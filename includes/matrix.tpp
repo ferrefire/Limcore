@@ -53,7 +53,20 @@ void Matrix<R, C>::operator-=(Matrix<R, C> other)
 MATRIX_TEMPLATE
 void Matrix<R, C>::operator*=(Matrix<R, C> other)
 {
-	//Matrix<R, C> result;
+	Matrix<R, C> result;
+
+	for (int r = 0; r < R; r++)
+	{
+		for (int c = 0; c < C; c++)
+		{
+			for (int i = 0; i < C; i++)
+			{
+				result(r, c) += *this(r, i) * other(i, c); 
+			}
+		}
+	}
+
+	for (int i = 0; i < size; i++) { data[i] = result[i]; }
 }
 
 MATRIX_TEMPLATE
