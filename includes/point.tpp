@@ -115,14 +115,6 @@ void Point<T, S>::operator/=(Point<T, S> other)
 	for (int i = 0; i < S; i++) data[i] /= other[i];
 }
 
-//POINT_TEMPLATE
-//std::ostream& operator<<(std::ostream& out, Point<T, S>& point)
-//{
-//	for (int i = 0; i < S; i++) out << point[i] << (i + 1 < S ? ", " : "");
-//
-//	return (out);
-//}
-
 POINT_TEMPLATE
 std::ostream& operator<<(std::ostream& out, Point<T, S> point)
 {
