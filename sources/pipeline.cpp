@@ -73,6 +73,8 @@ void Pipeline::CreateConfig()
 	config.dynamics.dynamicStateCount = CUI(config.dynamicStates.size());
 	config.dynamics.pDynamicStates = (config.dynamicStates.size() > 0 ? config.dynamicStates.data() : nullptr);
 
+	config.colorBlending.pAttachments = &config.colorBlendAttachment;
+
 	if (!Utilities::Contains(config.dynamicStates, VK_DYNAMIC_STATE_VIEWPORT)) config.viewportState.pViewports = &config.viewport;
 	if (!Utilities::Contains(config.dynamicStates, VK_DYNAMIC_STATE_SCISSOR)) config.viewportState.pScissors = &config.scissor;
 }
