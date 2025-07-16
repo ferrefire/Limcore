@@ -20,10 +20,15 @@ class Matrix
 
 	public:
 		Matrix();
+		Matrix(std::array<float, R * C> init);
+		Matrix<R, C>& operator=(const Matrix<R, C>& other);
 		~Matrix();
 
 		float& operator[](const uint32_t i);
 		float& operator()(const uint32_t row, const uint32_t col);
+		Matrix<R, C> operator+(Matrix<R, C> other);
+		Matrix<R, C> operator-(Matrix<R, C> other);
+		Matrix<R, C> operator*(Matrix<R, C> other);
 		void operator+=(Matrix<R, C> other);
 		void operator-=(Matrix<R, C> other);
 		void operator*=(Matrix<R, C> other);
