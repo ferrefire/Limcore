@@ -4,6 +4,8 @@
 #include "device.hpp"
 #include "swapchain.hpp"
 
+#include <functional>
+
 struct ManagerConfig
 {
 	bool fullscreen = false;
@@ -18,6 +20,9 @@ class Manager
 		static Window window;
 		static Device device;
 		static Swapchain swapchain;
+
+		static std::vector<std::function<void()>> startCalls;
+		static std::vector<std::function<void()>> endCalls;
 
 		static void CreateGLFW();
 		static void CreateVulkan();
@@ -43,4 +48,7 @@ class Manager
 		
 		static void ParseArguments(char **arguments, const int& count);
 		static bool ShouldClose();
+
+		static void RegisterStartCall(std::function<void()> call);
+		static void RegisterEndCall(std::function<void()> call);
 };

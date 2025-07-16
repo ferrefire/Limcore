@@ -33,98 +33,6 @@ Manager::~Manager()
 	Destroy();
 }
 
-/*struct UniformData
-{
-	dpoint2D center;
-	double zoom;
-	float aspect;
-	int maxIterations;
-};
-
-void Test(VkCommandBuffer commandBuffer, uint32_t currentFrame)
-{
-	static bool start = true;
-	static Mesh<Position | Coordinate, VK_INDEX_TYPE_UINT16> mesh;
-	static Pass pass;
-	static Pipeline pipeline;
-	static UniformData uniformData;
-	static Buffer buffer;
-	static Descriptor descriptor;
-
-	if (start)
-	{
-		uniformData.center = dpoint2D({-0.5, 0.0});
-		uniformData.zoom = 1.0;
-		uniformData.aspect = float(Manager::GetWindow().GetConfig().extent.width) / float(Manager::GetWindow().GetConfig().extent.height);
-		uniformData.maxIterations = 30;
-
-		mesh.SetShape(Shape<Position | Coordinate, VK_INDEX_TYPE_UINT16>(ShapeType::Quad));
-
-		mesh.Create(&Manager::GetDevice());
-
-		PassConfig passConfig = Pass::DefaultConfig();
-		pass.Create(passConfig, &Manager::GetDevice());
-
-		BufferConfig bufferConfig{};
-		bufferConfig.mapped = true;
-		bufferConfig.size = sizeof(uniformData);
-		buffer.Create(bufferConfig, &Manager::GetDevice(), &uniformData);
-
-		std::vector<DescriptorConfig> descriptorConfigs(1);
-		descriptorConfigs[0].stages = VK_SHADER_STAGE_FRAGMENT_BIT;
-		descriptor.Create(descriptorConfigs, &Manager::GetDevice());
-		
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = buffer.GetBuffer();
-		bufferInfo.range = sizeof(uniformData);
-		descriptor.Update(0, &bufferInfo, nullptr);
-
-		PipelineConfig pipelineConfig = Pipeline::DefaultConfig();
-		pipelineConfig.shader = "screen";
-		pipelineConfig.vertexInfo = mesh.GetVertexInfo();
-		pipelineConfig.renderpass = pass.GetRenderpass();
-		pipelineConfig.rasterization.cullMode = VK_CULL_MODE_NONE;
-		pipelineConfig.descriptorLayouts = {descriptor.GetLayout()};
-		pipeline.Create(pipelineConfig, &Manager::GetDevice());
-
-		Renderer::AddPass(&pass);
-
-		start = false;
-	}
-	else if (commandBuffer)
-	{
-		if (Input::GetKey(GLFW_KEY_W).down) uniformData.center.y() -= Time::deltaTime / uniformData.zoom;
-		if (Input::GetKey(GLFW_KEY_S).down) uniformData.center.y() += Time::deltaTime / uniformData.zoom;
-		if (Input::GetKey(GLFW_KEY_A).down) uniformData.center.x() -= Time::deltaTime / uniformData.zoom;
-		if (Input::GetKey(GLFW_KEY_D).down) uniformData.center.x() += Time::deltaTime / uniformData.zoom;
-
-		if (Input::GetKey(GLFW_KEY_UP).down) uniformData.zoom += Time::deltaTime * uniformData.zoom;
-		if (Input::GetKey(GLFW_KEY_DOWN).down) uniformData.zoom -= Time::deltaTime * uniformData.zoom;
-
-		if (Input::GetKey(GLFW_KEY_RIGHT).pressed || (Input::GetKey(GLFW_KEY_RIGHT).holding && Time::newTick)) 
-			uniformData.maxIterations += 2;
-		if (Input::GetKey(GLFW_KEY_LEFT).pressed || (Input::GetKey(GLFW_KEY_LEFT).holding && Time::newTick)) 
-			uniformData.maxIterations -= 2;
-
-		buffer.Update(&uniformData, sizeof(uniformData));
-
-		pipeline.Bind(commandBuffer);
-		descriptor.Bind(commandBuffer, pipeline.GetLayout());
-		mesh.Bind(commandBuffer);
-		vkCmdDrawIndexed(commandBuffer, CUI(mesh.GetIndices().size()), 1, 0, 0, 0);
-	}
-	else
-	{
-		mesh.Destroy();
-		buffer.Destroy();
-		descriptor.Destroy();
-		pass.Destroy();
-		pipeline.Destroy();
-
-		start = true;
-	}
-}*/
-
 void Manager::Create()
 {
 	try
@@ -189,9 +97,10 @@ void Manager::DestroyGLFW()
 
 void Manager::DestroyVulkan()
 {
+	for (std::function<void()> call : endCalls) { call(); }
+
 	if (device.Created())
 	{
-		//Test(nullptr, 0);
 		swapchain.Destroy();
 		Renderer::Destroy();
 		window.DestroySurface();
@@ -227,8 +136,7 @@ void Manager::Run()
 
 void Manager::Start()
 {
-	//Test(nullptr, 0);
-	//Renderer::RegisterCall(Test);
+	for (std::function<void()> call : startCalls) { call(); }
 }
 
 void Manager::Frame()
@@ -257,8 +165,21 @@ bool Manager::ShouldClose()
 	return (glfwWindowShouldClose(window.GetData()));
 }
 
+void Manager::RegisterStartCall(std::function<void()> call)
+{
+	startCalls.push_back(call);
+}
+
+void Manager::RegisterEndCall(std::function<void()> call)
+{
+	endCalls.push_back(call);
+}
+
 ManagerConfig Manager::config{};
 
 Window Manager::window;
 Device Manager::device;
 Swapchain Manager::swapchain;
+
+std::vector<std::function<void()>> Manager::startCalls;
+std::vector<std::function<void()>> Manager::endCalls;
