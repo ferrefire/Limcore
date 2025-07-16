@@ -62,7 +62,11 @@ void Manager::CreateGLFW()
 void Manager::CreateVulkan()
 {
 	DeviceConfig deviceConfig{};
-	if (config.integrated) deviceConfig.type = DeviceType::Integrated;
+	if (config.integrated)
+	{
+		deviceConfig.type = DeviceType::Integrated;
+		deviceConfig.shaderDouble = false;
+	}
 	device.SetConfig(deviceConfig);
 
 	Graphics::CreateInstance();
