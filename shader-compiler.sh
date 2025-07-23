@@ -1,10 +1,7 @@
 #!/bin/bash
 
 path=$(pwd)
-glslang_path=$path/build/_deps/glslang-build/StandAlone/glslang
-if [[ $OSTYPE == "msys" ]]; then
-	glslang_path=$path/build/_deps/glslang-build/StandAlone/Release/glslang
-fi
+glslang_path=$path/glslang
 
 while ! test -d $path/shaders; do
 	cd ..
@@ -18,7 +15,7 @@ fi
 
 compile_shader () 
 {
-	"$glslang_path" -V $1 -o $1.spv
+	"$glslang_path" -V -t $1 -o $1.spv
 }
 
 if [[ $@ == "ALL" ]] || [[ $@ == "all" ]]; then
