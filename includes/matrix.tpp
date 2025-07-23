@@ -43,6 +43,24 @@ float& Matrix<R, C>::operator[](const uint32_t i)
 }
 
 MATRIX_TEMPLATE
+const float& Matrix<R, C>::operator[](const uint32_t i) const
+{
+	if (i >= size) throw (std::out_of_range("Index out of bounds"));
+
+	return (data[i]);
+}
+
+MATRIX_TEMPLATE
+const float& Matrix<R, C>::operator()(const uint32_t row, const uint32_t col) const
+{
+	uint32_t i = col + (row * R);
+
+	if (i >= size) throw (std::out_of_range("Index out of bounds"));
+
+	return (data[i]);
+}
+
+MATRIX_TEMPLATE
 float& Matrix<R, C>::operator()(const uint32_t row, const uint32_t col)
 {
 	uint32_t i = col + (row * R);
@@ -53,7 +71,7 @@ float& Matrix<R, C>::operator()(const uint32_t row, const uint32_t col)
 }
 
 MATRIX_TEMPLATE
-Matrix<R, C> Matrix<R, C>::operator+(Matrix<R, C> other)
+Matrix<R, C> Matrix<R, C>::operator+(const Matrix<R, C>& other) const
 {
 	Matrix<R, C> result;
 
@@ -66,7 +84,7 @@ Matrix<R, C> Matrix<R, C>::operator+(Matrix<R, C> other)
 }
 
 MATRIX_TEMPLATE
-Matrix<R, C> Matrix<R, C>::operator-(Matrix<R, C> other)
+Matrix<R, C> Matrix<R, C>::operator-(const Matrix<R, C>& other) const
 {
 	Matrix<R, C> result;
 
@@ -79,7 +97,7 @@ Matrix<R, C> Matrix<R, C>::operator-(Matrix<R, C> other)
 }
 
 MATRIX_TEMPLATE
-Matrix<R, C> Matrix<R, C>::operator*(Matrix<R, C> other)
+Matrix<R, C> Matrix<R, C>::operator*(const Matrix<R, C>& other) const
 {
 	Matrix<R, C> result;
 
@@ -98,7 +116,7 @@ Matrix<R, C> Matrix<R, C>::operator*(Matrix<R, C> other)
 }
 
 MATRIX_TEMPLATE
-void Matrix<R, C>::operator+=(Matrix<R, C> other)
+void Matrix<R, C>::operator+=(const Matrix<R, C>& other)
 {
 	for (int i = 0; i < size; i++)
 	{
@@ -107,7 +125,7 @@ void Matrix<R, C>::operator+=(Matrix<R, C> other)
 }
 
 MATRIX_TEMPLATE
-void Matrix<R, C>::operator-=(Matrix<R, C> other)
+void Matrix<R, C>::operator-=(const Matrix<R, C>& other)
 {
 	for (int i = 0; i < size; i++)
 	{
@@ -116,13 +134,13 @@ void Matrix<R, C>::operator-=(Matrix<R, C> other)
 }
 
 MATRIX_TEMPLATE
-void Matrix<R, C>::operator*=(Matrix<R, C> other)
+void Matrix<R, C>::operator*=(const Matrix<R, C>& other)
 {
 	*this = *this * other;
 }
 
 MATRIX_TEMPLATE
-std::ostream& operator<<(std::ostream& out, Matrix<R, C> matrix)
+std::ostream& operator<<(std::ostream& out, const Matrix<R, C>& matrix)
 {
 	out << std::endl;
 

@@ -5,15 +5,19 @@
 #include <stdint.h>
 #include <stdexcept>
 #include <array>
+#include <type_traits>
 
-#define POINT_TEMPLATE template <ValidType T, uint32_t S> \
-	requires ValidRange<S>
+#define POINT_TEMPLATE template <ValidPointType T, uint32_t S> \
+	requires ValidPointRange<S>
+
+#define POINT_INIT_TEMPLATE template <typename... Init> \
+	requires (sizeof...(Init) <= S) && (ValidPointType<std::decay_t<Init>> && ...)
 
 template <typename T>
-concept ValidType = (std::is_floating_point<T>().value || std::is_integral<T>().value);
+concept ValidPointType = (std::is_floating_point<T>().value || std::is_integral<T>().value);
 
 template <uint32_t S>
-concept ValidRange = (S >= 1 && S <= 4);
+concept ValidPointRange = (S >= 1 && S <= 4);
 
 POINT_TEMPLATE
 class Point
@@ -24,7 +28,9 @@ class Point
 	public:
 		Point();
 		Point(const T init);
-		Point(std::initializer_list<T> init);
+		Point(const std::array<T, S> init);
+		POINT_INIT_TEMPLATE
+		Point(Init&&... init);
 		Point<T, S>& operator=(const Point<T, S>& other);
 		~Point();
 
@@ -39,21 +45,20 @@ class Point
 		const T& w() const {return (S > 3 ? data[3] : data[data.size() - 1]);}
 
 		T& operator[](const uint32_t i);
-		Point<T, S> operator+(Point<T, S> other);
-		Point<T, S> operator-(Point<T, S> other);
-		Point<T, S> operator*(Point<T, S> other);
-		Point<T, S> operator/(Point<T, S> other);
-		void operator+=(Point<T, S> other);
-		void operator-=(Point<T, S> other);
-		void operator*=(Point<T, S> other);
-		void operator/=(Point<T, S> other);
+		const T& operator[](const uint32_t i) const;
+
+		Point<T, S> operator+(const Point<T, S>& other) const;
+		Point<T, S> operator-(const Point<T, S>& other) const;
+		Point<T, S> operator*(const Point<T, S>& other) const;
+		Point<T, S> operator/(const Point<T, S>& other) const;
+		void operator+=(const Point<T, S>& other);
+		void operator-=(const Point<T, S>& other);
+		void operator*=(const Point<T, S>& other);
+		void operator/=(const Point<T, S>& other);
 };
 
-//POINT_TEMPLATE
-//std::ostream& operator<<(std::ostream& out, Point<T, S>& point);
-
 POINT_TEMPLATE
-std::ostream& operator<<(std::ostream& out, Point<T, S> point);
+std::ostream& operator<<(std::ostream& out, const Point<T, S>& point);
 
 #include "point.tpp"
 

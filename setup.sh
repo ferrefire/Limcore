@@ -3,9 +3,8 @@
 project=limcore
 path=$(pwd)
 dev="-DDEV=OFF"
-release=0
 
-run_command () 
+run_command ()
 {
 	if [[ $1 == "build" ]] || [[ $1 == "bd" ]]; then
 		if ! test -d $path/build; then
@@ -49,25 +48,13 @@ run_command ()
 			cd $path/build
 			cmake --build . -j --config Release
 		fi
-		if [[ $release == 1 ]]; then
-			if test -d $path/build/_deps; then
-				cd $path/build/_deps
-				rm -rf vulkan-headers-src
-				rm -rf vulkan-loader-src
-				rm -rf glfw-src
-			else
-				echo "ERROR: '"$path"/build/_deps' could not be found."
-				exit 1
-			fi
-		fi
 	fi
 }
 
 if test -f setup.sh; then
 	for x in $@; do
-		if [[ $x == "release" ]] || [[ $x == "rel" ]]; then
-			dev="-DDEV=OFF"
-			release=1
+		if [[ $x == "glsl" ]]; then
+			dev="-DDEV=ON"
 		elif [[ $x == "-"* ]]; then
 			args+=${x/-/}
 			args+=" "
