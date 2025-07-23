@@ -1,15 +1,15 @@
 #!/bin/bash
 
 path=$(pwd)
+project=${path##*/}
+commandCount=0
+optionCount=0
+override=0
 
 glslangName=glslang-main-linux-Release
 if [[ $OSTYPE == "mysys" ]]; then
 	glslangName=glslang-master-windows-Release
 fi
-
-commandCount=0
-optionCount=0
-override=0
 
 CreateDirectories ()
 {
@@ -39,6 +39,7 @@ FetchSetup ()
 	if ! test -f $path/setup.sh; then
 		echo "FETCHING SETUP SCRIPT"
 		wget https://raw.githubusercontent.com/ferrefire/Limcore/refs/heads/main/setup.sh
+		sed -i "s/^project=[^ ]*/project="$project"/" $path/setup.sh
 		echo "SETUP SCRIPT FETCHED"
 	fi
 }
@@ -53,6 +54,7 @@ FetchCMakeFile ()
 		echo "FETCHING CMAKE FILE"
 		wget https://raw.githubusercontent.com/ferrefire/Limcore/refs/heads/main/CMakeListsNewProject.txt
 		mv CMakeListsNewProject.txt CMakeLists.txt
+		sed -i "s/^project([^ ]*/project("$project" VERSION 1.0)/" $path/CMakeLists.txt
 		echo "CMAKE FILE FETCHED"
 	fi
 }
