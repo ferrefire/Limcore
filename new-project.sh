@@ -54,7 +54,7 @@ FetchCMakeFile ()
 		echo "FETCHING CMAKE FILE"
 		wget https://raw.githubusercontent.com/ferrefire/Limcore/refs/heads/main/CMakeListsNewProject.txt
 		mv CMakeListsNewProject.txt CMakeLists.txt
-		sed -i "s/^project([^ ]*/project("$project" VERSION 1.0)/" $path/CMakeLists.txt
+		sed -i "s/^project([^ ]*/project("$project"/" $path/CMakeLists.txt
 		echo "CMAKE FILE FETCHED"
 	fi
 }
