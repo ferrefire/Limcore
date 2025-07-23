@@ -109,8 +109,26 @@ ExecuteCommand ()
 	elif [[ $1 == "cmk" ]] || [[ $1 == "c" ]]; then
 		FetchCMakeFile
 	elif [[ $1 == "shdrcmp" ]] || [[ $1 == "g" ]]; then
-		FetchCMakeFile
+		FetchShaderCompilers
 	fi
+}
+
+Clean ()
+{
+	if read -p "Delete all source directories? (y/n): " confirmDir && [[ $confirmDir == [yY] ]]; then
+		CleanDirectories
+	fi
+	echo ""
+
+	if read -p "Delete all fetched files? (y/n): " confirmFetched && [[ $confirmFetched == [yY] ]]; then
+		CleanFetches
+	fi
+	echo ""
+
+	if read -p "Exit? (y/n): " confirmExit && [[ $confirmExit == [yY] ]]; then
+		exit 1
+	fi
+	echo ""
 }
 
 ParseOption ()
@@ -118,15 +136,7 @@ ParseOption ()
 	if [[ $1 == "-override" ]] || [[ $1 == "-o" ]]; then
 		override=1
 	elif [[ $1 == "-clean" ]] || [[ $1 == "-c" ]]; then
-		if read -p "Delete all source directories? (y/n): " confirmDir && [[ $confirmDir == [yY] ]]; then
-			CleanDirectories
-		fi
-		if read -p "Delete all fetched files? (y/n): " confirmFetched && [[ $confirmFetched == [yY] ]]; then
-			CleanFetches
-		fi
-		if read -p "Exit? (y/n): " confirmExit && [[ $confirmExit == [yY] ]]; then
-			exit 1
-		fi
+		Clean
 	fi
 }
 
