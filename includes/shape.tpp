@@ -35,18 +35,18 @@ void Shape<V, I>::CreateQuad()
 	
 	if (hasPosition)
 	{
-		vertices[0].position = point3D({-0.5f, -0.5f, 0.0f});
-		vertices[1].position = point3D({0.5f, 0.5f, 0.0f});
-		vertices[2].position = point3D({-0.5f, 0.5f, 0.0f});
-		vertices[3].position = point3D({0.5f, -0.5f, 0.0f});
+		vertices[0].position = point3D(-0.5f, -0.5f, 0.0f);
+		vertices[1].position = point3D(0.5f, 0.5f, 0.0f);
+		vertices[2].position = point3D(-0.5f, 0.5f, 0.0f);
+		vertices[3].position = point3D(0.5f, -0.5f, 0.0f);
 	}
 
 	if (hasCoordinate)
 	{
-		vertices[0].coordinate = point2D({0.0f, 0.0f});
-		vertices[1].coordinate = point2D({1.0f, 1.0f});
-		vertices[2].coordinate = point2D({0.0f, 1.0f});
-		vertices[3].coordinate = point2D({1.0f, 0.0f});
+		vertices[0].coordinate = point2D(0.0f, 0.0f);
+		vertices[1].coordinate = point2D(1.0f, 1.0f);
+		vertices[2].coordinate = point2D(0.0f, 1.0f);
+		vertices[3].coordinate = point2D(1.0f, 0.0f);
 	}
 
 	if (hasIndices)
