@@ -8,8 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 FILE(GLOB SOURCE_FILES sources/*.cpp)
 
-add_executable(${PROJECT_NAME} ${SOURCE_FILES})
-#add_library(${PROJECT_NAME} ${SOURCE_FILES})
+#add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+add_library(${PROJECT_NAME} ${SOURCE_FILES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC "includes")
 
@@ -18,8 +18,6 @@ set(BUILD_WSI_WAYLAND_SUPPORT False)
 set(ENABLE_OPT False)
 set(UPDATE_DEPS OFF)
 set(BUILD_TESTS OFF)
-
-execute_process(COMMAND pwd)
 
 include(FetchContent)
 
