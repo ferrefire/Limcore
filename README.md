@@ -1,7 +1,5 @@
 # Limcore
 
-![Example Batch](test)
-
 Limcore is a lightweight platform independent graphics library that uses Vulkan and GLFW. Limcore does not use any other external libraries. All the dependencies are automatically downloaded and compiled alongside Limcore.
 
 ## Table of Contents
@@ -10,9 +8,18 @@ Limcore is a lightweight platform independent graphics library that uses Vulkan 
 - [Usage](#usage)
 
 ## Installation
+### Dependencies
+For Linux:
+- CMake version 3.22 or newer.
+
+For Windows:
+- A bash terminal: something like 'git bash'.
+- Visual studio 2022 or newer.
+- CMake version 3.22 or newer.
+
 ### CMake
 To build Limcore into your project using CMake, you can use CMake's FetchContent functionality.
-Simply add the following into your CMakeLists file and your set:
+Simply add the following into your CMakeLists.txt file and your set:
 ```cmake
 include(FetchContent) # If not already included
 
@@ -43,31 +50,31 @@ It will automatically create the source file directories needed for Limcore. It 
 ```
 
 ### Creation commands
-- d (to create all the source directories)
-- s (to download and initiate the setup script)
-- c (to download and initiate the CMake file)
-- g (to download and initiate the shader compiling scripts)
+- d (to create all the source directories).
+- s (to download and initiate the setup script).
+- c (to download and initiate the CMake file).
+- g (to download and initiate the shader compiling scripts).
 
 ### Creation options
-- -override or -o (to overwrite all the helper scripts and CMake files regardless of if they already exist)
-- -clean or -c (to clean up and remove downloaded files)
+- -override or -o (to overwrite all the helper scripts and CMake files regardless of if they already exist).
+- -clean or -c (to clean up and remove downloaded files).
 
 The new-project.sh script will also add two very usefull scripts for managing the project (building, compiling, running, managing dependencies, etc.)
 
 ### Setup.sh
 The setup.sh script is very usefull to quickly manage your Limcore project. It's usage is simple and straightfoward.
 
-To build the CMake files and fetch any dependencies, run the following command:
+To build the CMake files and fetch or update any dependencies, execute the following command:
 ```bash
 ./setup.sh build # Or 'bd'
 ```
 
-To compile the project into an executable, run the following command:
+To compile the project into an executable, execute the following command:
 ```bash
 ./setup.sh compile # Or 'cmp'
 ```
 
-To run the project, run the following command:
+To run the project, execute the following command:
 ```bash
 ./setup.sh run # Or 'r'
 ```
@@ -76,13 +83,13 @@ And to add application arguments, you can add them after the "run" command by us
 ./setup.sh run -fs # To run the application in fullscreen
 ```
 
-To clean the project and remove any downloaded dependencies, run the following command:
+To clean the project and remove any downloaded dependencies, execute the following command:
 ```bash
 ./setup.sh clean # Or 'cl'
 ```
 
 ### Shader-Compiler.sh
-The shader-compiler.sh script is a swift way to compile your shaders from GLSL into SPIRV code. Simply put your shaders (.vert, .frag, .comp, etc.) in the "shaders" folder and run the following command:
+The shader-compiler.sh script is a swift way to compile your shaders from GLSL into SPIRV code. Simply put your shaders (.vert, .frag, .comp, etc.) in the "shaders" folder and execute the following command:
 ```bash
 ./shader-compiler all # Or example.vert example.frag for compiling specifig shaders
 ```
