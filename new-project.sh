@@ -124,6 +124,9 @@ ParseOption ()
 		if read -p "Delete all fetched files? (y/n): " confirmFetched && [[ $confirmFetched == [yY] ]]; then
 			CleanFetches
 		fi
+		if read -p "Exit? (y/n): " confirmExit && [[ $confirmExit == [yY] ]]; then
+			exit 1
+		fi
 	fi
 }
 
