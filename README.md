@@ -1,6 +1,6 @@
 # Limcore
 
-Limcore is a lightweight platform independent graphics library that uses Vulkan and GLFW. Limcore does not use any other external libraries. All the dependencies are automatically downloaded and compiled alongside Limcore.
+Limcore is a lightweight, platform-independent graphics library that uses Vulkan and GLFW. Limcore does not use any other external libraries. All the dependencies are automatically downloaded and compiled alongside Limcore.
 
 ## Table of Contents
 - [Installation](#installation)
@@ -19,7 +19,7 @@ For Windows:
 
 ### CMake
 To build Limcore into your project using CMake, you can use CMake's FetchContent functionality.
-Simply add the following into your CMakeLists.txt file and your set:
+Simply add the following into your CMakeLists.txt file and you're set:
 ```cmake
 include(FetchContent) # If not already included
 
@@ -49,17 +49,17 @@ It will automatically create the source file directories needed for Limcore. It 
 ./new-project.sh -override # To add specific behaviour by using options
 ```
 
-### Creation commands
+Creation commands:
 - d (to create all the source directories).
 - s (to download and initiate the setup script).
 - c (to download and initiate the CMake file).
 - g (to download and initiate the shader compiling scripts).
 
-### Creation options
+Creation options:
 - -override or -o (to overwrite all the helper scripts and CMake files regardless of if they already exist).
 - -clean or -c (to clean up and remove downloaded files).
 
-The new-project.sh script will also add two very usefull scripts for managing the project (building, compiling, running, managing dependencies, etc.)
+The new-project.sh script will also add two very usefull scripts for managing the project (building, compiling, running, dependencies, etc.)
 
 ### Setup.sh
 The setup.sh script is very usefull to quickly manage your Limcore project. It's usage is simple and straightfoward.
