@@ -8,8 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 FILE(GLOB SOURCE_FILES sources/*.cpp)
 
-#add_executable(${PROJECT_NAME} ${SOURCE_FILES})
-add_library(${PROJECT_NAME} ${SOURCE_FILES})
+add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+#add_library(${PROJECT_NAME} ${SOURCE_FILES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC "includes")
 
@@ -47,13 +47,3 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable("Vulkan-Loader")
 target_link_libraries(${PROJECT_NAME} PUBLIC "vulkan")
-
-if(DEV)
-	FetchContent_Declare(
-	    glslang
-	    GIT_REPOSITORY https://github.com/KhronosGroup/glslang.git
-	    GIT_TAG fa9c3deb49e035a8abcabe366f26aac010f6cbfb
-		GIT_SHALLOW 1
-	)
-	FetchContent_MakeAvailable("glslang")
-endif()

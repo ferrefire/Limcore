@@ -2,7 +2,6 @@
 
 project=limcore
 path=$(pwd)
-dev="-DDEV=OFF"
 
 run_command ()
 {
@@ -11,7 +10,7 @@ run_command ()
 			mkdir build
 		fi
 		cd $path/build
-		cmake $dev ..
+		cmake ..
 
 	elif [[ $1 == "clean" ]] || [[ $1 == "cl" ]]; then
 		rm -rf $path/build
@@ -53,9 +52,7 @@ run_command ()
 
 if test -f setup.sh; then
 	for x in $@; do
-		if [[ $x == "glsl" ]]; then
-			dev="-DDEV=ON"
-		elif [[ $x == "-"* ]]; then
+		if [[ $x == "-"* ]]; then
 			args+=${x/-/}
 			args+=" "
 		fi
