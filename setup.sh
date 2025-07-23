@@ -50,17 +50,18 @@ run_command ()
 	fi
 }
 
-if test -f setup.sh; then
-	for x in $@; do
-		if [[ $x == "-"* ]]; then
-			args+=${x/-/}
-			args+=" "
-		fi
-	done
-	for x in $@; do
-		run_command $x
-	done
-else
+if ! test -f setup.sh; then
 	echo "ERROR: please run the setup script from the root project directory."
 	exit 1
 fi
+
+for x in $@; do
+	if [[ $x == "-"* ]]; then
+		args+=${x/-/}
+		args+=" "
+	fi
+done
+
+for x in $@; do
+	run_command $x
+done
