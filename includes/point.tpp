@@ -9,35 +9,33 @@ Point<T, S>::Point()
 }
 
 POINT_TEMPLATE
-Point<T, S>::Point(const T init)
-{
-	for (int i = 0; i < S; i++)
-	{
-		data[i] = init;
-	}
-}
-
-POINT_TEMPLATE
-Point<T, S>::Point(const std::array<T, S> init)
-{
-	for (int i = 0; i < S; i++)
-	{
-		data[i] = init[i];
-	}
-}
-
-POINT_TEMPLATE
 POINT_INIT_TEMPLATE
-Point<T, S>::Point(Init&&... init)
+Point<T, S>::Point(Init... init)
 {
 	int i = 0;
-	((data[i++] = std::forward<T>(init)), ...);
+
+	((data[i++] = init), ...);
+
+	if (sizeof...(Init) == 1) { for (i = 1; i < S; i++) { data[i] = data[0]; } }
 }
 
 POINT_TEMPLATE
-Point<T, S>& Point<T, S>::operator=(const Point<T, S>& other)
+POINT_CAST_TEMPLATE
+Point<T, S>::Point(const Point<T, CS>& other)
 {
-	this->data = other.data;
+	uint32_t size = (S < CS ? S : CS);
+
+	for (int i = 0; i < size; i++) { this->data[i] = other[i]; }
+}
+
+POINT_TEMPLATE
+POINT_CAST_TEMPLATE
+Point<T, S>& Point<T, S>::operator=(const Point<T, CS>& other)
+{
+	uint32_t size = (S < CS ? S : CS);
+
+	for (int i = 0; i < size; i++) { this->data[i] = other[i]; }
+
 	return (*this);
 }
 
@@ -106,25 +104,25 @@ Point<T, S> Point<T, S>::operator/(const Point<T, S>& other) const
 POINT_TEMPLATE
 void Point<T, S>::operator+=(const Point<T, S>& other)
 {
-	for (int i = 0; i < S; i++) data[i] += other[i];
+	for (int i = 0; i < S; i++) { data[i] += other[i]; }
 }
 
 POINT_TEMPLATE
 void Point<T, S>::operator-=(const Point<T, S>& other)
 {
-	for (int i = 0; i < S; i++) data[i] -= other[i];
+	for (int i = 0; i < S; i++) { data[i] -= other[i]; }
 }
 
 POINT_TEMPLATE
 void Point<T, S>::operator*=(const Point<T, S>& other)
 {
-	for (int i = 0; i < S; i++) data[i] *= other[i];
+	for (int i = 0; i < S; i++) { data[i] *= other[i]; }
 }
 
 POINT_TEMPLATE
 void Point<T, S>::operator/=(const Point<T, S>& other)
 {
-	for (int i = 0; i < S; i++) data[i] /= other[i];
+	for (int i = 0; i < S; i++) { data[i] /= other[i]; }
 }
 
 POINT_TEMPLATE

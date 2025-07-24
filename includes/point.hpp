@@ -10,6 +10,9 @@
 #define POINT_TEMPLATE template <ValidPointType T, uint32_t S> \
 	requires ValidPointRange<S>
 
+#define POINT_CAST_TEMPLATE template <uint32_t CS> \
+	requires ValidPointRange<CS>
+
 #define POINT_INIT_TEMPLATE template <typename... Init> \
 	requires (sizeof...(Init) <= S) && (ValidPointType<std::decay_t<Init>> && ...)
 
@@ -27,11 +30,12 @@ class Point
 
 	public:
 		Point();
-		Point(const T init);
-		Point(const std::array<T, S> init);
 		POINT_INIT_TEMPLATE
-		Point(Init&&... init);
-		Point<T, S>& operator=(const Point<T, S>& other);
+		Point(Init... init);
+		POINT_CAST_TEMPLATE
+		Point(const Point<T, CS>& other);
+		POINT_CAST_TEMPLATE
+		Point<T, S>& operator=(const Point<T, CS>& other);
 		~Point();
 
 		T& x() {return (data[0]);}
@@ -51,6 +55,7 @@ class Point
 		Point<T, S> operator-(const Point<T, S>& other) const;
 		Point<T, S> operator*(const Point<T, S>& other) const;
 		Point<T, S> operator/(const Point<T, S>& other) const;
+		
 		void operator+=(const Point<T, S>& other);
 		void operator-=(const Point<T, S>& other);
 		void operator*=(const Point<T, S>& other);
@@ -60,8 +65,6 @@ class Point
 POINT_TEMPLATE
 std::ostream& operator<<(std::ostream& out, const Point<T, S>& point);
 
-#include "point.tpp"
-
 typedef Point<float, 2> point2D;
 typedef Point<float, 3> point3D;
 typedef Point<float, 4> point4D;
@@ -69,3 +72,5 @@ typedef Point<float, 4> point4D;
 typedef Point<double, 2> dpoint2D;
 typedef Point<double, 3> dpoint3D;
 typedef Point<double, 4> dpoint4D;
+
+#include "point.tpp"

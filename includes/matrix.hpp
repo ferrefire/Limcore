@@ -1,5 +1,7 @@
 #pragma once
 
+#include "point.hpp"
+
 #include <iostream>
 #include <stdint.h>
 #include <array>
@@ -32,12 +34,21 @@ class Matrix
 		Matrix<R, C> operator+(const Matrix<R, C>& other) const;
 		Matrix<R, C> operator-(const Matrix<R, C>& other) const;
 		Matrix<R, C> operator*(const Matrix<R, C>& other) const;
+		Point<float, C> operator*(const Point<float, C>& point) const;
+
 		void operator+=(const Matrix<R, C>& other);
 		void operator-=(const Matrix<R, C>& other);
 		void operator*=(const Matrix<R, C>& other);
+
+		void Scale(const Point<float, C>& scalar);
+
+		static Matrix<4, 4> Identity();
 };
 
 MATRIX_TEMPLATE
 std::ostream& operator<<(std::ostream& out, const Matrix<R, C>& matrix);
+
+typedef Matrix<3, 3> mat3;
+typedef Matrix<4, 4> mat4;
 
 #include "matrix.tpp"

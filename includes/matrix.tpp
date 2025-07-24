@@ -116,6 +116,22 @@ Matrix<R, C> Matrix<R, C>::operator*(const Matrix<R, C>& other) const
 }
 
 MATRIX_TEMPLATE
+Point<float, C> Matrix<R, C>::operator*(const Point<float, C>& point) const
+{
+	Point<float, C> result;
+
+	for (int r = 0; r < R; r++)
+	{
+		for (int c = 0; c < C; c++)
+		{
+			result[r] += (*this)(r, c) * point[c];
+		}
+	}
+
+	return (result);
+}
+
+MATRIX_TEMPLATE
 void Matrix<R, C>::operator+=(const Matrix<R, C>& other)
 {
 	for (int i = 0; i < size; i++)
@@ -137,6 +153,27 @@ MATRIX_TEMPLATE
 void Matrix<R, C>::operator*=(const Matrix<R, C>& other)
 {
 	*this = *this * other;
+}
+
+MATRIX_TEMPLATE
+void Matrix<R, C>::Scale(const Point<float, C>& scalar)
+{
+	for (int i = 0; i < C; i++)
+	{
+		(*this)(i, i) *= scalar[i];
+	}
+}
+
+MATRIX_TEMPLATE
+mat4 Matrix<R, C>::Identity()
+{
+	mat4 identity({
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1});
+
+	return (identity);
 }
 
 MATRIX_TEMPLATE
