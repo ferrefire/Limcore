@@ -2,14 +2,24 @@
 
 path=$(pwd)
 project=${path##*/}
+fetch=https://raw.githubusercontent.com/ferrefire/Limcore/refs/heads/main/
 commandCount=0
 optionCount=0
 override=0
 
 glslangName=glslang-main-linux-Release
-if [[ $OSTYPE == "mysys" ]]; then
+if [[ $OSTYPE == "msys" ]]; then
 	glslangName=glslang-master-windows-Release
 fi
+
+FetchFile ()
+{
+	if [[ $OSTYPE == "msys" ]]; then
+		curl -LO $1
+	elif [[ $OSTYPE == "linux-gnu" ]] || [[ $OSTYPE == "darwin" ]]; then
+		wget $1
+	fi
+}
 
 CreateDirectories ()
 {
@@ -38,7 +48,7 @@ FetchSetup ()
 
 	if ! test -f $path/setup.sh; then
 		echo "FETCHING SETUP SCRIPT"
-		wget https://raw.githubusercontent.com/ferrefire/Limcore/refs/heads/main/setup.sh
+		FetchFile ${fetch}setup.sh
 		sed -i "s/^project=[^ ]*/project="$project"/" $path/setup.sh
 		echo "SETUP SCRIPT FETCHED"
 	fi
@@ -52,7 +62,7 @@ FetchCMakeFile ()
 
 	if ! test -f $path/CMakeLists.txt; then
 		echo "FETCHING CMAKE FILE"
-		wget https://raw.githubusercontent.com/ferrefire/Limcore/refs/heads/main/CMakeListsNewProject.txt
+		FetchFile ${fetch}CMakeListsNewProject.txt
 		mv CMakeListsNewProject.txt CMakeLists.txt
 		sed -i "s/^project([^ ]*/project("$project"/" $path/CMakeLists.txt
 		echo "CMAKE FILE FETCHED"
@@ -68,13 +78,13 @@ FetchShaderCompilers ()
 
 	if ! test -f $path/shader-compiler.sh; then
 		echo "FETCHING SHADER COMPILER SCRIPT"
-		wget https://raw.githubusercontent.com/ferrefire/Limcore/refs/heads/main/shader-compiler.sh
+		FetchFile ${fetch}shader-compiler.sh
 		echo "SHADER COMPILER SCRIPT FETCHED"
 	fi
 
 	if ! test -f $path/glslang; then
 		echo "FETCHING GLSLANG EXECUTABLE"
-		wget https://github.com/KhronosGroup/glslang/releases/download/main-tot/$glslangName.zip
+		FetchFile https://github.com/KhronosGroup/glslang/releases/download/main-tot/$glslangName.zip
 		unzip -d $path/$glslangName $path/$glslangName.zip
 		mv $path/$glslangName/bin/glslang $path/glslang
 		rm -rf $path/$glslangName.zip
