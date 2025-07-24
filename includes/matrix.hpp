@@ -22,7 +22,7 @@ class Matrix
 
 	public:
 		Matrix();
-		Matrix(std::array<float, R * C> init);
+		Matrix(const std::array<float, R * C>& init);
 		Matrix<R, C>& operator=(const Matrix<R, C>& other);
 		~Matrix();
 
@@ -41,6 +41,7 @@ class Matrix
 		void operator*=(const Matrix<R, C>& other);
 
 		void Scale(const Point<float, C>& scalar);
+		void Translate(const Point<float, C>& translation);
 
 		static Matrix<4, 4> Identity();
 };

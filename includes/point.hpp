@@ -16,6 +16,9 @@
 #define POINT_INIT_TEMPLATE template <typename... Init> \
 	requires (sizeof...(Init) <= S) && (ValidPointType<std::decay_t<Init>> && ...)
 
+#define POINT_INIT_CAST_TEMPLATE template <uint32_t CS, typename... Init> \
+	requires (ValidPointRange<CS>) && (sizeof...(Init) <= S - CS) && (ValidPointType<std::decay_t<Init>> && ...)
+
 template <typename T>
 concept ValidPointType = (std::is_floating_point<T>().value || std::is_integral<T>().value);
 
@@ -34,6 +37,8 @@ class Point
 		Point(Init... init);
 		POINT_CAST_TEMPLATE
 		Point(const Point<T, CS>& other);
+		POINT_INIT_CAST_TEMPLATE
+		Point(const Point<T, CS>& other, Init... init);
 		POINT_CAST_TEMPLATE
 		Point<T, S>& operator=(const Point<T, CS>& other);
 		~Point();

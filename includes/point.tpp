@@ -29,6 +29,18 @@ Point<T, S>::Point(const Point<T, CS>& other)
 }
 
 POINT_TEMPLATE
+POINT_INIT_CAST_TEMPLATE
+Point<T, S>::Point(const Point<T, CS>& other, Init... init)
+{
+	uint32_t size = (S < CS ? S : CS);
+	int i = 0;
+
+	for (i = 0; i < size; i++) { this->data[i] = other[i]; }
+
+	((data[i++] = init), ...);
+}
+
+POINT_TEMPLATE
 POINT_CAST_TEMPLATE
 Point<T, S>& Point<T, S>::operator=(const Point<T, CS>& other)
 {

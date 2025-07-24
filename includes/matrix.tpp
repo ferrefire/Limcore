@@ -9,7 +9,7 @@ Matrix<R, C>::Matrix()
 }
 
 MATRIX_TEMPLATE
-Matrix<R, C>::Matrix(std::array<float, R * C> init)
+Matrix<R, C>::Matrix(const std::array<float, R * C>& init)
 {
 	for (int i = 0; i < size; i++)
 	{
@@ -161,6 +161,15 @@ void Matrix<R, C>::Scale(const Point<float, C>& scalar)
 	for (int i = 0; i < C; i++)
 	{
 		(*this)(i, i) *= scalar[i];
+	}
+}
+
+MATRIX_TEMPLATE
+void Matrix<R, C>::Translate(const Point<float, C>& translation)
+{
+	for (int i = 0; i < C; i++)
+	{
+		(*this)(i, C - 1) += translation[i];
 	}
 }
 
