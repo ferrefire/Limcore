@@ -139,8 +139,7 @@ void Point<T, S>::operator/=(const Point<T, S>& other)
 }
 
 POINT_TEMPLATE
-template <uint32_t PS>
-requires (PS < 3)
+template <uint32_t PS> requires (PS < 3)
 void Point<T, S>::Rotate(const float& degrees)
 {
 	float radians = degrees * 0.0174532925;
@@ -153,8 +152,7 @@ void Point<T, S>::Rotate(const float& degrees)
 }
 
 POINT_TEMPLATE
-template <uint32_t PS>
-requires (PS > 2)
+template <uint32_t PS> requires (PS > 2)
 void Point<T, S>::Rotate(const float& degrees, const Axis& axis)
 {
 	if (S > 3) return;

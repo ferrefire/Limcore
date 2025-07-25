@@ -68,12 +68,10 @@ class Point
 		void operator*=(const Point<T, S>& other);
 		void operator/=(const Point<T, S>& other);
 
-		template <uint32_t PS = S>
-		requires (PS < 3)
+		template <uint32_t PS = S> requires (PS < 3)
 		void Rotate(const float& degrees);
 
-		template <uint32_t PS = S>
-		requires (PS > 2)
+		template <uint32_t PS = S> requires (PS > 2)
 		void Rotate(const float& degrees, const Axis& axis);
 };
 

@@ -1,6 +1,7 @@
 #include "matrix.hpp"
 
 #include <stdexcept>
+#include <cmath>
 
 MATRIX_TEMPLATE
 Matrix<R, C>::Matrix()
@@ -174,15 +175,74 @@ void Matrix<R, C>::Translate(const Point<float, C>& translation)
 }
 
 MATRIX_TEMPLATE
+template <uint32_t CS> requires (CS == 4)
+void Matrix<R, C>::Rotate(const float& degrees, const Axis& axis)
+{
+	float radians = degrees * 0.0174532925;
+	float cosTheta = cos(radians);
+	float sinTheta = sin(radians);
+
+	if (axis == Axis::x || axis == Axis::z) (*this)(1, 1) = cosTheta;
+	if (axis == Axis::x || axis == Axis::y) (*this)(2, 2) = cosTheta;
+	if (axis == Axis::y || axis == Axis::z) (*this)(0, 0) = cosTheta;
+
+	if (axis == Axis::x)
+	{
+		(*this)(1, 2) = -sinTheta;
+		(*this)(2, 1) = sinTheta;
+	}
+	else if (axis == Axis::y)
+	{
+		(*this)(0, 2) = -sinTheta;
+		(*this)(2, 0) = sinTheta;
+	}
+	else if (axis == Axis::z)
+	{
+		(*this)(0, 1) = -sinTheta;
+		(*this)(1, 0) = sinTheta;
+	}
+}
+
+MATRIX_TEMPLATE
 mat4 Matrix<R, C>::Identity()
 {
-	mat4 identity({
+	mat4 result({
 		1, 0, 0, 0,
 		0, 1, 0, 0,
 		0, 0, 1, 0,
 		0, 0, 0, 1});
 
-	return (identity);
+	return (result);
+}
+
+MATRIX_TEMPLATE
+mat4 Matrix<R, C>::Scalar(const Point<float, C>& scalar)
+{
+	mat4 result = mat4::Identity();
+
+	result.Scale(scalar);
+
+	return (result);
+}
+
+MATRIX_TEMPLATE
+mat4 Matrix<R, C>::Translation(const Point<float, C>& translation)
+{
+	mat4 result = mat4::Identity();
+	
+	result.Translate(translation);
+
+	return (result);
+}
+
+MATRIX_TEMPLATE
+mat4 Matrix<R, C>::Rotation(const float& degrees, const Axis& axis)
+{
+	mat4 result = mat4::Identity();
+	
+	result.Rotate(degrees, axis);
+
+	return (result);
 }
 
 MATRIX_TEMPLATE

@@ -42,8 +42,13 @@ class Matrix
 
 		void Scale(const Point<float, C>& scalar);
 		void Translate(const Point<float, C>& translation);
+		template <uint32_t CS = C> requires (CS == 4)
+		void Rotate(const float& degrees, const Axis& axis);
 
 		static Matrix<4, 4> Identity();
+		static Matrix<4, 4> Scalar(const Point<float, C>& scalar);
+		static Matrix<4, 4> Translation(const Point<float, C>& translation);
+		static Matrix<4, 4> Rotation(const float& degrees, const Axis& axis);
 };
 
 MATRIX_TEMPLATE
