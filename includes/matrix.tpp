@@ -4,13 +4,13 @@
 #include <cmath>
 
 MATRIX_TEMPLATE
-Matrix<R, C>::Matrix()
+Matrix<R, C, T>::Matrix()
 {
 
 }
 
 MATRIX_TEMPLATE
-Matrix<R, C>::Matrix(const std::array<float, R * C>& init)
+Matrix<R, C, T>::Matrix(const std::array<T, R * C>& init)
 {
 	for (int i = 0; i < size; i++)
 	{
@@ -21,22 +21,40 @@ Matrix<R, C>::Matrix(const std::array<float, R * C>& init)
 	}
 }
 
+
+
 MATRIX_TEMPLATE
-Matrix<R, C>& Matrix<R, C>::operator=(const Matrix<R, C>& other)
+MATRIX_CAST_TEMPLATE
+Matrix<R, C, T>::Matrix(const Matrix<R, C, CT>& other)
 {
-	this->data = other.data;
+	for (int i = 0; i < size; i++) { this->data[i] = other[i]; }
+}
+
+MATRIX_TEMPLATE
+Matrix<R, C, T>& Matrix<R, C, T>::operator=(const Matrix<R, C, T>& other)
+{
+	for (int i = 0; i < size; i++) { this->data[i] = other[i]; }
 
 	return (*this);
 }
 
 MATRIX_TEMPLATE
-Matrix<R, C>::~Matrix()
+MATRIX_CAST_TEMPLATE
+Matrix<R, C, T>& Matrix<R, C, T>::operator=(const Matrix<R, C, CT>& other)
+{
+	for (int i = 0; i < size; i++) { this->data[i] = other[i]; }
+
+	return (*this);
+}
+
+MATRIX_TEMPLATE
+Matrix<R, C, T>::~Matrix()
 {
 	
 }
 
 MATRIX_TEMPLATE
-float& Matrix<R, C>::operator[](const uint32_t i)
+T& Matrix<R, C, T>::operator[](const uint32_t i)
 {
 	if (i >= size) throw (std::out_of_range("Index out of bounds"));
 
@@ -44,7 +62,7 @@ float& Matrix<R, C>::operator[](const uint32_t i)
 }
 
 MATRIX_TEMPLATE
-const float& Matrix<R, C>::operator[](const uint32_t i) const
+const T& Matrix<R, C, T>::operator[](const uint32_t i) const
 {
 	if (i >= size) throw (std::out_of_range("Index out of bounds"));
 
@@ -52,7 +70,7 @@ const float& Matrix<R, C>::operator[](const uint32_t i) const
 }
 
 MATRIX_TEMPLATE
-const float& Matrix<R, C>::operator()(const uint32_t row, const uint32_t col) const
+const T& Matrix<R, C, T>::operator()(const uint32_t row, const uint32_t col) const
 {
 	uint32_t i = col + (row * R);
 
@@ -62,7 +80,7 @@ const float& Matrix<R, C>::operator()(const uint32_t row, const uint32_t col) co
 }
 
 MATRIX_TEMPLATE
-float& Matrix<R, C>::operator()(const uint32_t row, const uint32_t col)
+T& Matrix<R, C, T>::operator()(const uint32_t row, const uint32_t col)
 {
 	uint32_t i = col + (row * R);
 
@@ -72,9 +90,9 @@ float& Matrix<R, C>::operator()(const uint32_t row, const uint32_t col)
 }
 
 MATRIX_TEMPLATE
-Matrix<R, C> Matrix<R, C>::operator+(const Matrix<R, C>& other) const
+Matrix<R, C, T> Matrix<R, C, T>::operator+(const Matrix<R, C, T>& other) const
 {
-	Matrix<R, C> result;
+	Matrix<R, C, T> result;
 
 	for (int i = 0; i < size; i++)
 	{
@@ -85,9 +103,9 @@ Matrix<R, C> Matrix<R, C>::operator+(const Matrix<R, C>& other) const
 }
 
 MATRIX_TEMPLATE
-Matrix<R, C> Matrix<R, C>::operator-(const Matrix<R, C>& other) const
+Matrix<R, C, T> Matrix<R, C, T>::operator-(const Matrix<R, C, T>& other) const
 {
-	Matrix<R, C> result;
+	Matrix<R, C, T> result;
 
 	for (int i = 0; i < size; i++)
 	{
@@ -98,9 +116,9 @@ Matrix<R, C> Matrix<R, C>::operator-(const Matrix<R, C>& other) const
 }
 
 MATRIX_TEMPLATE
-Matrix<R, C> Matrix<R, C>::operator*(const Matrix<R, C>& other) const
+Matrix<R, C, T> Matrix<R, C, T>::operator*(const Matrix<R, C, T>& other) const
 {
-	Matrix<R, C> result;
+	Matrix<R, C, T> result;
 
 	for (int r = 0; r < R; r++)
 	{
@@ -117,9 +135,9 @@ Matrix<R, C> Matrix<R, C>::operator*(const Matrix<R, C>& other) const
 }
 
 MATRIX_TEMPLATE
-Point<float, C> Matrix<R, C>::operator*(const Point<float, C>& point) const
+Point<T, C> Matrix<R, C, T>::operator*(const Point<T, C>& point) const
 {
-	Point<float, C> result;
+	Point<T, C> result;
 
 	for (int r = 0; r < R; r++)
 	{
@@ -133,7 +151,7 @@ Point<float, C> Matrix<R, C>::operator*(const Point<float, C>& point) const
 }
 
 MATRIX_TEMPLATE
-void Matrix<R, C>::operator+=(const Matrix<R, C>& other)
+void Matrix<R, C, T>::operator+=(const Matrix<R, C, T>& other)
 {
 	for (int i = 0; i < size; i++)
 	{
@@ -142,7 +160,7 @@ void Matrix<R, C>::operator+=(const Matrix<R, C>& other)
 }
 
 MATRIX_TEMPLATE
-void Matrix<R, C>::operator-=(const Matrix<R, C>& other)
+void Matrix<R, C, T>::operator-=(const Matrix<R, C, T>& other)
 {
 	for (int i = 0; i < size; i++)
 	{
@@ -151,102 +169,106 @@ void Matrix<R, C>::operator-=(const Matrix<R, C>& other)
 }
 
 MATRIX_TEMPLATE
-void Matrix<R, C>::operator*=(const Matrix<R, C>& other)
+void Matrix<R, C, T>::operator*=(const Matrix<R, C, T>& other)
 {
 	*this = *this * other;
 }
 
 MATRIX_TEMPLATE
-void Matrix<R, C>::Scale(const Point<float, C>& scalar)
+void Matrix<R, C, T>::Scale(const Point<T, C>& scalar)
 {
-	for (int i = 0; i < C; i++)
-	{
-		(*this)(i, i) *= scalar[i];
-	}
+	(*this) = Matrix<R, C, T>::Scalar(scalar) * (*this);
 }
 
 MATRIX_TEMPLATE
-void Matrix<R, C>::Translate(const Point<float, C>& translation)
+void Matrix<R, C, T>::Translate(const Point<T, C>& translation)
 {
-	for (int i = 0; i < C; i++)
-	{
-		(*this)(i, C - 1) += translation[i];
-	}
+	(*this) = Matrix<R, C, T>::Translation(translation) * (*this);
 }
 
 MATRIX_TEMPLATE
 template <uint32_t CS> requires (CS == 4)
-void Matrix<R, C>::Rotate(const float& degrees, const Axis& axis)
+void Matrix<R, C, T>::Rotate(const T& degrees, const Axis& axis)
 {
-	float radians = degrees * 0.0174532925;
-	float cosTheta = cos(radians);
-	float sinTheta = sin(radians);
+	(*this) = Matrix<R, C, T>::Rotation(degrees, axis) * (*this);
+}
 
-	if (axis == Axis::x || axis == Axis::z) (*this)(1, 1) = cosTheta;
-	if (axis == Axis::x || axis == Axis::y) (*this)(2, 2) = cosTheta;
-	if (axis == Axis::y || axis == Axis::z) (*this)(0, 0) = cosTheta;
+MATRIX_TEMPLATE
+Matrix<R, C, T> Matrix<R, C, T>::Identity()
+{
+	Matrix<R, C, T> result;
+
+	for (int r = 0; r < R; r++)
+	{
+		for (int c = 0; c < C; c++)
+		{
+			result(r, c) = (r == c ? 1 : 0);
+		}
+	}
+
+	return (result);
+}
+
+MATRIX_TEMPLATE
+Matrix<R, C, T> Matrix<R, C, T>::Scalar(const Point<T, C>& scalar)
+{
+	Matrix<R, C, T> result = Identity();
+
+	for (int i = 0; i < C; i++)
+	{
+		result(i, i) *= scalar[i];
+	}
+
+	return (result);
+}
+
+MATRIX_TEMPLATE
+Matrix<R, C, T> Matrix<R, C, T>::Translation(const Point<T, C>& translation)
+{
+	Matrix<R, C, T> result = Identity();
+	
+	for (int i = 0; i < C; i++)
+	{
+		result(i, C - 1) += translation[i];
+	}
+
+	return (result);
+}
+
+MATRIX_TEMPLATE
+Matrix<R, C, T> Matrix<R, C, T>::Rotation(const T& degrees, const Axis& axis)
+{
+	Matrix<R, C, T> result = Identity();
+	
+	T radians = degrees * 0.0174532925;
+	T cosTheta = cos(radians);
+	T sinTheta = sin(radians);
+
+	if (axis == Axis::x || axis == Axis::z) result(1, 1) = cosTheta;
+	if (axis == Axis::x || axis == Axis::y) result(2, 2) = cosTheta;
+	if (axis == Axis::y || axis == Axis::z) result(0, 0) = cosTheta;
 
 	if (axis == Axis::x)
 	{
-		(*this)(1, 2) = -sinTheta;
-		(*this)(2, 1) = sinTheta;
+		result(1, 2) = -sinTheta;
+		result(2, 1) = sinTheta;
 	}
 	else if (axis == Axis::y)
 	{
-		(*this)(0, 2) = -sinTheta;
-		(*this)(2, 0) = sinTheta;
+		result(0, 2) = -sinTheta;
+		result(2, 0) = sinTheta;
 	}
 	else if (axis == Axis::z)
 	{
-		(*this)(0, 1) = -sinTheta;
-		(*this)(1, 0) = sinTheta;
+		result(0, 1) = -sinTheta;
+		result(1, 0) = sinTheta;
 	}
-}
-
-MATRIX_TEMPLATE
-mat4 Matrix<R, C>::Identity()
-{
-	mat4 result({
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		0, 0, 0, 1});
 
 	return (result);
 }
 
 MATRIX_TEMPLATE
-mat4 Matrix<R, C>::Scalar(const Point<float, C>& scalar)
-{
-	mat4 result = mat4::Identity();
-
-	result.Scale(scalar);
-
-	return (result);
-}
-
-MATRIX_TEMPLATE
-mat4 Matrix<R, C>::Translation(const Point<float, C>& translation)
-{
-	mat4 result = mat4::Identity();
-	
-	result.Translate(translation);
-
-	return (result);
-}
-
-MATRIX_TEMPLATE
-mat4 Matrix<R, C>::Rotation(const float& degrees, const Axis& axis)
-{
-	mat4 result = mat4::Identity();
-	
-	result.Rotate(degrees, axis);
-
-	return (result);
-}
-
-MATRIX_TEMPLATE
-std::ostream& operator<<(std::ostream& out, const Matrix<R, C>& matrix)
+std::ostream& operator<<(std::ostream& out, const Matrix<R, C, T>& matrix)
 {
 	out << std::endl;
 

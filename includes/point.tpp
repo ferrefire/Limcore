@@ -22,7 +22,7 @@ Point<T, S>::Point(Init... init)
 
 POINT_TEMPLATE
 POINT_CAST_TEMPLATE
-Point<T, S>::Point(const Point<T, CS>& other)
+Point<T, S>::Point(const Point<CT, CS>& other)
 {
 	uint32_t size = (S < CS ? S : CS);
 
@@ -31,7 +31,7 @@ Point<T, S>::Point(const Point<T, CS>& other)
 
 POINT_TEMPLATE
 POINT_INIT_CAST_TEMPLATE
-Point<T, S>::Point(const Point<T, CS>& other, Init... init)
+Point<T, S>::Point(const Point<CT, CS>& other, Init... init)
 {
 	uint32_t size = (S < CS ? S : CS);
 	int i = 0;
@@ -43,7 +43,7 @@ Point<T, S>::Point(const Point<T, CS>& other, Init... init)
 
 POINT_TEMPLATE
 POINT_CAST_TEMPLATE
-Point<T, S>& Point<T, S>::operator=(const Point<T, CS>& other)
+Point<T, S>& Point<T, S>::operator=(const Point<CT, CS>& other)
 {
 	uint32_t size = (S < CS ? S : CS);
 

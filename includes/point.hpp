@@ -12,13 +12,13 @@ enum class Axis { x, y, z };
 #define POINT_TEMPLATE template <ValidPointType T, uint32_t S> \
 	requires ValidPointRange<S>
 
-#define POINT_CAST_TEMPLATE template <uint32_t CS> \
+#define POINT_CAST_TEMPLATE template <ValidPointType CT, uint32_t CS> \
 	requires ValidPointRange<CS>
 
 #define POINT_INIT_TEMPLATE template <typename... Init> \
 	requires (sizeof...(Init) <= S) && (ValidPointType<std::decay_t<Init>> && ...)
 
-#define POINT_INIT_CAST_TEMPLATE template <uint32_t CS, typename... Init> \
+#define POINT_INIT_CAST_TEMPLATE template <ValidPointType CT, uint32_t CS, typename... Init> \
 	requires (ValidPointRange<CS>) && (sizeof...(Init) <= S - CS) && (ValidPointType<std::decay_t<Init>> && ...)
 
 template <typename T>
@@ -38,11 +38,11 @@ class Point
 		POINT_INIT_TEMPLATE
 		Point(Init... init);
 		POINT_CAST_TEMPLATE
-		Point(const Point<T, CS>& other);
+		Point(const Point<CT, CS>& other);
 		POINT_INIT_CAST_TEMPLATE
-		Point(const Point<T, CS>& other, Init... init);
+		Point(const Point<CT, CS>& other, Init... init);
 		POINT_CAST_TEMPLATE
-		Point<T, S>& operator=(const Point<T, CS>& other);
+		Point<T, S>& operator=(const Point<CT, CS>& other);
 		~Point();
 
 		T& x() {return (data[0]);}
