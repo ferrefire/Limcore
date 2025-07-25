@@ -95,4 +95,74 @@ The shader-compiler.sh script is a swift way to compile your shaders from GLSL i
 ```
 
 ## Usage
-test
+This is a short example that explains how to render a simple quad to a window.
+
+### Manager
+The manager class handles the application's creation, function registering, configuration, cleaning and destruction. The first thing to do is tell the manager to create all the neccessary resources:
+
+```cxx
+#include "manager.hpp"
+
+int main(int argc, char** argv)
+{
+	Manager::ParseArguments(argv, argc); // Optional
+	Manager::Create();
+}
+```
+
+Then we can register a start, frame and end call to the manager for creation, update and cleanup purposes:
+
+```cxx
+Manager::RegisterStartCall(StartFuctionName);
+Manager::RegisterFrameCall(FrameFuctionName);
+Manager::RegisterEndCall(EndFunctionName);
+```
+
+After that we tell the manager to start the main loop:
+
+```cxx
+Manager::Run();
+```
+
+Don't forget to tell the manager to clean up all the resources when application has ended. This will also call all registered end functions.
+
+```cxx
+Manager::Destroy();
+```
+
+That was pretty much it for the application's main function. It should look something like this:
+
+```cxx
+#include "manager.hpp"
+
+int main(int argc, char** argv)
+{
+	Manager::ParseArguments(argv, argc);
+	Manager::Create();
+
+	Manager::RegisterStartCall(StartFuctionName);
+	Manager::RegisterFrameCall(FrameFuctionName);
+	Manager::RegisterEndCall(EndFuctionName);
+
+	Manager::Run();
+
+	Manager::Destroy();
+
+	exit(EXIT_SUCCESS);
+}
+```
+
+### Mesh
+Next we will create a mesh to render. Creating meshes is very straightfoward and dynamic. In Limcore, meshes are templated with a flag for that describes the elements of it's vertices and an enum to describe the type of indices it will use.
+
+We declare our mesh like this:
+
+```cxx
+#include "mesh.hpp"
+
+Mesh<Position, VK_INDEX_TYPE_UINT16> mesh;
+// Or Mesh<Position | Coordinate | Normal, VK_INDEX_TYPE_UINT32> mesh;
+// Or Mesh<Position | Color, VK_INDEX_TYPE_NONE_KHR> mesh;
+```
+
+Work in progress...

@@ -29,12 +29,9 @@ class Matrix
 	public:
 		Matrix();
 		Matrix(const std::array<T, R * C>& init);
-
 		MATRIX_CAST_TEMPLATE
 		Matrix(const Matrix<R, C, CT>& other);
-
 		Matrix<R, C, T>& operator=(const Matrix<R, C, T>& other);
-
 		MATRIX_CAST_TEMPLATE
 		Matrix<R, C, T>& operator=(const Matrix<R, C, CT>& other);
 		
