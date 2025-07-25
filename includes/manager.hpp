@@ -21,6 +21,8 @@ class Manager
 		static Device device;
 		static Swapchain swapchain;
 
+		static bool stopping;
+
 		static std::vector<std::function<void()>> startCalls;
 		static std::vector<std::function<void()>> endCalls;
 

@@ -132,8 +132,6 @@ void Manager::Run()
 	Start();
 
 	while (!ShouldClose()) { Frame(); }
-	
-	Destroy();
 }
 
 void Manager::Start()
@@ -143,14 +141,14 @@ void Manager::Start()
 
 void Manager::Frame()
 {
-	if (Input::GetKey(GLFW_KEY_ESCAPE).pressed) Destroy();
-
 	glfwPollEvents();
 
 	Time::Frame();
 	Input::Frame();
 
 	Renderer::Frame();
+
+	if (Input::GetKey(GLFW_KEY_ESCAPE).pressed) stopping = true;
 }
 
 void Manager::ParseArguments(char** arguments, const int& count)
@@ -164,7 +162,7 @@ void Manager::ParseArguments(char** arguments, const int& count)
 
 bool Manager::ShouldClose()
 {
-	return (glfwWindowShouldClose(window.GetData()));
+	return (stopping || glfwWindowShouldClose(window.GetData()));
 }
 
 void Manager::RegisterStartCall(std::function<void()> call)
@@ -182,6 +180,8 @@ ManagerConfig Manager::config{};
 Window Manager::window;
 Device Manager::device;
 Swapchain Manager::swapchain;
+
+bool Manager::stopping = false;
 
 std::vector<std::function<void()>> Manager::startCalls;
 std::vector<std::function<void()>> Manager::endCalls;
