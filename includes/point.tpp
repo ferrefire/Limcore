@@ -33,7 +33,7 @@ POINT_TEMPLATE
 POINT_INIT_CAST_TEMPLATE
 Point<T, S>::Point(const Point<CT, CS>& other, Init... init)
 {
-	uint32_t size = (S < CS ? S : CS);
+	const uint32_t size = (S < CS ? S : CS);
 	int i = 0;
 
 	for (i = 0; i < size; i++) { this->data[i] = other[i]; }
@@ -45,7 +45,7 @@ POINT_TEMPLATE
 POINT_CAST_TEMPLATE
 Point<T, S>& Point<T, S>::operator=(const Point<CT, CS>& other)
 {
-	uint32_t size = (S < CS ? S : CS);
+	const uint32_t size = (S < CS ? S : CS);
 
 	for (int i = 0; i < size; i++) { this->data[i] = other[i]; }
 
@@ -142,9 +142,9 @@ POINT_TEMPLATE
 template <uint32_t PS> requires (PS < 3)
 void Point<T, S>::Rotate(const float& degrees)
 {
-	float radians = degrees * 0.0174532925;
-	float cosTheta = cos(radians);
-	float sinTheta = sin(radians);
+	const float radians = degrees * 0.0174532925;
+	const float cosTheta = cos(radians);
+	const float sinTheta = sin(radians);
 	Point<T, S> temp = *this;
 
 	x() = (temp.x() * cosTheta) - (temp.y() * sinTheta);
@@ -157,9 +157,9 @@ void Point<T, S>::Rotate(const float& degrees, const Axis& axis)
 {
 	if (S > 3) return;
 
-	T radians = degrees * 0.0174532925;
-	T cosTheta = cos(radians);
-	T sinTheta = sin(radians);
+	const T radians = degrees * 0.0174532925;
+	const T cosTheta = cos(radians);
+	const T sinTheta = sin(radians);
 
 	int ai = (axis != Axis::x ? 0 : 1);
 	int bi = (axis != Axis::z ? 2 : 1);

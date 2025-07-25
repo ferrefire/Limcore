@@ -240,9 +240,9 @@ Matrix<R, C, T> Matrix<R, C, T>::Rotation(const T& degrees, const Axis& axis)
 {
 	Matrix<R, C, T> result = Identity();
 	
-	T radians = degrees * 0.0174532925;
-	T cosTheta = cos(radians);
-	T sinTheta = sin(radians);
+	const T radians = degrees * 0.0174532925;
+	const T cosTheta = cos(radians);
+	const T sinTheta = sin(radians);
 
 	if (axis == Axis::x || axis == Axis::z) result(1, 1) = cosTheta;
 	if (axis == Axis::x || axis == Axis::y) result(2, 2) = cosTheta;
@@ -263,6 +263,26 @@ Matrix<R, C, T> Matrix<R, C, T>::Rotation(const T& degrees, const Axis& axis)
 		result(0, 1) = -sinTheta;
 		result(1, 0) = sinTheta;
 	}
+
+	return (result);
+}
+
+MATRIX_TEMPLATE
+Matrix<R, C, T> Matrix<R, C, T>::Projection(T fov, T ratio, T near, T far)
+{
+	Matrix<R, C, T> result = Identity();
+
+	const T radians = (fov * 0.5) * 0.0174532925;
+	const T tangent = tan(radians);
+	const T top = near * tangent;
+	const T right = top * ratio;
+
+	result(0, 0) = near / right;
+	result(1, 1) = near / top;
+	result(2, 2) = far / (far - near);
+	result(3, 2) = 1;
+	result(2, 3) = (far * -near) / (far - near);
+	result(3, 3) = 0;
 
 	return (result);
 }

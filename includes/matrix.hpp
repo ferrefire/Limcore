@@ -60,6 +60,7 @@ class Matrix
 		static Matrix<R, C, T> Scalar(const Point<T, C>& scalar);
 		static Matrix<R, C, T> Translation(const Point<T, C>& translation);
 		static Matrix<R, C, T> Rotation(const T& degrees, const Axis& axis);
+		static Matrix<R, C, T> Projection(T fov, T ratio, T near, T far);
 };
 
 MATRIX_TEMPLATE
