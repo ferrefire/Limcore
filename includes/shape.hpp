@@ -18,10 +18,10 @@ class Shape
 {
 	using indexType = typename std::conditional_t<I == VK_INDEX_TYPE_UINT16, uint16_t, uint32_t>;
 	const bool hasIndices = I != VK_INDEX_TYPE_NONE_KHR;
-	const bool hasPosition = Bitmask::HasFlag(V, Position);
-	const bool hasCoordinate = Bitmask::HasFlag(V, Coordinate);
-	const bool hasNormal = Bitmask::HasFlag(V, Normal);
-	const bool hasColor = Bitmask::HasFlag(V, Color);
+	#define HAS_POSITION constexpr (Bitmask::HasFlag(V, Position))
+	#define HAS_COORDINATE constexpr (Bitmask::HasFlag(V, Coordinate))
+	#define HAS_NORMAL constexpr (Bitmask::HasFlag(V, Normal))
+	#define HAS_COLOR constexpr (Bitmask::HasFlag(V, Color))
 
 	private:
 		std::vector<Vertex<V>> vertices;

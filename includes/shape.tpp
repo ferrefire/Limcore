@@ -33,7 +33,7 @@ void Shape<V, I>::CreateQuad()
 {
 	vertices.resize(4);
 	
-	if (hasPosition)
+	if HAS_POSITION
 	{
 		vertices[0].position = point3D(-0.5f, -0.5f, 0.0f);
 		vertices[1].position = point3D(0.5f, 0.5f, 0.0f);
@@ -41,7 +41,7 @@ void Shape<V, I>::CreateQuad()
 		vertices[3].position = point3D(0.5f, -0.5f, 0.0f);
 	}
 
-	if (hasCoordinate)
+	if HAS_COORDINATE
 	{
 		vertices[0].coordinate = point2D(0.0f, 0.0f);
 		vertices[1].coordinate = point2D(1.0f, 1.0f);

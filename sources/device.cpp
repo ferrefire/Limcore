@@ -145,6 +145,13 @@ VkPhysicalDevice& Device::GetPhysicalDevice()
 	return (physicalDevice);
 }
 
+const VkPhysicalDevice& Device::GetPhysicalDevice() const
+{
+	if (!physicalDevice) throw (std::runtime_error("Physical device requested but not yet created"));
+
+	return (physicalDevice);
+}
+
 VkDevice& Device::GetLogicalDevice()
 {
 	if (!logicalDevice) throw (std::runtime_error("Logical device requested but not yet created"));
@@ -258,17 +265,34 @@ int Device::DeviceTypePriority(DeviceType type)
 	return (-1);
 }
 
-std::ostream& operator<<(std::ostream& out, Device& device)
+void Device::PrintAllDevices()
 {
-	VkPhysicalDeviceProperties deviceProperties;
-	vkGetPhysicalDeviceProperties(device.GetPhysicalDevice(), &deviceProperties);
+	std::vector<DeviceInfo> availableDevices = GetAvailableDevices();
 
+	for (const DeviceInfo& info : availableDevices)
+	{
+		std::cout << info.deviceProperties << std::endl;
+	}
+}
+
+std::ostream& operator<<(std::ostream& out, const VkPhysicalDeviceProperties& deviceProperties)
+{
 	out << std::endl;
 	out << VAR_VAL(deviceProperties.deviceName) << std::endl;
 	out << VAR_VAL(deviceProperties.vendorID) << std::endl;
 	out << ENUM_VAL(deviceProperties.deviceType) << std::endl;
 	out << VAR_VAL(deviceProperties.driverVersion) << std::endl;
 	out << VAR_VAL(deviceProperties.apiVersion) << std::endl;
+
+	return (out);
+}
+
+std::ostream& operator<<(std::ostream& out, const Device& device)
+{
+	VkPhysicalDeviceProperties deviceProperties;
+	vkGetPhysicalDeviceProperties(device.GetPhysicalDevice(), &deviceProperties);
+
+	out << deviceProperties;
 
 	return (out);
 }

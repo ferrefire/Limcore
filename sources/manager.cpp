@@ -84,10 +84,10 @@ void Manager::CreateVulkan()
 
 void Manager::Destroy()
 {
-	for (std::function<void()> call : endCalls) { call(); }
-
 	if (device.Created() && vkDeviceWaitIdle(device.GetLogicalDevice()) != VK_SUCCESS)
 		throw (std::runtime_error("Failed to wait for device to be idle"));
+
+	for (std::function<void()> call : endCalls) { call(); }
 
 	DestroyGLFW();
 	DestroyVulkan();

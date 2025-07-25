@@ -67,6 +67,7 @@ class Device
 
 		const bool Created() const;
 		VkPhysicalDevice& GetPhysicalDevice();
+		const VkPhysicalDevice& GetPhysicalDevice() const;
 		VkDevice& GetLogicalDevice();
 		uint32_t GetQueueIndex(QueueType type);
 		VkQueue GetQueue(uint32_t index);
@@ -75,6 +76,8 @@ class Device
 		static std::vector<DeviceInfo> GetAvailableDevices();
 		static DeviceInfo GetBestDevice(DeviceConfig& config);
 		static int DeviceTypePriority(DeviceType type);
+		static void PrintAllDevices();
 };
 
-std::ostream& operator<<(std::ostream& out, Device& device);
+std::ostream& operator<<(std::ostream& out, const VkPhysicalDeviceProperties& deviceProperties);
+std::ostream& operator<<(std::ostream& out, const Device& device);
