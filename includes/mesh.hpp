@@ -22,11 +22,11 @@ MESH_TEMPLATE
 class Mesh
 {
 	using indexType = typename std::conditional_t<I == VK_INDEX_TYPE_UINT16, uint16_t, uint32_t>;
-	const bool hasIndices = I != VK_INDEX_TYPE_NONE_KHR;
-	const bool hasPosition = Bitmask::HasFlag(V, Position);
-	const bool hasCoordinate = Bitmask::HasFlag(V, Coordinate);
-	const bool hasNormal = Bitmask::HasFlag(V, Normal);
-	const bool hasColor = Bitmask::HasFlag(V, Color);
+	static const bool hasIndices = I != VK_INDEX_TYPE_NONE_KHR;
+	static const bool hasPosition = Bitmask::HasFlag(V, Position);
+	static const bool hasCoordinate = Bitmask::HasFlag(V, Coordinate);
+	static const bool hasNormal = Bitmask::HasFlag(V, Normal);
+	static const bool hasColor = Bitmask::HasFlag(V, Color);
 
 	private:
 		Device* device = nullptr;

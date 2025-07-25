@@ -153,7 +153,7 @@ int main(int argc, char** argv)
 ```
 
 ### Mesh
-Next we will create a mesh to render. Creating meshes is very straightfoward and dynamic. In Limcore, meshes are templated with a flag for that describes the elements of it's vertices and an enum to describe the type of indices it will use.
+Next we will create a mesh to render. Creating meshes is very straightfoward and dynamic. In Limcore, meshes are templated with a flag that describes the elements of it's vertices and an enum to describe the type of indices it will use.
 
 We declare our mesh like this:
 

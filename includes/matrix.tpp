@@ -72,7 +72,7 @@ const T& Matrix<R, C, T>::operator[](const uint32_t i) const
 MATRIX_TEMPLATE
 const T& Matrix<R, C, T>::operator()(const uint32_t row, const uint32_t col) const
 {
-	uint32_t i = col + (row * R);
+	uint32_t i = row + (col * R);
 
 	if (i >= size) throw (std::out_of_range("Index out of bounds"));
 
@@ -82,7 +82,7 @@ const T& Matrix<R, C, T>::operator()(const uint32_t row, const uint32_t col) con
 MATRIX_TEMPLATE
 T& Matrix<R, C, T>::operator()(const uint32_t row, const uint32_t col)
 {
-	uint32_t i = col + (row * R);
+	uint32_t i = row + (col * R);
 
 	if (i >= size) throw (std::out_of_range("Index out of bounds"));
 

@@ -21,7 +21,7 @@ template <uint32_t R, uint32_t C, ValidMatrixType T = float>
 requires (ValidMatrixRange<R> && ValidMatrixRange<C>)
 class Matrix
 {
-	const uint32_t size = R * C; 
+	static const uint32_t size = R * C;
 
 	private:
 		std::array<T, R * C> data{};
