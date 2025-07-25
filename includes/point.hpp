@@ -7,6 +7,8 @@
 #include <array>
 #include <type_traits>
 
+enum class Axis { x, y, z };
+
 #define POINT_TEMPLATE template <ValidPointType T, uint32_t S> \
 	requires ValidPointRange<S>
 
@@ -23,7 +25,7 @@ template <typename T>
 concept ValidPointType = (std::is_floating_point<T>().value || std::is_integral<T>().value);
 
 template <uint32_t S>
-concept ValidPointRange = (S >= 1 && S <= 4);
+concept ValidPointRange = (S > 1 && S <= 4);
 
 POINT_TEMPLATE
 class Point
@@ -65,6 +67,14 @@ class Point
 		void operator-=(const Point<T, S>& other);
 		void operator*=(const Point<T, S>& other);
 		void operator/=(const Point<T, S>& other);
+
+		template <uint32_t PS = S>
+		requires (PS < 3)
+		void Rotate(const float& degrees);
+
+		template <uint32_t PS = S>
+		requires (PS > 2)
+		void Rotate(const float& degrees, const Axis& axis);
 };
 
 POINT_TEMPLATE

@@ -18,6 +18,8 @@ class Utilities
 		
 		template <typename T>
 		static bool Contains(const std::vector<T>& vector, T target);
+
+		static float Radians(float degrees);
 };
 
 #include "utilities.tpp"

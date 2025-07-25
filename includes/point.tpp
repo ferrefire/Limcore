@@ -1,6 +1,7 @@
 #include "point.hpp"
 
 #include <stdexcept>
+#include <cmath>
 
 POINT_TEMPLATE
 Point<T, S>::Point()
@@ -135,6 +136,41 @@ POINT_TEMPLATE
 void Point<T, S>::operator/=(const Point<T, S>& other)
 {
 	for (int i = 0; i < S; i++) { data[i] /= other[i]; }
+}
+
+POINT_TEMPLATE
+template <uint32_t PS>
+requires (PS < 3)
+void Point<T, S>::Rotate(const float& degrees)
+{
+	float radians = degrees * 0.0174532925;
+	float cosTheta = cos(radians);
+	float sinTheta = sin(radians);
+	Point<T, S> temp = *this;
+
+	x() = (temp.x() * cosTheta) - (temp.y() * sinTheta);
+	y() = (temp.x() * sinTheta) + (temp.y() * cosTheta);
+}
+
+POINT_TEMPLATE
+template <uint32_t PS>
+requires (PS > 2)
+void Point<T, S>::Rotate(const float& degrees, const Axis& axis)
+{
+	if (S > 3) return;
+
+	T radians = degrees * 0.0174532925;
+	T cosTheta = cos(radians);
+	T sinTheta = sin(radians);
+
+	int ai = (axis != Axis::x ? 0 : 1);
+	int bi = (axis != Axis::z ? 2 : 1);
+	
+	T a = data[ai];
+	T b = data[bi];
+
+	data[ai] = (a * cosTheta) - (b * sinTheta);
+	data[bi] = (a * sinTheta) + (b * cosTheta);
 }
 
 POINT_TEMPLATE

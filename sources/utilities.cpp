@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+#include <cmath>
 
 std::string Utilities::GetPath()
 {
@@ -30,4 +31,9 @@ std::vector<char> Utilities::FileToBinary(std::string path)
 	file.close();
 
 	return (result);
+}
+
+float Utilities::Radians(float degrees)
+{
+	return (degrees * 0.0174532925);
 }
