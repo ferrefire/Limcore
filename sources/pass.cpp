@@ -164,7 +164,7 @@ void Pass::End(VkCommandBuffer commandBuffer)
 VkAttachmentDescription Pass::DefaultColorAttachment()
 {
 	VkAttachmentDescription description{};
-	description.format = VK_FORMAT_B8G8R8A8_UNORM;
+	description.format = VK_FORMAT_B8G8R8A8_SRGB;
 	description.samples = VK_SAMPLE_COUNT_1_BIT;
 	description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
