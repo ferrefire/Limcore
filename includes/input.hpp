@@ -4,6 +4,8 @@
 #include <GLFW/glfw3.h>
 
 #include <map>
+#include <vector>
+#include <functional>
 
 struct KeyInfo
 {
@@ -19,6 +21,9 @@ class Input
 {
 	private:
 		static std::map<int, KeyInfo> keys;
+		static std::vector<std::function<void (double, double)>> mouseCalls;
+
+		static double mx, my;
 
 		static void AddKey(int keycode);
 
@@ -28,4 +33,8 @@ class Input
 		static KeyInfo GetKey(int keycode);
 
 		static void Frame();
+
+		static void MouseCallback(GLFWwindow* window, double xpos, double ypos);
+
+		static void RegisterMouseCallback(std::function<void (double, double)> call);
 };

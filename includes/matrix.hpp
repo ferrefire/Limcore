@@ -55,12 +55,16 @@ class Matrix
 		void Translate(const Point<T, C>& translation);
 		template <size_t CS = C> requires (CS == 4)
 		void Rotate(const T& degrees, const Axis& axis);
+		template <size_t CS = C> requires (CS == 4)
+		void Rotate(const point3D& rotation);
 
 		static Matrix<R, C, T> Identity();
 		static Matrix<R, C, T> Scalar(const Point<T, C>& scalar);
 		static Matrix<R, C, T> Translation(const Point<T, C>& translation);
 		static Matrix<R, C, T> Rotation(const T& degrees, const Axis& axis);
-		static Matrix<R, C, T> Projection(T fov, T ratio, T near, T far);
+		static Matrix<R, C, T> Projection(const T& fov, const T& ratio, const T& near, const T& far);
+		static Matrix<R, C, T> View(const Point<T, C>& direction, const Point<T, C>& position);
+		static Matrix<R, C, T> Look(const Point<T, C>& position, const Point<T, C>& target, const Point<T, C>& up);
 };
 
 MATRIX_TEMPLATE

@@ -194,6 +194,15 @@ void Matrix<R, C, T>::Rotate(const T& degrees, const Axis& axis)
 }
 
 MATRIX_TEMPLATE
+template <size_t CS> requires (CS == 4)
+void Matrix<R, C, T>::Rotate(const point3D& rotation)
+{
+	if (rotation.x() != 0) (*this) = Rotation(rotation.x(), Axis::x) * (*this);
+	if (rotation.y() != 0) (*this) = Rotation(rotation.y(), Axis::y) * (*this);
+	if (rotation.z() != 0) (*this) = Rotation(rotation.z(), Axis::z) * (*this);
+}
+
+MATRIX_TEMPLATE
 Matrix<R, C, T> Matrix<R, C, T>::Identity()
 {
 	Matrix<R, C, T> result;
@@ -268,9 +277,9 @@ Matrix<R, C, T> Matrix<R, C, T>::Rotation(const T& degrees, const Axis& axis)
 }
 
 MATRIX_TEMPLATE
-Matrix<R, C, T> Matrix<R, C, T>::Projection(T fov, T ratio, T near, T far)
+Matrix<R, C, T> Matrix<R, C, T>::Projection(const T& fov, const T& ratio, const T& near, const T& far)
 {
-	Matrix<R, C, T> result = Identity();
+	Matrix<R, C, T> result;
 
 	const T radians = (fov * 0.5) * 0.0174532925;
 	const T tangent = tan(radians);
@@ -283,6 +292,52 @@ Matrix<R, C, T> Matrix<R, C, T>::Projection(T fov, T ratio, T near, T far)
 	result(3, 2) = 1;
 	result(2, 3) = (far * -near) / (far - near);
 	result(3, 3) = 0;
+
+	result(1, 1) *= -1;
+
+	/*const T tangent = tan((fov * 0.0174532925) * 0.5);
+
+	result(0, 0) = 1.0 / (ratio * tangent);
+	result(1, 1) = 1.0 / tangent;
+	result(2, 2) = far / (far - near);
+	result(3, 2) = 1;
+	result(2, 3) = (-near * far) / (far - near);*/
+
+	return (result);
+}
+
+MATRIX_TEMPLATE
+Matrix<R, C, T> Matrix<R, C, T>::View(const Point<T, C>& rotation, const Point<T, C>& position)
+{
+	Matrix<R, C, T> result = Identity();
+
+	result.Rotate(rotation);
+	result.Translate(position * point3D(-1));
+
+	return (result);
+}
+
+MATRIX_TEMPLATE
+Matrix<R, C, T> Matrix<R, C, T>::Look(const Point<T, C>& position, const Point<T, C>& target, const Point<T, C>& up)
+{
+	Matrix<R, C, T> result = Identity();
+
+	const point3D foward = (target - position).Unitized();
+	const point3D horizontal = point3D::Cross(up, foward).Unitized();
+	const point3D vertical = point3D::Cross(foward, horizontal);
+
+	result(0, 0) = horizontal.x();
+	result(0, 1) = horizontal.y();
+	result(0, 2) = horizontal.z();
+	result(1, 0) = vertical.x();
+	result(1, 1) = vertical.y();
+	result(1, 2) = vertical.z();
+	result(2, 0) = foward.x();
+	result(2, 1) = foward.y();
+	result(2, 2) = foward.z();
+	result(0, 3) = -point3D::Dot(horizontal, position);
+	result(1, 3) = -point3D::Dot(vertical, position);
+	result(2, 3) = -point3D::Dot(foward, position);
 
 	return (result);
 }

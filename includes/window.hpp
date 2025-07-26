@@ -12,7 +12,7 @@ struct WindowConfig
 	bool fullscreen = true;
 	VkSurfaceCapabilitiesKHR capabilities{};
 	VkSurfaceFormatKHR format{};
-	VkPresentModeKHR presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+	VkPresentModeKHR presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
 	VkExtent2D extent{};
 };
 

@@ -78,7 +78,7 @@ POINT_TEMPLATE
 Point<T, S> Point<T, S>::operator+(const Point<T, S>& other) const
 {
 	Point<T, S> result;
-	result += *this;
+	result = (*this);
 	result += other;
 
 	return (result);
@@ -88,7 +88,7 @@ POINT_TEMPLATE
 Point<T, S> Point<T, S>::operator-(const Point<T, S>& other) const
 {
 	Point<T, S> result;
-	result -= *this;
+	result = (*this);
 	result -= other;
 
 	return (result);
@@ -98,7 +98,7 @@ POINT_TEMPLATE
 Point<T, S> Point<T, S>::operator*(const Point<T, S>& other) const
 {
 	Point<T, S> result;
-	result *= *this;
+	result = (*this);
 	result *= other;
 
 	return (result);
@@ -108,7 +108,7 @@ POINT_TEMPLATE
 Point<T, S> Point<T, S>::operator/(const Point<T, S>& other) const
 {
 	Point<T, S> result;
-	result /= *this;
+	result = (*this);
 	result /= other;
 
 	return (result);
@@ -145,7 +145,7 @@ void Point<T, S>::Rotate(const T& degrees)
 	const T radians = degrees * 0.0174532925;
 	const T cosTheta = cos(radians);
 	const T sinTheta = sin(radians);
-	const Point<T, S> temp = *this;
+	const Point<T, S> temp = (*this);
 
 	x() = (temp.x() * cosTheta) - (temp.y() * sinTheta);
 	y() = (temp.x() * sinTheta) + (temp.y() * cosTheta);
@@ -155,7 +155,7 @@ POINT_TEMPLATE
 template <size_t PS> requires (PS > 2)
 void Point<T, S>::Rotate(const T& degrees, const Axis& axis)
 {
-	if (S > 3) return;
+	if (S > 3 || degrees == 0) return;
 
 	const T radians = degrees * 0.0174532925;
 	const T cosTheta = cos(radians);
@@ -172,6 +172,17 @@ void Point<T, S>::Rotate(const T& degrees, const Axis& axis)
 }
 
 POINT_TEMPLATE
+template <size_t PS> requires (PS > 2)
+void Point<T, S>::Rotate(const Point<T, S>& rotation)
+{
+	if (S > 3) return;
+
+	if (rotation.x() != 0) Rotate(rotation.x(), Axis::x);
+	if (rotation.y() != 0) Rotate(rotation.y(), Axis::y);
+	if (rotation.z() != 0) Rotate(rotation.z(), Axis::z);
+}
+
+POINT_TEMPLATE
 void Point<T, S>::Normalize()
 {
 	T total = 0;
@@ -181,6 +192,69 @@ void Point<T, S>::Normalize()
 	if (total == 0) return;
 
 	for (size_t i = 0; i < S; i++) { data[i] /= total; }
+}
+
+POINT_TEMPLATE
+Point<T, S> Point<T, S>::Normalized() const
+{
+	Point<T, S> result = (*this);
+	result.Normalize();
+
+	return (result);
+}
+
+POINT_TEMPLATE
+void Point<T, S>::Unitize()
+{
+	T length = Length();
+
+	if (length == 0) return;
+
+	for (size_t i = 0; i < S; i++) { data[i] /= length; }
+}
+
+POINT_TEMPLATE
+Point<T, S> Point<T, S>::Unitized() const
+{
+	Point<T, S> result = (*this);
+	result.Unitize();
+
+	return (result);
+}
+
+POINT_TEMPLATE
+T Point<T, S>::Length() const
+{
+	T result = 0;
+
+	for (size_t i = 0; i < S; i++) { result += data[i] * data[i]; }
+
+	result = sqrt(result);
+
+	return (result);
+}
+
+POINT_TEMPLATE
+T Point<T, S>::Dot(const Point<T, S>& a, const Point<T, S>& b)
+{
+	T result = 0;
+
+	for (size_t i = 0; i < S; i++) { result += a[i] * b[i]; }
+
+	return (result);
+}
+
+POINT_TEMPLATE
+template <size_t PS> requires (PS > 2)
+Point<T, S> Point<T, S>::Cross(const Point<T, S>& a, const Point<T, S>& b)
+{
+	point3D result;
+
+	result.x() = (a.y() * b.z()) - (a.z() * b.y());
+	result.y() = (a.z() * b.x()) - (a.x() * b.z());
+	result.z() = (a.x() * b.y()) - (a.y() * b.x());
+
+	return (result);
 }
 
 POINT_TEMPLATE

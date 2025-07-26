@@ -2,19 +2,9 @@
 
 #include "graphics.hpp"
 #include "renderer.hpp"
-#include "descriptor.hpp"
 #include "utilities.hpp"
 #include "input.hpp"
 #include "time.hpp"
-
-#include "pipeline.hpp"
-#include "mesh.hpp"
-#include "buffer.hpp"
-#include "pass.hpp"
-#include "bitmask.hpp"
-#include "command.hpp"
-#include "vertex.hpp"
-#include "shape.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -80,6 +70,13 @@ void Manager::CreateVulkan()
 	swapchain.Create(&window, &device);
 	std::cout << "Swapchain created: " << swapchain << std::endl;
 	Renderer::Create(swapchain.GetFrameCount(), &device, &swapchain);
+
+	CameraConfig cameraConfig{};
+	cameraConfig.width = window.GetConfig().extent.width;
+	cameraConfig.height = window.GetConfig().extent.height;
+	camera.Create(cameraConfig);
+
+	RegisterFrameCall([&]() { camera.Frame(); });
 }
 
 void Manager::Destroy()
@@ -127,6 +124,11 @@ Swapchain& Manager::GetSwapchain()
 	return (swapchain);
 }
 
+Camera& Manager::GetCamera()
+{
+	return (camera);
+}
+
 void Manager::Run()
 {
 	Start();
@@ -145,6 +147,8 @@ void Manager::Frame()
 
 	Time::Frame();
 	Input::Frame();
+
+	for (std::function<void()> call : frameCalls) { call(); }
 
 	Renderer::Frame();
 
@@ -170,6 +174,11 @@ void Manager::RegisterStartCall(std::function<void()> call)
 	startCalls.push_back(call);
 }
 
+void Manager::RegisterFrameCall(std::function<void()> call)
+{
+	frameCalls.push_back(call);
+}
+
 void Manager::RegisterEndCall(std::function<void()> call)
 {
 	endCalls.push_back(call);
@@ -180,8 +189,10 @@ ManagerConfig Manager::config{};
 Window Manager::window;
 Device Manager::device;
 Swapchain Manager::swapchain;
+Camera Manager::camera;
 
 bool Manager::stopping = false;
 
 std::vector<std::function<void()>> Manager::startCalls;
+std::vector<std::function<void()>> Manager::frameCalls;
 std::vector<std::function<void()>> Manager::endCalls;

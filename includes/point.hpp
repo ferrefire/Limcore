@@ -72,8 +72,18 @@ class Point
 		void Rotate(const T& degrees);
 		template <size_t PS = S> requires (PS > 2)
 		void Rotate(const T& degrees, const Axis& axis);
+		template <size_t PS = S> requires (PS > 2)
+		void Rotate(const Point<T, S>& rotation);
 
 		void Normalize();
+		Point<T, S> Normalized() const;
+		void Unitize();
+		Point<T, S> Unitized() const;
+		T Length() const;
+
+		static T Dot(const Point<T, S>& a, const Point<T, S>& b);
+		template <size_t PS = S> requires (PS > 2)
+		static Point<T, S> Cross(const Point<T, S>& a, const Point<T, S>& b);
 };
 
 POINT_TEMPLATE

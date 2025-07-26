@@ -3,6 +3,7 @@
 #include "graphics.hpp"
 #include "utilities.hpp"
 #include "printer.hpp"
+#include "input.hpp"
 
 #include <stdexcept>
 #include <iostream>
@@ -37,6 +38,9 @@ void Window::CreateFrame()
 	data = glfwCreateWindow(width, height, "limcore", config.fullscreen ? monitor : nullptr, nullptr);
 
 	if (!data) throw (std::runtime_error("Failed to create window"));
+
+	glfwSetInputMode(data, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPosCallback(data, Input::MouseCallback);
 }
 
 void Window::CreateSurface(Device& device)
@@ -138,16 +142,22 @@ void Window::SelectPresentMode(Device& device)
 	vkGetPhysicalDeviceSurfacePresentModesKHR(device.GetPhysicalDevice(), surface, &presentModeCount, presentModes.data());
 
 	bool correctPresentModeFound = false;
+	bool defaultPresentModeFound = false;
 	for (VkPresentModeKHR availablePresentMode : presentModes)
 	{
 		if (availablePresentMode == VK_PRESENT_MODE_FIFO_KHR)
 		{
-			config.presentMode = availablePresentMode;
+			defaultPresentModeFound = true;
+		}
+		if (availablePresentMode == config.presentMode)
+		{
 			correctPresentModeFound = true;
 		}
 	}
 
-	if (!correctPresentModeFound) throw (std::runtime_error("Failed to find correct surface present mode"));
+	if (!correctPresentModeFound && !defaultPresentModeFound) throw (std::runtime_error("Failed to find correct surface present mode"));
+
+	if (!correctPresentModeFound) config.presentMode = VK_PRESENT_MODE_FIFO_KHR;
 }
 
 std::ostream& operator<<(std::ostream& out, Window& window)

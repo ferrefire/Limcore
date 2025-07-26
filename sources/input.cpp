@@ -37,4 +37,22 @@ void Input::Frame()
 	UpdateKeys();
 }
 
+void Input::MouseCallback(GLFWwindow* window, double xpos, double ypos)
+{
+	double deltaX = mx - xpos, deltaY = ypos - my;
+	
+	for (std::function<void (double, double)> call : mouseCalls) { call(deltaX, deltaY); }
+
+	mx = xpos;
+	my = ypos;
+}
+
+void Input::RegisterMouseCallback(std::function<void (double, double)> call)
+{
+	mouseCalls.push_back(call);
+}
+
 std::map<int, KeyInfo> Input::keys;
+std::vector<std::function<void (double, double)>> Input::mouseCalls;
+
+double Input::mx = 0, Input::my = 0;

@@ -61,11 +61,11 @@ void Shape<V, I>::CreateQuad()
 	if constexpr (hasIndices)
 	{
 		indices.push_back(0);
-		indices.push_back(2);
 		indices.push_back(1);
-		indices.push_back(0);
-		indices.push_back(3);
 		indices.push_back(2);
+		indices.push_back(0);
+		indices.push_back(2);
+		indices.push_back(3);
 	}
 }
 
@@ -140,7 +140,7 @@ void Shape<V, I>::Rotate(const float& degrees, const Axis& axis)
 		if constexpr (hasNormal)
 		{
 			vertex.normal.Rotate(degrees, axis);
-			vertex.normal.Normalize();
+			vertex.normal.Unitize();
 		}
 	}
 }
