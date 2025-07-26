@@ -6,22 +6,22 @@
 #include <stdint.h>
 #include <array>
 
-#define MATRIX_TEMPLATE template <uint32_t R, uint32_t C, ValidMatrixType T> \
+#define MATRIX_TEMPLATE template <size_t R, size_t C, ValidMatrixType T> \
 	requires (ValidMatrixRange<R> && ValidMatrixRange<C>)
 
 #define MATRIX_CAST_TEMPLATE template <ValidMatrixType CT>
 
-template <uint32_t S>
+template <size_t S>
 concept ValidMatrixRange = (S >= 1 && S <= 4);
 
 template <typename T>
 concept ValidMatrixType = (std::is_floating_point<T>().value);
 
-template <uint32_t R, uint32_t C, ValidMatrixType T = float>
+template <size_t R, size_t C, ValidMatrixType T = float>
 requires (ValidMatrixRange<R> && ValidMatrixRange<C>)
 class Matrix
 {
-	static const uint32_t size = R * C;
+	static const size_t size = R * C;
 
 	private:
 		std::array<T, R * C> data{};
@@ -37,10 +37,10 @@ class Matrix
 		
 		~Matrix();
 
-		T& operator[](const uint32_t i);
-		const T& operator[](const uint32_t i) const;
-		T& operator()(const uint32_t row, const uint32_t col);
-		const T& operator()(const uint32_t row, const uint32_t col) const;
+		T& operator[](const size_t i);
+		const T& operator[](const size_t i) const;
+		T& operator()(const size_t row, const size_t col);
+		const T& operator()(const size_t row, const size_t col) const;
 
 		Matrix<R, C, T> operator+(const Matrix<R, C, T>& other) const;
 		Matrix<R, C, T> operator-(const Matrix<R, C, T>& other) const;
@@ -53,7 +53,7 @@ class Matrix
 
 		void Scale(const Point<T, C>& scalar);
 		void Translate(const Point<T, C>& translation);
-		template <uint32_t CS = C> requires (CS == 4)
+		template <size_t CS = C> requires (CS == 4)
 		void Rotate(const T& degrees, const Axis& axis);
 
 		static Matrix<R, C, T> Identity();

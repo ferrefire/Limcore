@@ -9,22 +9,22 @@
 
 enum class Axis { x, y, z };
 
-#define POINT_TEMPLATE template <ValidPointType T, uint32_t S> \
+#define POINT_TEMPLATE template <ValidPointType T, size_t S> \
 	requires ValidPointRange<S>
 
-#define POINT_CAST_TEMPLATE template <ValidPointType CT, uint32_t CS> \
+#define POINT_CAST_TEMPLATE template <ValidPointType CT, size_t CS> \
 	requires ValidPointRange<CS>
 
 #define POINT_INIT_TEMPLATE template <typename... Init> \
 	requires (sizeof...(Init) <= S) && (ValidPointType<std::decay_t<Init>> && ...)
 
-#define POINT_INIT_CAST_TEMPLATE template <ValidPointType CT, uint32_t CS, typename... Init> \
+#define POINT_INIT_CAST_TEMPLATE template <ValidPointType CT, size_t CS, typename... Init> \
 	requires (ValidPointRange<CS>) && (sizeof...(Init) <= S - CS) && (ValidPointType<std::decay_t<Init>> && ...)
 
 template <typename T>
 concept ValidPointType = (std::is_floating_point<T>().value || std::is_integral<T>().value);
 
-template <uint32_t S>
+template <size_t S>
 concept ValidPointRange = (S > 1 && S <= 4);
 
 POINT_TEMPLATE
@@ -55,8 +55,8 @@ class Point
 		const T& z() const {return (S > 2 ? data[2] : data[data.size() - 1]);}
 		const T& w() const {return (S > 3 ? data[3] : data[data.size() - 1]);}
 
-		T& operator[](const uint32_t i);
-		const T& operator[](const uint32_t i) const;
+		T& operator[](const size_t i);
+		const T& operator[](const size_t i) const;
 
 		Point<T, S> operator+(const Point<T, S>& other) const;
 		Point<T, S> operator-(const Point<T, S>& other) const;
@@ -68,11 +68,12 @@ class Point
 		void operator*=(const Point<T, S>& other);
 		void operator/=(const Point<T, S>& other);
 
-		template <uint32_t PS = S> requires (PS < 3)
-		void Rotate(const float& degrees);
+		template <size_t PS = S> requires (PS < 3)
+		void Rotate(const T& degrees);
+		template <size_t PS = S> requires (PS > 2)
+		void Rotate(const T& degrees, const Axis& axis);
 
-		template <uint32_t PS = S> requires (PS > 2)
-		void Rotate(const float& degrees, const Axis& axis);
+		void Normalize();
 };
 
 POINT_TEMPLATE

@@ -32,6 +32,8 @@ void Window::CreateFrame()
 	width = (config.fullscreen ? mode->width : mode->width / 2);
 	height = (config.fullscreen ? mode->height : mode->height / 2);
 
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
 	data = glfwCreateWindow(width, height, "limcore", config.fullscreen ? monitor : nullptr, nullptr);
 
 	if (!data) throw (std::runtime_error("Failed to create window"));

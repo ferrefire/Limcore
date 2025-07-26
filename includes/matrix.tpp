@@ -12,10 +12,10 @@ Matrix<R, C, T>::Matrix()
 MATRIX_TEMPLATE
 Matrix<R, C, T>::Matrix(const std::array<T, R * C>& init)
 {
-	for (int i = 0; i < size; i++)
+	for (size_t i = 0; i < size; i++)
 	{
-		int r = i / R;
-		int c = i % R;
+		size_t r = i / R;
+		size_t c = i % R;
 
 		(*this)(r, c) = init[i];
 	}
@@ -27,13 +27,13 @@ MATRIX_TEMPLATE
 MATRIX_CAST_TEMPLATE
 Matrix<R, C, T>::Matrix(const Matrix<R, C, CT>& other)
 {
-	for (int i = 0; i < size; i++) { this->data[i] = other[i]; }
+	for (size_t i = 0; i < size; i++) { this->data[i] = static_cast<T>(other[i]); }
 }
 
 MATRIX_TEMPLATE
 Matrix<R, C, T>& Matrix<R, C, T>::operator=(const Matrix<R, C, T>& other)
 {
-	for (int i = 0; i < size; i++) { this->data[i] = other[i]; }
+	for (size_t i = 0; i < size; i++) { this->data[i] = other[i]; }
 
 	return (*this);
 }
@@ -42,7 +42,7 @@ MATRIX_TEMPLATE
 MATRIX_CAST_TEMPLATE
 Matrix<R, C, T>& Matrix<R, C, T>::operator=(const Matrix<R, C, CT>& other)
 {
-	for (int i = 0; i < size; i++) { this->data[i] = other[i]; }
+	for (size_t i = 0; i < size; i++) { this->data[i] = static_cast<T>(other[i]); }
 
 	return (*this);
 }
@@ -54,7 +54,7 @@ Matrix<R, C, T>::~Matrix()
 }
 
 MATRIX_TEMPLATE
-T& Matrix<R, C, T>::operator[](const uint32_t i)
+T& Matrix<R, C, T>::operator[](const size_t i)
 {
 	if (i >= size) throw (std::out_of_range("Index out of bounds"));
 
@@ -62,7 +62,7 @@ T& Matrix<R, C, T>::operator[](const uint32_t i)
 }
 
 MATRIX_TEMPLATE
-const T& Matrix<R, C, T>::operator[](const uint32_t i) const
+const T& Matrix<R, C, T>::operator[](const size_t i) const
 {
 	if (i >= size) throw (std::out_of_range("Index out of bounds"));
 
@@ -70,9 +70,9 @@ const T& Matrix<R, C, T>::operator[](const uint32_t i) const
 }
 
 MATRIX_TEMPLATE
-const T& Matrix<R, C, T>::operator()(const uint32_t row, const uint32_t col) const
+const T& Matrix<R, C, T>::operator()(const size_t row, const size_t col) const
 {
-	uint32_t i = row + (col * R);
+	const size_t i = row + (col * R);
 
 	if (i >= size) throw (std::out_of_range("Index out of bounds"));
 
@@ -80,9 +80,9 @@ const T& Matrix<R, C, T>::operator()(const uint32_t row, const uint32_t col) con
 }
 
 MATRIX_TEMPLATE
-T& Matrix<R, C, T>::operator()(const uint32_t row, const uint32_t col)
+T& Matrix<R, C, T>::operator()(const size_t row, const size_t col)
 {
-	uint32_t i = row + (col * R);
+	const size_t i = row + (col * R);
 
 	if (i >= size) throw (std::out_of_range("Index out of bounds"));
 
@@ -107,7 +107,7 @@ Matrix<R, C, T> Matrix<R, C, T>::operator-(const Matrix<R, C, T>& other) const
 {
 	Matrix<R, C, T> result;
 
-	for (int i = 0; i < size; i++)
+	for (size_t i = 0; i < size; i++)
 	{
 		result[i] = data[i] - other[i];
 	}
@@ -120,11 +120,11 @@ Matrix<R, C, T> Matrix<R, C, T>::operator*(const Matrix<R, C, T>& other) const
 {
 	Matrix<R, C, T> result;
 
-	for (int r = 0; r < R; r++)
+	for (size_t r = 0; r < R; r++)
 	{
-		for (int c = 0; c < C; c++)
+		for (size_t c = 0; c < C; c++)
 		{
-			for (int i = 0; i < C; i++)
+			for (size_t i = 0; i < C; i++)
 			{
 				result(r, c) += (*this)(r, i) * other(i, c);
 			}
@@ -139,9 +139,9 @@ Point<T, C> Matrix<R, C, T>::operator*(const Point<T, C>& point) const
 {
 	Point<T, C> result;
 
-	for (int r = 0; r < R; r++)
+	for (size_t r = 0; r < R; r++)
 	{
-		for (int c = 0; c < C; c++)
+		for (size_t c = 0; c < C; c++)
 		{
 			result[r] += (*this)(r, c) * point[c];
 		}
@@ -153,7 +153,7 @@ Point<T, C> Matrix<R, C, T>::operator*(const Point<T, C>& point) const
 MATRIX_TEMPLATE
 void Matrix<R, C, T>::operator+=(const Matrix<R, C, T>& other)
 {
-	for (int i = 0; i < size; i++)
+	for (size_t i = 0; i < size; i++)
 	{
 		data[i] += other[i];
 	}
@@ -162,7 +162,7 @@ void Matrix<R, C, T>::operator+=(const Matrix<R, C, T>& other)
 MATRIX_TEMPLATE
 void Matrix<R, C, T>::operator-=(const Matrix<R, C, T>& other)
 {
-	for (int i = 0; i < size; i++)
+	for (size_t i = 0; i < size; i++)
 	{
 		data[i] -= other[i];
 	}
@@ -171,7 +171,7 @@ void Matrix<R, C, T>::operator-=(const Matrix<R, C, T>& other)
 MATRIX_TEMPLATE
 void Matrix<R, C, T>::operator*=(const Matrix<R, C, T>& other)
 {
-	*this = *this * other;
+	(*this) = (*this) * other;
 }
 
 MATRIX_TEMPLATE
@@ -187,7 +187,7 @@ void Matrix<R, C, T>::Translate(const Point<T, C>& translation)
 }
 
 MATRIX_TEMPLATE
-template <uint32_t CS> requires (CS == 4)
+template <size_t CS> requires (CS == 4)
 void Matrix<R, C, T>::Rotate(const T& degrees, const Axis& axis)
 {
 	(*this) = Matrix<R, C, T>::Rotation(degrees, axis) * (*this);
@@ -198,9 +198,9 @@ Matrix<R, C, T> Matrix<R, C, T>::Identity()
 {
 	Matrix<R, C, T> result;
 
-	for (int r = 0; r < R; r++)
+	for (size_t r = 0; r < R; r++)
 	{
-		for (int c = 0; c < C; c++)
+		for (size_t c = 0; c < C; c++)
 		{
 			result(r, c) = (r == c ? 1 : 0);
 		}
@@ -214,7 +214,7 @@ Matrix<R, C, T> Matrix<R, C, T>::Scalar(const Point<T, C>& scalar)
 {
 	Matrix<R, C, T> result = Identity();
 
-	for (int i = 0; i < C; i++)
+	for (size_t i = 0; i < C; i++)
 	{
 		result(i, i) *= scalar[i];
 	}
@@ -227,7 +227,7 @@ Matrix<R, C, T> Matrix<R, C, T>::Translation(const Point<T, C>& translation)
 {
 	Matrix<R, C, T> result = Identity();
 	
-	for (int i = 0; i < C; i++)
+	for (size_t i = 0; i < C; i++)
 	{
 		result(i, C - 1) += translation[i];
 	}
@@ -292,9 +292,9 @@ std::ostream& operator<<(std::ostream& out, const Matrix<R, C, T>& matrix)
 {
 	out << std::endl;
 
-	for (int r = 0; r < R; r++)
+	for (size_t r = 0; r < R; r++)
 	{
-		for (int c = 0; c < C; c++)
+		for (size_t c = 0; c < C; c++)
 		{
 			out << matrix(r, c) << ", ";
 		}

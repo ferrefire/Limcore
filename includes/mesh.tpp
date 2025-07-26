@@ -217,8 +217,8 @@ std::ostream& operator<<(std::ostream& out, const Mesh<V, I>& mesh)
 
 	out << std::endl;
 	//out << "size: " << mesh.GetData().size() << std::endl;
-	//for (const Vertex<V>& vertex : mesh.GetVertices()) { out << vertex << std::endl; };
-	for (const float& val : mesh.GetData()) { out << val << " "; };
+	for (const Vertex<V>& vertex : mesh.GetVertices()) { out << vertex << std::endl; };
+	//for (const float& val : mesh.GetData()) { out << val << " "; };
 
 	return (out);
 }

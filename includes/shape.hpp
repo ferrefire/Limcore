@@ -8,6 +8,7 @@
 #include <GLFW/glfw3.h>
 
 #include <vector>
+#include <iostream>
 
 #define SHAPE_TEMPLATE template <VertexConfig V, VkIndexType I>
 
@@ -17,11 +18,11 @@ SHAPE_TEMPLATE
 class Shape
 {
 	using indexType = typename std::conditional_t<I == VK_INDEX_TYPE_UINT16, uint16_t, uint32_t>;
-	const bool hasIndices = I != VK_INDEX_TYPE_NONE_KHR;
-	#define HAS_POSITION constexpr (Bitmask::HasFlag(V, Position))
-	#define HAS_COORDINATE constexpr (Bitmask::HasFlag(V, Coordinate))
-	#define HAS_NORMAL constexpr (Bitmask::HasFlag(V, Normal))
-	#define HAS_COLOR constexpr (Bitmask::HasFlag(V, Color))
+	static const bool hasIndices = I != VK_INDEX_TYPE_NONE_KHR;
+	static const bool hasPosition = Bitmask::HasFlag(V, Position);
+	static const bool hasCoordinate = Bitmask::HasFlag(V, Coordinate);
+	static const bool hasNormal = Bitmask::HasFlag(V, Normal);
+	static const bool hasColor = Bitmask::HasFlag(V, Color);
 
 	private:
 		std::vector<Vertex<V>> vertices;
@@ -39,6 +40,10 @@ class Shape
 
 		const std::vector<Vertex<V>>& GetVertices() const;
 		const std::vector<indexType>& GetIndices() const;
+
+		void Move(const point3D& translation);
+		void Rotate(const float& degrees, const Axis& axis);
+		void Join(const Shape<V, I>& other);
 };
 
 #include "shape.tpp"

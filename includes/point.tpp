@@ -13,9 +13,9 @@ POINT_TEMPLATE
 POINT_INIT_TEMPLATE
 Point<T, S>::Point(Init... init)
 {
-	int i = 0;
+	size_t i = 0;
 
-	((data[i++] = init), ...);
+	((data[i++] = static_cast<T>(init)), ...);
 
 	if (sizeof...(Init) == 1) { for (i = 1; i < S; i++) { data[i] = data[0]; } }
 }
@@ -24,21 +24,21 @@ POINT_TEMPLATE
 POINT_CAST_TEMPLATE
 Point<T, S>::Point(const Point<CT, CS>& other)
 {
-	uint32_t size = (S < CS ? S : CS);
+	const size_t size = (S < CS ? S : CS);
 
-	for (int i = 0; i < size; i++) { this->data[i] = other[i]; }
+	for (int i = 0; i < size; i++) { this->data[i] = static_cast<T>(other[i]); }
 }
 
 POINT_TEMPLATE
 POINT_INIT_CAST_TEMPLATE
 Point<T, S>::Point(const Point<CT, CS>& other, Init... init)
 {
-	const uint32_t size = (S < CS ? S : CS);
-	int i = 0;
+	const size_t size = (S < CS ? S : CS);
+	size_t i = 0;
 
-	for (i = 0; i < size; i++) { this->data[i] = other[i]; }
+	for (i = 0; i < size; i++) { this->data[i] = static_cast<T>(other[i]); }
 
-	((data[i++] = init), ...);
+	((data[i++] = static_cast<T>(init)), ...);
 }
 
 POINT_TEMPLATE
@@ -47,7 +47,7 @@ Point<T, S>& Point<T, S>::operator=(const Point<CT, CS>& other)
 {
 	const uint32_t size = (S < CS ? S : CS);
 
-	for (int i = 0; i < size; i++) { this->data[i] = other[i]; }
+	for (size_t i = 0; i < size; i++) { this->data[i] = static_cast<T>(other[i]); }
 
 	return (*this);
 }
@@ -59,7 +59,7 @@ Point<T, S>::~Point()
 }
 
 POINT_TEMPLATE
-T& Point<T, S>::operator[](const uint32_t i)
+T& Point<T, S>::operator[](const size_t i)
 {
 	if (i >= S) throw (std::out_of_range("Index out of bounds"));
 
@@ -67,7 +67,7 @@ T& Point<T, S>::operator[](const uint32_t i)
 }
 
 POINT_TEMPLATE
-const T& Point<T, S>::operator[](const uint32_t i) const
+const T& Point<T, S>::operator[](const size_t i) const
 {
 	if (i >= S) throw (std::out_of_range("Index out of bounds"));
 
@@ -117,43 +117,43 @@ Point<T, S> Point<T, S>::operator/(const Point<T, S>& other) const
 POINT_TEMPLATE
 void Point<T, S>::operator+=(const Point<T, S>& other)
 {
-	for (int i = 0; i < S; i++) { data[i] += other[i]; }
+	for (size_t i = 0; i < S; i++) { data[i] += other[i]; }
 }
 
 POINT_TEMPLATE
 void Point<T, S>::operator-=(const Point<T, S>& other)
 {
-	for (int i = 0; i < S; i++) { data[i] -= other[i]; }
+	for (size_t i = 0; i < S; i++) { data[i] -= other[i]; }
 }
 
 POINT_TEMPLATE
 void Point<T, S>::operator*=(const Point<T, S>& other)
 {
-	for (int i = 0; i < S; i++) { data[i] *= other[i]; }
+	for (size_t i = 0; i < S; i++) { data[i] *= other[i]; }
 }
 
 POINT_TEMPLATE
 void Point<T, S>::operator/=(const Point<T, S>& other)
 {
-	for (int i = 0; i < S; i++) { data[i] /= other[i]; }
+	for (size_t i = 0; i < S; i++) { data[i] /= other[i]; }
 }
 
 POINT_TEMPLATE
-template <uint32_t PS> requires (PS < 3)
-void Point<T, S>::Rotate(const float& degrees)
+template <size_t PS> requires (PS < 3)
+void Point<T, S>::Rotate(const T& degrees)
 {
-	const float radians = degrees * 0.0174532925;
-	const float cosTheta = cos(radians);
-	const float sinTheta = sin(radians);
-	Point<T, S> temp = *this;
+	const T radians = degrees * 0.0174532925;
+	const T cosTheta = cos(radians);
+	const T sinTheta = sin(radians);
+	const Point<T, S> temp = *this;
 
 	x() = (temp.x() * cosTheta) - (temp.y() * sinTheta);
 	y() = (temp.x() * sinTheta) + (temp.y() * cosTheta);
 }
 
 POINT_TEMPLATE
-template <uint32_t PS> requires (PS > 2)
-void Point<T, S>::Rotate(const float& degrees, const Axis& axis)
+template <size_t PS> requires (PS > 2)
+void Point<T, S>::Rotate(const T& degrees, const Axis& axis)
 {
 	if (S > 3) return;
 
@@ -161,20 +161,32 @@ void Point<T, S>::Rotate(const float& degrees, const Axis& axis)
 	const T cosTheta = cos(radians);
 	const T sinTheta = sin(radians);
 
-	int ai = (axis != Axis::x ? 0 : 1);
-	int bi = (axis != Axis::z ? 2 : 1);
+	const size_t ai = (axis != Axis::x ? 0 : 1);
+	const size_t bi = (axis != Axis::z ? 2 : 1);
 	
-	T a = data[ai];
-	T b = data[bi];
+	const T a = data[ai];
+	const T b = data[bi];
 
 	data[ai] = (a * cosTheta) - (b * sinTheta);
 	data[bi] = (a * sinTheta) + (b * cosTheta);
 }
 
 POINT_TEMPLATE
+void Point<T, S>::Normalize()
+{
+	T total = 0;
+
+	for (size_t i = 0; i < S; i++) { total += fabs(data[i]); }
+
+	if (total == 0) return;
+
+	for (size_t i = 0; i < S; i++) { data[i] /= total; }
+}
+
+POINT_TEMPLATE
 std::ostream& operator<<(std::ostream& out, const Point<T, S>& point)
 {
-	for (int i = 0; i < S; i++)
+	for (size_t i = 0; i < S; i++)
 	{
 		out << static_cast<char>(119 + ((i + 1) % 4)) << ": " << point[i] << (i + 1 < S ? ", " : "");
 	}
