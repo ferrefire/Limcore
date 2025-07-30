@@ -25,6 +25,7 @@ void Camera::Create(const CameraConfig& cameraConfig)
 	UpdateProjection();
 
 	Input::RegisterMouseCallback([&](double xpos, double ypos) { Mouse(xpos, ypos); });
+	Input::RegisterScrollCallback([&](double xpos, double ypos) { Scroll(xpos, ypos); });
 }
 
 const CameraConfig& Camera::GetConfig() const
@@ -114,6 +115,12 @@ void Camera::Rotate(const point3D& rotation)
 void Camera::Mouse(double deltaX, double deltaY)
 {
 	Rotate(point3D(deltaY * config.sensitivity, deltaX * config.sensitivity));
+}
+
+void Camera::Scroll(double deltaX, double deltaY)
+{
+	if (deltaY > 0) config.speed *= 1.25;
+	else if (deltaY < 0) config.speed *= 0.8;
 }
 
 void Camera::Frame()

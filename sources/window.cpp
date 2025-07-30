@@ -34,13 +34,17 @@ void Window::CreateFrame()
 	height = (config.fullscreen ? mode->height : mode->height / 2);
 
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 
-	data = glfwCreateWindow(width, height, "limcore", config.fullscreen ? monitor : nullptr, nullptr);
+	//data = glfwCreateWindow(width, height, "limcore", config.fullscreen ? monitor : nullptr, nullptr);
+	data = glfwCreateWindow(width, height, "limcore", nullptr, nullptr);
 
 	if (!data) throw (std::runtime_error("Failed to create window"));
 
+	if (config.fullscreen) glfwSetWindowMonitor(data, nullptr, 0, 0, width, height, mode->refreshRate);
 	glfwSetInputMode(data, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(data, Input::MouseCallback);
+	glfwSetScrollCallback(data, Input::ScrollCallback);
 }
 
 void Window::CreateSurface(Device& device)

@@ -55,8 +55,6 @@ void Swapchain::CreateSwapchain()
 	createInfo.clipped = VK_TRUE;
 	createInfo.oldSwapchain = nullptr;
 
-	std::cout << ENUM_VAL(createInfo.presentMode) << std::endl;
-
 	if (vkCreateSwapchainKHR(device->GetLogicalDevice(), &createInfo, nullptr, &swapchain) != VK_SUCCESS)
 		throw (std::runtime_error("Failed to create swapchain"));
 }

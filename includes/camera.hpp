@@ -10,7 +10,7 @@ struct CameraConfig
 	uint32_t width = 400;
 	uint32_t height = 400;
 	float near = 0.01;
-	float far = 100;
+	float far = 10000;
 	float fov = 60;
 	float speed = 3;
 	float sensitivity = 0.1;
@@ -33,6 +33,7 @@ class Camera
 		bool updated = false;
 
 		void Mouse(double deltaX, double deltaY);
+		void Scroll(double deltaX, double deltaY);
 
 	public:
 		Camera();

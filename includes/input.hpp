@@ -22,6 +22,7 @@ class Input
 	private:
 		static std::map<int, KeyInfo> keys;
 		static std::vector<std::function<void (double, double)>> mouseCalls;
+		static std::vector<std::function<void (double, double)>> scrollCalls;
 
 		static double mx, my;
 
@@ -35,6 +36,8 @@ class Input
 		static void Frame();
 
 		static void MouseCallback(GLFWwindow* window, double xpos, double ypos);
+		static void ScrollCallback(GLFWwindow* window, double deltaX, double deltaY);
 
 		static void RegisterMouseCallback(std::function<void (double, double)> call);
+		static void RegisterScrollCallback(std::function<void (double, double)> call);
 };

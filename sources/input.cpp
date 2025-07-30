@@ -47,12 +47,23 @@ void Input::MouseCallback(GLFWwindow* window, double xpos, double ypos)
 	my = ypos;
 }
 
+void Input::ScrollCallback(GLFWwindow* window, double deltaX, double deltaY)
+{
+	for (std::function<void (double, double)> call : scrollCalls) { call(deltaX, deltaY); }
+}
+
 void Input::RegisterMouseCallback(std::function<void (double, double)> call)
 {
 	mouseCalls.push_back(call);
 }
 
+void Input::RegisterScrollCallback(std::function<void (double, double)> call)
+{
+	scrollCalls.push_back(call);
+}
+
 std::map<int, KeyInfo> Input::keys;
 std::vector<std::function<void (double, double)>> Input::mouseCalls;
+std::vector<std::function<void (double, double)>> Input::scrollCalls;
 
 double Input::mx = 0, Input::my = 0;
