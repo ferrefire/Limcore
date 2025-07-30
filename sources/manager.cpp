@@ -69,7 +69,7 @@ void Manager::CreateVulkan()
 	std::cout << "Device created: " << device << std::endl;
 	swapchain.Create(&window, &device);
 	std::cout << "Swapchain created: " << swapchain << std::endl;
-	Renderer::Create(swapchain.GetFrameCount(), &device, &swapchain);
+	Renderer::Create(2, &device, &swapchain);
 
 	CameraConfig cameraConfig{};
 	cameraConfig.width = window.GetConfig().extent.width;
