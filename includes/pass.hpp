@@ -1,6 +1,7 @@
 #pragma once
 
 #include "device.hpp"
+#include "image.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -13,6 +14,7 @@ struct AttachmentConfig
 	VkImageView view = nullptr;
 	VkAttachmentDescription description{};
 	VkAttachmentReference reference{};
+	VkClearValue clear{};
 };
 
 struct PassConfig
@@ -20,10 +22,12 @@ struct PassConfig
 	std::vector<AttachmentConfig> colorAttachments;
 	AttachmentConfig depthAttachment{};
 	std::vector<VkSubpassDescription> subpasses;
+	bool depth = false;
 
 	std::vector<VkAttachmentReference> GetColorReferences(); 
 	std::vector<VkAttachmentDescription> GetAttachments();
 	std::vector<VkImageView> GetViews();
+	std::vector<VkClearValue> GetClears();
 };
 
 class Pass
@@ -36,9 +40,11 @@ class Pass
 		Device* device = nullptr;
 
 		VkRenderPass renderpass = nullptr;
+		std::vector<Image*> images;
 		std::vector<VkFramebuffer> framebuffers;
 
 		void CreateRenderPass();
+		void CreateImages();
 		void CreateFramebuffers();
 
 	public:
@@ -54,7 +60,7 @@ class Pass
 		void Begin(VkCommandBuffer commandBuffer, uint32_t renderIndex);
 		void End(VkCommandBuffer commandBuffer);
 
-		static VkAttachmentDescription DefaultColorAttachment();
-		static AttachmentConfig DefaultAttachmentConfig();
-		static PassConfig DefaultConfig();
+		static VkAttachmentDescription DefaultColorDescription();
+		static VkAttachmentDescription DefaultDepthDescription();
+		static PassConfig DefaultConfig(bool depth = false);
 };

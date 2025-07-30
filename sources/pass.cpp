@@ -20,7 +20,7 @@ std::vector<VkAttachmentDescription> PassConfig::GetAttachments()
 
 	for (AttachmentConfig& attachment : colorAttachments) attachments.push_back(attachment.description);
 
-	if (depthAttachment.view) attachments.push_back(depthAttachment.description);
+	if (depth) attachments.push_back(depthAttachment.description);
 
 	return (attachments);
 }
@@ -31,9 +31,20 @@ std::vector<VkImageView> PassConfig::GetViews()
 
 	for (AttachmentConfig& attachment : colorAttachments) views.push_back(attachment.view);
 
-	if (depthAttachment.view) views.push_back(depthAttachment.view);
+	if (depth) views.push_back(depthAttachment.view);
 
 	return (views);
+}
+
+std::vector<VkClearValue> PassConfig::GetClears()
+{
+	std::vector<VkClearValue> clears;
+
+	for (AttachmentConfig& attachment : colorAttachments) clears.push_back(attachment.clear);
+
+	if (depth) clears.push_back(depthAttachment.clear);
+
+	return (clears);
 }
 
 Pass::Pass()
@@ -53,8 +64,20 @@ void Pass::Create(const PassConfig& passConfig, Device* passDevice = nullptr)
 
 	if (!device) device = &Manager::GetDevice();
 
+	CreateImages();
 	CreateRenderPass();
 	CreateFramebuffers();
+}
+
+void Pass::CreateImages()
+{
+	if (config.depth)
+	{
+		images.push_back(new Image());
+		ImageConfig imageConfig = Image::DefaultDepthConfig();
+		images[images.size() - 1]->Create(imageConfig, device);
+		config.depthAttachment.view = images[images.size() - 1]->GetView();
+	}
 }
 
 void Pass::CreateRenderPass()
@@ -107,8 +130,17 @@ void Pass::Destroy()
 {
 	if (!device) return;
 
+	for (Image* image : images)
+	{
+		image->Destroy();
+		delete(image);
+	}
+	images.clear();
+
 	for (int i = 0; i < framebuffers.size(); i++) 
+	{
 		vkDestroyFramebuffer(device->GetLogicalDevice(), framebuffers[i], nullptr);
+	}
 	framebuffers.clear();
 
 	if (renderpass)
@@ -134,8 +166,7 @@ void Pass::Begin(VkCommandBuffer commandBuffer, uint32_t renderIndex)
 	if (renderIndex >= framebuffers.size()) throw (std::runtime_error("Render index is out of range"));
 	if (state != Ended) throw (std::runtime_error("Pass has not yet ended"));
 
-	std::vector<VkClearValue> clearValues(1);
-	clearValues[0].color = {{0.75f, 0.75f, 0.75f, 1.0f}};
+	std::vector<VkClearValue> clearValues = config.GetClears();
 
 	VkRenderPassBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -161,7 +192,7 @@ void Pass::End(VkCommandBuffer commandBuffer)
 	state = Ended;
 }
 
-VkAttachmentDescription Pass::DefaultColorAttachment()
+VkAttachmentDescription Pass::DefaultColorDescription()
 {
 	VkAttachmentDescription description{};
 	description.format = VK_FORMAT_B8G8R8A8_SRGB;
@@ -174,24 +205,44 @@ VkAttachmentDescription Pass::DefaultColorAttachment()
 	return (description);
 }
 
-AttachmentConfig Pass::DefaultAttachmentConfig()
+VkAttachmentDescription Pass::DefaultDepthDescription()
 {
-	AttachmentConfig config{};
-	config.description = DefaultColorAttachment();
-	config.reference.attachment = 0;
-	config.reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	VkAttachmentDescription description{};
+	description.format = VK_FORMAT_D32_SFLOAT;
+	description.samples = VK_SAMPLE_COUNT_1_BIT;
+	description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	description.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-	return (config);
+	return (description);
 }
 
-PassConfig Pass::DefaultConfig()
+PassConfig Pass::DefaultConfig(bool depth)
 {
+	AttachmentConfig colorAttachment{};
+	colorAttachment.description = DefaultColorDescription();
+	colorAttachment.reference.attachment = 0;
+	colorAttachment.reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	colorAttachment.clear.color = {{0.75f, 0.75f, 0.75f, 1.0f}};
+
+	AttachmentConfig depthAttachment{};
+	depthAttachment.description = DefaultDepthDescription();
+	depthAttachment.reference.attachment = 1;
+	depthAttachment.reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	depthAttachment.clear.depthStencil = {1.0f, 0};
+
 	PassConfig config{};
-	config.colorAttachments.push_back(DefaultAttachmentConfig());
+	config.depth = depth;
+	config.colorAttachments.push_back(colorAttachment);
+	if (depth) config.depthAttachment = depthAttachment;
 	config.subpasses.resize(1);
 	config.subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	config.subpasses[0].colorAttachmentCount = 1;
 	config.subpasses[0].pColorAttachments = &config.colorAttachments[0].reference;
+	if (depth) config.subpasses[0].pDepthStencilAttachment = &config.depthAttachment.reference;
 
 	return (config);
 }
