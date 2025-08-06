@@ -1,6 +1,7 @@
 #pragma once
 
 #include "point.hpp"
+#include "bitmask.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>

@@ -14,7 +14,11 @@ class Utilities
 
 	public:
 		static std::string GetPath();
-		static std::vector<char> FileToBinary(std::string path);
+		static std::vector<char> FileToBinary(const std::string& path);
+		static std::string FileToString(const std::string& path);
+		static std::vector<std::string> Split(const std::string& string, const std::string& delimitter);
+		static std::vector<std::string> FileToLines(const std::string& path);
+		static std::pair<size_t, size_t> FindPair(const std::string& string, size_t start, const std::pair<char, char>& pair);
 		
 		template <typename T>
 		static bool Contains(const std::vector<T>& vector, T target);

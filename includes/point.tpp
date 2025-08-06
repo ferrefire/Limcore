@@ -3,6 +3,8 @@
 #include <stdexcept>
 #include <cmath>
 
+#include "utilities.hpp"
+
 POINT_TEMPLATE
 Point<T, S>::Point()
 {
@@ -253,6 +255,22 @@ Point<T, S> Point<T, S>::Cross(const Point<T, S>& a, const Point<T, S>& b)
 	result.x() = (a.y() * b.z()) - (a.z() * b.y());
 	result.y() = (a.z() * b.x()) - (a.x() * b.z());
 	result.z() = (a.x() * b.y()) - (a.y() * b.x());
+
+	return (result);
+}
+
+POINT_TEMPLATE
+Point<T, S> Point<T, S>::FromString(const std::string& string)
+{
+	Point<T, S> result;
+
+	std::vector<std::string> values = Utilities::Split(string, " ");
+	
+
+	for (int i = 0; i < std::min(S, values.size()); i++)
+	{
+		result[i] = static_cast<T>(std::stof(values[i]));
+	}
 
 	return (result);
 }

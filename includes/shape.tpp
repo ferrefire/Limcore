@@ -29,6 +29,41 @@ void Shape<V, I>::Create(ShapeType type)
 }
 
 SHAPE_TEMPLATE
+void Shape<V, I>::Create(const ModelInfo& modelInfo)
+{
+	//ObjData data = Loader::LoadObj(path + "/resources/" + file);
+	//GltfData data = Loader::LoadGltf(file);
+
+	/*vertices.resize(model.size);
+
+	if constexpr (hasPosition)
+	{
+		size_t i = 0;
+		for (const point3D& point : model.positions)
+		{
+			vertices[i++].position = point;
+		}
+	}
+
+	if constexpr (hasNormal)
+	{
+		size_t i = 0;
+		for (const point3D& point : model.normals)
+		{
+			vertices[i++].normal = point;
+		}
+	}
+
+	if constexpr (hasIndices)
+	{
+		for (const uint16_t& index : model.indices)
+		{
+			indices.push_back(index);
+		}
+	}*/
+}
+
+SHAPE_TEMPLATE
 void Shape<V, I>::CreateQuad()
 {
 	vertices.resize(4);

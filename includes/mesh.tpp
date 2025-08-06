@@ -26,7 +26,7 @@ void Mesh<V, I>::Create(Device* meshDevice)
 
 	CreateData();
 	CreateVertexBuffer();
-	CreateIndexBuffer();
+	if (hasIndices) CreateIndexBuffer();
 }
 
 MESH_TEMPLATE

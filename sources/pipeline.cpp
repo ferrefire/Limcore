@@ -182,7 +182,8 @@ PipelineConfig Pipeline::DefaultConfig()
 	config.rasterization.polygonMode = VK_POLYGON_MODE_FILL;
 	config.rasterization.lineWidth = 1.0f;
 	config.rasterization.cullMode = VK_CULL_MODE_BACK_BIT;
-	config.rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	//config.rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	config.rasterization.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	config.rasterization.depthBiasEnable = VK_FALSE;
 	config.rasterization.depthBiasConstantFactor = 0.0f;
 	config.rasterization.depthBiasClamp = 0.0f;

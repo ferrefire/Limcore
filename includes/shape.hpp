@@ -3,12 +3,14 @@
 #include "point.hpp"
 #include "vertex.hpp"
 #include "bitmask.hpp"
+#include "loader.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 #include <vector>
 #include <iostream>
+#include <string>
 
 #define SHAPE_TEMPLATE template <VertexConfig V, VkIndexType I>
 
@@ -37,6 +39,7 @@ class Shape
 		~Shape();
 
 		void Create(ShapeType type);
+		void Create(const ModelInfo& modelInfo);
 
 		const std::vector<Vertex<V>>& GetVertices() const;
 		const std::vector<indexType>& GetIndices() const;

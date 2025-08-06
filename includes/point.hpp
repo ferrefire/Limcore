@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <array>
 #include <type_traits>
+#include <string>
 
 enum class Axis { x, y, z };
 
@@ -84,6 +85,7 @@ class Point
 		static T Dot(const Point<T, S>& a, const Point<T, S>& b);
 		template <size_t PS = S> requires (PS > 2)
 		static Point<T, S> Cross(const Point<T, S>& a, const Point<T, S>& b);
+		static Point<T, S> FromString(const std::string& string);
 };
 
 POINT_TEMPLATE
