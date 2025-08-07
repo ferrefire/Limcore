@@ -7,6 +7,32 @@
 #include <sstream>
 #include <filesystem>
 
+std::string Loader::GetValue(const std::string& content, const std::string& target)
+{
+	if (!content.contains(target)) return ("");
+
+	size_t start = content.find(target) + target.size() + 3;
+	size_t end = content.find('\n', start);
+
+	return (content.substr(start, end - start));
+}
+
+AttributeInfo Loader::GetAttribute(const std::string& accessContent, const std::string& viewContent)
+{
+	AttributeInfo info{};
+	info.accessContent = accessContent;
+	info.viewIndex = GetValue(info.accessContent, "bufferView");
+	info.component = GetValue(info.accessContent, "componentType");
+	info.count = GetValue(info.accessContent, "count");
+	info.type = GetValue(info.accessContent, "type");
+	info.viewContent = viewContent;
+	info.bufferIndex = GetValue(info.viewContent, "buffer");
+	info.length = GetValue(info.viewContent, "byteLength");
+	info.offset = GetValue(info.viewContent, "byteOffset");
+
+	return (info);
+}
+
 ModelInfo Loader::GetModelInfo(const std::string& name, const ModelType& type)
 {
 	switch (type)
@@ -21,56 +47,71 @@ ModelInfo Loader::GetModelInfo(const std::string& name, const ModelType& type)
 ModelInfo Loader::GetGltfInfo(const std::string& name)
 {
 	ModelInfo info{};
+
+	info.name = name;
+
 	std::string path = Utilities::GetPath() + "/resources/" + name + ".gltf";
 	std::string file = Utilities::FileToString(path);
 
-	size_t meshes = file.find("meshes");
-	if (meshes == std::string::npos) throw (std::runtime_error("Gltf file is invalid"));
-
-	std::pair<size_t, size_t> range = Utilities::FindPair(file, meshes, {'[', ']'});
+	std::pair<size_t, size_t> range = Utilities::FindPair(file, file.find("meshes"), {'[', ']'});
 	if (range.first == range.second) throw (std::runtime_error("Gltf file is invalid"));
-
 	std::string meshesInfo = file.substr(range.first + 1, range.second - range.first - 1);
 
-	size_t primitives = meshesInfo.find("primitives");
-	if (primitives == std::string::npos) throw (std::runtime_error("Gltf file is invalid"));
+	std::string positionsIndex = GetValue(meshesInfo, "POSITION");
+	std::string normalsIndex = GetValue(meshesInfo, "NORMAL");
+	std::string indicesIndex = GetValue(meshesInfo, "indices");
 
-	range = Utilities::FindPair(meshesInfo, primitives, {'[', ']'});
+	range = Utilities::FindPair(file, file.find("accessors"), {'[', ']'});
 	if (range.first == range.second) throw (std::runtime_error("Gltf file is invalid"));
+	std::string accessInfo = file.substr(range.first + 1, range.second - range.first - 1);
+	std::vector<std::string> accessors;
+	size_t end = 0;
 
-	std::string primitivesInfo = meshesInfo.substr(range.first + 1, range.second - range.first - 1);
+	while (end != std::string::npos && end < accessInfo.size())
+	{
+		range = Utilities::FindPair(accessInfo, end, {'{', '}'});
+		accessors.push_back(accessInfo.substr(range.first + 1, range.second - range.first - 1));
+		end = range.second + 1;
+	}
 
-	size_t attributes = primitivesInfo.find("attributes");
-	if (attributes == std::string::npos) throw (std::runtime_error("Gltf file is invalid"));
-
-	range = Utilities::FindPair(primitivesInfo, attributes, {'{', '}'});
+	range = Utilities::FindPair(file, file.find("bufferViews"), {'[', ']'});
 	if (range.first == range.second) throw (std::runtime_error("Gltf file is invalid"));
+	std::string viewInfo = file.substr(range.first + 1, range.second - range.first - 1);
+	std::vector<std::string> views;
+	end = 0;
 
-	std::string attributesInfo = primitivesInfo.substr(range.first + 1, range.second - range.first - 1);
+	while (end != std::string::npos && end < viewInfo.size())
+	{
+		range = Utilities::FindPair(viewInfo, end, {'{', '}'});
+		views.push_back(viewInfo.substr(range.first + 1, range.second - range.first - 1));
+		end = range.second + 1;
+	}
 
-	//std::cout << attributesInfo << std::endl;
-
-	if (attributesInfo.contains("POSITION"))
+	if (positionsIndex != "")
 	{
 		info.vertexConfig = Bitmask::SetFlag(info.vertexConfig, Position);
-		info.attributes[Position] = AttributeInfo{};
-		info.attributes[Position].type = Position;
-		info.attributes[Position].index = std::stoi(attributesInfo.substr(attributesInfo.find("POSITION") + 11, 1));
+		std::string accessContent = accessors[std::stoi(positionsIndex)];
+		std::string viewContent = views[std::stoi(GetValue(accessContent, "bufferView"))];
+		info.attributes[Position] = GetAttribute(accessContent, viewContent);
+		info.size = std::max(info.size, std::stoul(info.attributes[Position].count));
 	}
-	if (attributesInfo.contains("NORMAL"))
+
+	if (normalsIndex != "")
 	{
 		info.vertexConfig = Bitmask::SetFlag(info.vertexConfig, Normal);
-		info.attributes[Normal] = AttributeInfo{};
-		info.attributes[Normal].type = Normal;
-		info.attributes[Normal].index = std::stoi(attributesInfo.substr(attributesInfo.find("NORMAL") + 9, 1));
+		std::string accessContent = accessors[std::stoi(normalsIndex)];
+		std::string viewContent = views[std::stoi(GetValue(accessContent, "bufferView"))];
+		info.attributes[Normal] = GetAttribute(accessContent, viewContent);
+		info.size = std::max(info.size, std::stoul(info.attributes[Normal].count));
 	}
 
-	if (primitivesInfo.contains("indices"))
+	if (indicesIndex != "")
 	{
-		info.indexInfo.index = std::stoi(primitivesInfo.substr(primitivesInfo.find("indices") + 10, 1));
+		info.indexConfig = VK_INDEX_TYPE_UINT16;
+		std::string accessContent = accessors[std::stoi(indicesIndex)];
+		std::string viewContent = views[std::stoi(GetValue(accessContent, "bufferView"))];
+		info.indexInfo = GetAttribute(accessContent, viewContent);
 	}
-
-	//Continue by parsing accessor information!!!!!!1
 
 	return (info);
 }
@@ -86,18 +127,20 @@ ModelInfo Loader::GetObjInfo(const std::string& name)
 	return (data);
 }
 
-/*ModelData Loader::LoadModel(const std::string& name, const ModelType& type)
+void Loader::GetBytes(const std::string& name, char* address, size_t offset, size_t size)
 {
-	switch (type)
-	{
-		case ModelType::Obj: return (LoadObj(name)); break;
-		case ModelType::Gltf: return (LoadGltf(name)); break;
-	}
+	std::string path = Utilities::GetPath() + "/resources/" + name + ".bin";
+	std::ifstream file(path, std::ios::binary);
 
-	throw (std::runtime_error("Not a valid mode type"));
+	if (!file.is_open()) throw (std::runtime_error("Failed to open file: " + name));
+
+	file.seekg(offset);
+	file.read(address, size);
+
+	file.close();
 }
 
-ModelData Loader::LoadObj(const std::string& name)
+/*ModelData Loader::LoadObj(const std::string& name)
 {
 	ModelData data{};
 	std::string path = Utilities::GetPath();
@@ -134,35 +177,6 @@ ModelData Loader::LoadObj(const std::string& name)
 			}
 		}
 	}
-
-	data.size = data.positions.size();
-
-	return (data);
-}
-
-ModelData Loader::LoadGltf(const std::string& name)
-{
-	ModelData data{};
-	std::string path = Utilities::GetPath();
-	std::string fullName = path + "/resources/" + name + ".bin";
-
-	std::ifstream file(fullName.c_str(), std::ios::binary);
-
-	if (!file.is_open()) throw std::runtime_error("Failed to open file: " + path);
-
-	file.seekg(0);
-	data.positions.resize(1031);
-	file.read(reinterpret_cast<char*>(data.positions.data()), 1031 * 3 * sizeof(float));
-
-	file.seekg(12372);
-	data.normals.resize(1031);
-	file.read(reinterpret_cast<char*>(data.normals.data()), 1031 * 3 * sizeof(float));
-
-	file.seekg(32992);
-	data.indices.resize(5970);
-	file.read(reinterpret_cast<char*>(data.indices.data()), 5970 * sizeof(uint16_t));
-	
-	file.close();
 
 	data.size = data.positions.size();
 

@@ -29,38 +29,51 @@ void Shape<V, I>::Create(ShapeType type)
 }
 
 SHAPE_TEMPLATE
-void Shape<V, I>::Create(const ModelInfo& modelInfo)
+void Shape<V, I>::Create(ModelInfo& info)
 {
-	//ObjData data = Loader::LoadObj(path + "/resources/" + file);
-	//GltfData data = Loader::LoadGltf(file);
-
-	/*vertices.resize(model.size);
+	vertices.resize(info.size);
 
 	if constexpr (hasPosition)
 	{
-		size_t i = 0;
-		for (const point3D& point : model.positions)
+		if (Bitmask::HasFlag(info.vertexConfig, Position))
 		{
-			vertices[i++].position = point;
+			AttributeInfo& attributeInfo = info.attributes[Position];
+			std::vector<point3D> positions(attributeInfo.Count());
+			size_t offset = attributeInfo.Offset();
+			size_t length = attributeInfo.Length();
+			Loader::GetBytes(info.name, reinterpret_cast<char*>(positions.data()), offset, length);
+
+			size_t i = 0;
+			for (const point3D& point : positions) { vertices[i++].position = point; }
 		}
 	}
 
 	if constexpr (hasNormal)
 	{
-		size_t i = 0;
-		for (const point3D& point : model.normals)
+		if (Bitmask::HasFlag(info.vertexConfig, Normal))
 		{
-			vertices[i++].normal = point;
+			AttributeInfo& attributeInfo = info.attributes[Normal];
+			std::vector<point3D> normals(attributeInfo.Count());
+			size_t offset = attributeInfo.Offset();
+			size_t length = attributeInfo.Length();
+			Loader::GetBytes(info.name, reinterpret_cast<char*>(normals.data()), offset, length);
+
+			size_t i = 0;
+			for (const point3D& point : normals) { vertices[i++].normal = point; }
 		}
 	}
 
 	if constexpr (hasIndices)
 	{
-		for (const uint16_t& index : model.indices)
+		if (info.indexConfig != VK_INDEX_TYPE_NONE_KHR)
 		{
-			indices.push_back(index);
+			AttributeInfo& attributeInfo = info.indexInfo;
+			indices.resize(attributeInfo.Count());
+			size_t offset = attributeInfo.Offset();
+			size_t length = attributeInfo.Length();
+			Loader::GetBytes(info.name, reinterpret_cast<char*>(indices.data()), offset, length);
 		}
-	}*/
+	}
 }
 
 SHAPE_TEMPLATE

@@ -39,7 +39,7 @@ class Shape
 		~Shape();
 
 		void Create(ShapeType type);
-		void Create(const ModelInfo& modelInfo);
+		void Create(ModelInfo& info);
 
 		const std::vector<Vertex<V>>& GetVertices() const;
 		const std::vector<indexType>& GetIndices() const;
