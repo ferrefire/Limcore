@@ -7,6 +7,57 @@
 #include <sstream>
 #include <filesystem>
 
+ByteReader::ByteReader(const uint8_t* data, size_t size) : position(data), end(data + size) {}
+
+size_t ByteReader::BytesLeft() const
+{
+	return (CST(end - position));
+}
+
+size_t ByteReader::Offset(const uint8_t* base) const
+{
+	return (CST(position - base));
+}
+
+uint8_t ByteReader::Read8()
+{
+	if (position >= end) throw (std::runtime_error("Byte reader out of bounds (8)"));
+
+	//return (*position++);
+
+	uint8_t result = position[0];
+	position++;
+	
+	return (result);
+}
+
+uint16_t ByteReader::Read16()
+{
+	if (end - position < 2) throw (std::runtime_error("Byte reader out of bounds (16)"));
+
+	uint16_t result = ((C16(position[0]) << 8) | C16(position[1]));
+	position += 2;
+
+	return (result);
+}
+
+uint32_t ByteReader::Read32()
+{
+	if (end - position < 4) throw (std::runtime_error("Byte reader out of bounds (32)"));
+
+	uint32_t result = ((C32(position[0]) << 24) | (C32(position[1]) << 16) | (C32(position[2]) << 8) | C32(position[3]));
+	position += 4;
+
+	return (result);
+}
+
+void ByteReader::Skip(size_t bytes)
+{
+	if (BytesLeft() < bytes) throw (std::runtime_error("Byte reader out of bounds (Skip)"));
+
+	position += bytes;
+}
+
 std::string Loader::GetValue(const std::string& content, const std::string& target)
 {
 	if (!content.contains(target)) return ("");
@@ -119,10 +170,6 @@ ModelInfo Loader::GetGltfInfo(const std::string& name)
 ModelInfo Loader::GetObjInfo(const std::string& name)
 {
 	ModelInfo data{};
-	//std::string path = Utilities::GetPath() + "/resources/" + name + ".gltf";
-	//std::string file = Utilities::FileToString(path);
-
-	
 
 	return (data);
 }
