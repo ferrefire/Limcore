@@ -50,7 +50,7 @@ ModelInfo Loader::GetGltfInfo(const std::string& name)
 
 	info.name = name;
 
-	std::string path = Utilities::GetPath() + "/resources/" + name + ".gltf";
+	std::string path = Utilities::GetPath() + "/resources/models/" + name + ".gltf";
 	std::string file = Utilities::FileToString(path);
 
 	std::pair<size_t, size_t> range = Utilities::FindPair(file, file.find("meshes"), {'[', ']'});
@@ -129,7 +129,7 @@ ModelInfo Loader::GetObjInfo(const std::string& name)
 
 void Loader::GetBytes(const std::string& name, char* address, size_t offset, size_t size)
 {
-	std::string path = Utilities::GetPath() + "/resources/" + name + ".bin";
+	std::string path = Utilities::GetPath() + "/resources/models/" + name + ".bin";
 	std::ifstream file(path, std::ios::binary);
 
 	if (!file.is_open()) throw (std::runtime_error("Failed to open file: " + name));

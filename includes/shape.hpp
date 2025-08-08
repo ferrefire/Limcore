@@ -36,16 +36,21 @@ class Shape
 	public:
 		Shape();
 		Shape(ShapeType type);
+		Shape(ModelInfo info);
 		~Shape();
 
 		void Create(ShapeType type);
-		void Create(ModelInfo& info);
+		void Create(ModelInfo info);
+
+		void Destroy();
 
 		const std::vector<Vertex<V>>& GetVertices() const;
 		const std::vector<indexType>& GetIndices() const;
 
 		void Move(const point3D& translation);
 		void Rotate(const float& degrees, const Axis& axis);
+		void Centerize();
+		void Scalarize();
 		void Join(const Shape<V, I>& other);
 };
 

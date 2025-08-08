@@ -15,7 +15,6 @@ struct DescriptorConfig
 	uint32_t count = 1;
 };
 
-
 class Descriptor
 {
     private:
@@ -24,11 +23,11 @@ class Descriptor
 
         VkDescriptorSetLayout layout = nullptr;
 		VkDescriptorPool pool = nullptr;
-		VkDescriptorSet set = nullptr;
+		std::vector<VkDescriptorSet> sets;
 
 		void CreateLayout();
 		void CreatePool();
-		void AllocateSet();
+		void AllocateSet(VkDescriptorSet& set);
 
     public:
         Descriptor();
@@ -41,8 +40,9 @@ class Descriptor
 		const std::vector<DescriptorConfig>& GetConfig() const;
 		const VkDescriptorSetLayout& GetLayout() const;
 
-		void Bind(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
-		void Update(uint32_t binding, VkDescriptorBufferInfo* bufferInfo, VkDescriptorImageInfo* imageInfo);
+		size_t GetNewSet();
+		void Bind(size_t setID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
+		void Update(size_t setID, uint32_t binding, VkDescriptorBufferInfo* bufferInfo, VkDescriptorImageInfo* imageInfo);
 };
 
 std::ostream& operator<<(std::ostream& out, const DescriptorConfig& config);

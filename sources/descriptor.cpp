@@ -25,7 +25,6 @@ void Descriptor::Create(const std::vector<DescriptorConfig>& descriptorConfig, D
 
 	CreateLayout();
 	CreatePool();
-	AllocateSet();
 }
 
 void Descriptor::CreateLayout()
@@ -60,20 +59,20 @@ void Descriptor::CreatePool()
 	for (int i = 0; i < config.size(); i++)
 	{
 		poolSizes[i].type = config[i].type;
-		poolSizes[i].descriptorCount = config[i].count;
+		poolSizes[i].descriptorCount = config[i].count * 10;
 	}
 
 	VkDescriptorPoolCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	createInfo.poolSizeCount = CUI(poolSizes.size());
 	createInfo.pPoolSizes = poolSizes.data();
-	createInfo.maxSets = 1;
+	createInfo.maxSets = 10; //Make value dynamic
 
 	if (vkCreateDescriptorPool(device->GetLogicalDevice(), &createInfo, nullptr, &pool) != VK_SUCCESS)
 		throw (std::runtime_error("Failed to create descriptor pool"));
 }
 
-void Descriptor::AllocateSet()
+void Descriptor::AllocateSet(VkDescriptorSet& set)
 {
 	if (set) throw (std::runtime_error("Descriptor set is already allocated"));
 	if (!layout) throw (std::runtime_error("Descriptor has no layout"));
@@ -99,7 +98,7 @@ void Descriptor::Destroy()
 		vkDestroyDescriptorPool(device->GetLogicalDevice(), pool, nullptr);
 		pool = nullptr;
 
-		set = nullptr;
+		sets.clear();
 	}
 
 	if (layout)
@@ -121,23 +120,35 @@ const std::vector<DescriptorConfig>& Descriptor::GetConfig() const
 	return (config);
 }
 
-void Descriptor::Bind(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
+size_t Descriptor::GetNewSet()
+{
+	if (sets.size() >= 10) throw (std::runtime_error("Maximum amount of sets already allocated"));
+
+	size_t setID = sets.size();
+	sets.resize(setID + 1);
+
+	AllocateSet(sets[setID]);
+
+	return (setID);
+}
+
+void Descriptor::Bind(size_t setID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
 {
 	if (!commandBuffer) throw (std::runtime_error("Cannot bind descriptor because command buffer does not exist"));
 	if (!pipelineLayout) throw (std::runtime_error("Cannot bind descriptor because pipeline layout does not exist"));
-	if (!set) throw (std::runtime_error("Descriptor has no set"));
+	if (!sets[setID]) throw (std::runtime_error("Descriptor has no set"));
 
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &set, 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &sets[setID], 0, nullptr);
 }
 
-void Descriptor::Update(uint32_t binding, VkDescriptorBufferInfo* bufferInfo = nullptr, VkDescriptorImageInfo* imageInfo = nullptr)
+void Descriptor::Update(size_t setID, uint32_t binding, VkDescriptorBufferInfo* bufferInfo = nullptr, VkDescriptorImageInfo* imageInfo = nullptr)
 {
-	if (!set) throw (std::runtime_error("Descriptor has no set"));
+	if (!sets[setID]) throw (std::runtime_error("Descriptor has no set"));
 	if (!device) throw (std::runtime_error("Descriptor has no device"));
 
 	VkWriteDescriptorSet writeInfo{};
 	writeInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeInfo.dstSet = set;
+	writeInfo.dstSet = sets[setID];
 	writeInfo.dstBinding = binding;
 	writeInfo.dstArrayElement = 0;
 	writeInfo.descriptorType = config[binding].type;

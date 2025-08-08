@@ -13,6 +13,12 @@ Shape<V, I>::Shape(ShapeType type)
 }
 
 SHAPE_TEMPLATE
+Shape<V, I>::Shape(ModelInfo info)
+{
+	Create(info);
+}
+
+SHAPE_TEMPLATE
 Shape<V, I>::~Shape()
 {
 	
@@ -21,6 +27,8 @@ Shape<V, I>::~Shape()
 SHAPE_TEMPLATE
 void Shape<V, I>::Create(ShapeType type)
 {
+	Destroy();
+
 	switch (type)
 	{
 		case ShapeType::Quad: CreateQuad(); break;
@@ -29,8 +37,10 @@ void Shape<V, I>::Create(ShapeType type)
 }
 
 SHAPE_TEMPLATE
-void Shape<V, I>::Create(ModelInfo& info)
+void Shape<V, I>::Create(ModelInfo info)
 {
+	Destroy();
+
 	vertices.resize(info.size);
 
 	if constexpr (hasPosition)
@@ -77,6 +87,13 @@ void Shape<V, I>::Create(ModelInfo& info)
 }
 
 SHAPE_TEMPLATE
+void Shape<V, I>::Destroy()
+{
+	vertices.clear();
+	indices.clear();
+}
+
+SHAPE_TEMPLATE
 void Shape<V, I>::CreateQuad()
 {
 	vertices.resize(4);
@@ -100,10 +117,10 @@ void Shape<V, I>::CreateQuad()
 
 	if constexpr (hasNormal)
 	{
-		vertices[0].normal = point3D(0, 0, -1);
-		vertices[1].normal = point3D(0, 0, -1);
-		vertices[2].normal = point3D(0, 0, -1);
-		vertices[3].normal = point3D(0, 0, -1);
+		vertices[0].normal = point3D(0, 0, 1);
+		vertices[1].normal = point3D(0, 0, 1);
+		vertices[2].normal = point3D(0, 0, 1);
+		vertices[3].normal = point3D(0, 0, 1);
 	}
 
 	if constexpr (hasIndices)
@@ -120,27 +137,27 @@ void Shape<V, I>::CreateQuad()
 SHAPE_TEMPLATE
 void Shape<V, I>::CreateCube()
 {
-	Shape<V, I> near(ShapeType::Quad);
-	near.Move(point3D(0, 0, -0.5));
-
 	Shape<V, I> far(ShapeType::Quad);
-	far.Rotate(180, Axis::y);
 	far.Move(point3D(0, 0, 0.5));
 
+	Shape<V, I> near(ShapeType::Quad);
+	near.Rotate(180, Axis::y);
+	near.Move(point3D(0, 0, -0.5));
+
 	Shape<V, I> right(ShapeType::Quad);
-	right.Rotate(90, Axis::y);
+	right.Rotate(-90, Axis::y);
 	right.Move(point3D(0.5, 0, 0));
 
 	Shape<V, I> left(ShapeType::Quad);
-	left.Rotate(-90, Axis::y);
+	left.Rotate(90, Axis::y);
 	left.Move(point3D(-0.5, 0, 0));
 
 	Shape<V, I> top(ShapeType::Quad);
-	top.Rotate(90, Axis::x);
+	top.Rotate(-90, Axis::x);
 	top.Move(point3D(0, 0.5, 0));
 
 	Shape<V, I> bottom(ShapeType::Quad);
-	bottom.Rotate(-90, Axis::x);
+	bottom.Rotate(90, Axis::x);
 	bottom.Move(point3D(0, -0.5, 0));
 
 	Join(near);
@@ -190,6 +207,62 @@ void Shape<V, I>::Rotate(const float& degrees, const Axis& axis)
 			vertex.normal.Rotate(degrees, axis);
 			vertex.normal.Unitize();
 		}
+	}
+}
+
+SHAPE_TEMPLATE
+void Shape<V, I>::Centerize()
+{
+	if (!hasPosition) return;
+
+	point3D boundsX;
+	point3D boundsY;
+	point3D boundsZ;
+
+	for (const Vertex<V>& vertex : vertices)
+	{
+		if (vertex.position.x() < boundsX.x()) boundsX.x() = vertex.position.x();
+		if (vertex.position.x() > boundsX.y()) boundsX.y() = vertex.position.x();
+
+		if (vertex.position.y() < boundsY.x()) boundsY.x() = vertex.position.y();
+		if (vertex.position.y() > boundsY.y()) boundsY.y() = vertex.position.y();
+
+		if (vertex.position.z() < boundsZ.x()) boundsZ.x() = vertex.position.z();
+		if (vertex.position.z() > boundsZ.y()) boundsZ.y() = vertex.position.z();
+	}
+
+	point3D center;
+	center.x() = (boundsX.x() + boundsX.y()) / 2.0;
+	center.y() = (boundsY.x() + boundsY.y()) / 2.0;
+	center.z() = (boundsZ.x() + boundsZ.y()) / 2.0;
+
+	for (Vertex<V>& vertex : vertices)
+	{
+		vertex.position -= center;
+	}
+}
+
+SHAPE_TEMPLATE
+void Shape<V, I>::Scalarize()
+{
+	if (!hasPosition) return;
+
+	Centerize();
+
+	float max = 0;
+
+	for (const Vertex<V>& vertex : vertices)
+	{
+		max = std::max(std::abs(vertex.position.x()), max);
+		max = std::max(std::abs(vertex.position.y()), max);
+		max = std::max(std::abs(vertex.position.z()), max);
+	}
+
+	float divider = max * 2;
+
+	for (Vertex<V>& vertex : vertices)
+	{
+		vertex.position /= divider;
 	}
 }
 

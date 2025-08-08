@@ -228,6 +228,8 @@ Matrix<R, C, T> Matrix<R, C, T>::Scalar(const Point<T, C>& scalar)
 		result(i, i) *= scalar[i];
 	}
 
+	result(C - 1, C - 1) = 1.0;
+
 	return (result);
 }
 
