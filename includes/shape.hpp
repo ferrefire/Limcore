@@ -36,11 +36,11 @@ class Shape
 	public:
 		Shape();
 		Shape(ShapeType type);
-		Shape(ModelInfo info);
+		Shape(ModelLoader loader);
 		~Shape();
 
 		void Create(ShapeType type);
-		void Create(ModelInfo info);
+		void Create(ModelLoader loader);
 
 		void Destroy();
 
@@ -51,7 +51,7 @@ class Shape
 		void Rotate(const float& degrees, const Axis& axis);
 		void Centerize();
 		void Scalarize();
-		void Join(const Shape<V, I>& other);
+		void Join(const Shape<V, I>& other, bool offset = true);
 };
 
 #include "shape.tpp"

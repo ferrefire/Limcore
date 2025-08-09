@@ -13,9 +13,9 @@ Shape<V, I>::Shape(ShapeType type)
 }
 
 SHAPE_TEMPLATE
-Shape<V, I>::Shape(ModelInfo info)
+Shape<V, I>::Shape(ModelLoader loader)
 {
-	Create(info);
+	Create(loader);
 }
 
 SHAPE_TEMPLATE
@@ -37,24 +37,24 @@ void Shape<V, I>::Create(ShapeType type)
 }
 
 SHAPE_TEMPLATE
-void Shape<V, I>::Create(ModelInfo info)
+void Shape<V, I>::Create(ModelLoader loader)
 {
 	Destroy();
 
+	const ModelInfo& info = loader.GetInfo();
 	vertices.resize(info.size);
 
 	if constexpr (hasPosition)
 	{
 		if (Bitmask::HasFlag(info.vertexConfig, Position))
 		{
-			AttributeInfo& attributeInfo = info.attributes[Position];
-			std::vector<point3D> positions(attributeInfo.Count());
-			size_t offset = attributeInfo.Offset();
-			size_t length = attributeInfo.Length();
-			Loader::GetBytes(info.name, reinterpret_cast<char*>(positions.data()), offset, length);
+			std::vector<point3D> positions(info.GetAttribute(AttributeType::Position).Count());
+			loader.GetBytes(reinterpret_cast<char*>(positions.data()), AttributeType::Position);
+
+			point3D offset = info.GetAttribute(AttributeType::Position).Translation();
 
 			size_t i = 0;
-			for (const point3D& point : positions) { vertices[i++].position = point; }
+			for (const point3D& point : positions) { vertices[i++].position = point + offset; }
 		}
 	}
 
@@ -62,11 +62,8 @@ void Shape<V, I>::Create(ModelInfo info)
 	{
 		if (Bitmask::HasFlag(info.vertexConfig, Normal))
 		{
-			AttributeInfo& attributeInfo = info.attributes[Normal];
-			std::vector<point3D> normals(attributeInfo.Count());
-			size_t offset = attributeInfo.Offset();
-			size_t length = attributeInfo.Length();
-			Loader::GetBytes(info.name, reinterpret_cast<char*>(normals.data()), offset, length);
+			std::vector<point3D> normals(info.GetAttribute(AttributeType::Normal).Count());
+			loader.GetBytes(reinterpret_cast<char*>(normals.data()), AttributeType::Normal);
 
 			size_t i = 0;
 			for (const point3D& point : normals) { vertices[i++].normal = point; }
@@ -77,12 +74,19 @@ void Shape<V, I>::Create(ModelInfo info)
 	{
 		if (info.indexConfig != VK_INDEX_TYPE_NONE_KHR)
 		{
-			AttributeInfo& attributeInfo = info.indexInfo;
-			indices.resize(attributeInfo.Count());
-			size_t offset = attributeInfo.Offset();
-			size_t length = attributeInfo.Length();
-			Loader::GetBytes(info.name, reinterpret_cast<char*>(indices.data()), offset, length);
+			indices.resize(info.GetAttribute(AttributeType::Index).Count());
+			std::vector<uint16_t> tempIndices(info.GetAttribute(AttributeType::Index).Count());
+			loader.GetBytes(reinterpret_cast<char*>(tempIndices.data()), AttributeType::Index);
+
+			size_t i = 0;
+			for (const uint16_t& index : tempIndices) { indices[i++] = static_cast<indexType>(index); }
 		}
+	}
+
+	if (info.count > 0)
+	{
+		Shape<V, I> other(ModelLoader(info.name, info.type, info.ID + 1));
+		Join(other);
 	}
 }
 
@@ -267,9 +271,9 @@ void Shape<V, I>::Scalarize()
 }
 
 SHAPE_TEMPLATE
-void Shape<V, I>::Join(const Shape<V, I>& other)
+void Shape<V, I>::Join(const Shape<V, I>& other, bool offset)
 {
-	const indexType count = static_cast<indexType>(vertices.size());
+	const indexType count = (offset ? static_cast<indexType>(vertices.size()) : 0);
 
 	for (const Vertex<V>& vertex : other.GetVertices())
 	{

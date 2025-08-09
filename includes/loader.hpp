@@ -15,7 +15,7 @@
 #define C32(a) static_cast<uint32_t>(a)
 
 enum class ModelType { None, Obj, Gltf };
-enum class AttributeType { None, Float, Int };
+enum class AttributeType { None, Position, Normal, Coordinate, Color, Index };
 enum class ImageType { None, Jpg, Png };
 
 struct AttributeInfo
@@ -32,20 +32,26 @@ struct AttributeInfo
 	std::string buffer;
 	std::string length;
 	std::string offset;
+	std::string translation = "0, 0, 0";
 
-	size_t Count() { return (std::stoul(count)); }
-	size_t Offset() { return (std::stoul(offset)); }
-	size_t Length() { return (std::stoul(length)); }
+	size_t Count() const { return (std::stoul(count)); }
+	size_t Offset() const { return (std::stoul(offset)); }
+	size_t Length() const { return (std::stoul(length)); }
+	point3D Translation() const;
 };
 
 struct ModelInfo
 {
 	std::string name = "";
+	ModelType type = ModelType::None;
+	size_t ID = 0;
+	size_t count = 0;
 	size_t size = 0;
 	VertexConfig vertexConfig = None;
 	VkIndexType indexConfig = VK_INDEX_TYPE_NONE_KHR;
-	AttributeInfo indexInfo{};
-	std::map<VertexConfigBits, AttributeInfo> attributes;
+	std::map<AttributeType, AttributeInfo> attributes;
+
+	const AttributeInfo& GetAttribute(const AttributeType& type) const;
 };
 
 struct ImageInfo
@@ -71,17 +77,36 @@ class ByteReader
 		void Skip(size_t bytes);
 };
 
-class Loader
+class ModelLoader
 {
 	private:
-		static std::string GetValue(const std::string& content, const std::string& target);
-		static AttributeInfo GetAttribute(const std::string& accessContent, const std::string& viewContent);
-		static ModelInfo GetObjInfo(const std::string& name);
-		static ModelInfo GetGltfInfo(const std::string& name);
+		ModelInfo info{};
+
+		std::string GetPart(const std::string& content, const std::string& target, const std::pair<char, char>& pair);
+		std::vector<std::string> GetList(const std::string& content, const std::string& target, const std::pair<char, char>& pair);
+		AttributeInfo GetAttribute(const std::string& accessContent, const std::string& viewContent) const;
+		std::string GetValue(const std::string& content, const std::string& target)  const;
+		void GetObjInfo(const std::string& name, size_t meshID);
+		void GetGltfInfo(const std::string& name, size_t meshID);
 
 	public:
-		static ModelInfo GetModelInfo(const std::string& name, const ModelType& type);
-		static ImageInfo GetImageInfo(const std::string& name, const ImageType& type);
+		ModelLoader(const std::string& name, const ModelType& type, size_t meshID = 0);
+		~ModelLoader();
 
-		static void GetBytes(const std::string& name, char* address, size_t offset, size_t size);
+		const ModelInfo& GetInfo() const;
+		void GetBytes(char* address, const AttributeType& type);
+};
+
+class ImageLoader
+{
+	private:
+		ImageInfo info{};
+
+		void GetJpgInfo(const std::string& name);
+
+	public:
+		ImageLoader(const std::string& name, const ImageType& type);
+		~ImageLoader();
+
+
 };

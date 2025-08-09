@@ -4,6 +4,8 @@
 #include <sstream>
 #include <filesystem>
 #include <cmath>
+#include <algorithm>
+#include <iostream>
 
 std::string Utilities::GetPath()
 {
@@ -78,7 +80,7 @@ std::vector<std::string> Utilities::FileToLines(const std::string& path)
 	return (result);
 }
 
-std::pair<size_t, size_t> Utilities::FindPair(const std::string& string, size_t begin, const std::pair<char, char>& pair)
+/*std::pair<size_t, size_t> Utilities::FindPair(const std::string& string, size_t begin, const std::pair<char, char>& pair)
 {
 	std::pair<size_t, size_t> result(begin, begin);
 
@@ -99,6 +101,39 @@ std::pair<size_t, size_t> Utilities::FindPair(const std::string& string, size_t 
 	}
 
 	if (end != std::string::npos) result.second = end;
+
+	return (result);
+}*/
+
+std::pair<size_t, size_t> Utilities::FindPair(const std::string& string, size_t begin, const std::pair<char, char>& pair)
+{
+	std::pair<size_t, size_t> result(begin, begin);
+
+	size_t start = string.find(pair.first, begin);
+	size_t position = start;
+
+	size_t openings = 1;
+	size_t closings = 0;
+
+	while (openings != closings)
+	{
+		if (position == std::string::npos || position >= string.size()) break;
+
+		position++;
+
+		size_t nextOpening = string.find(pair.first, position);
+		size_t nextClosing = string.find(pair.second, position);
+
+		if (nextOpening < nextClosing) openings++;
+		else if (nextClosing < nextOpening) closings++;
+
+		position = std::min(nextOpening, nextClosing);
+	}
+	
+	if (openings != closings) return (result);
+
+	result.first = start;
+	result.second = position;
 
 	return (result);
 }
