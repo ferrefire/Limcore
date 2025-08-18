@@ -86,8 +86,8 @@ void Manager::Destroy()
 
 	for (std::function<void()> call : endCalls) { call(); }
 
-	DestroyGLFW();
 	DestroyVulkan();
+	DestroyGLFW();
 }
 
 void Manager::DestroyGLFW()
