@@ -177,6 +177,7 @@ void ModelLoader::GetGltfInfo(const std::string& name, size_t meshID)
 
 	std::string positionsIndex = GetValue(meshes[meshID], "POSITION");
 	std::string normalsIndex = GetValue(meshes[meshID], "NORMAL");
+	std::string coordinatesIndex = GetValue(meshes[meshID], "TEXCOORD_0");
 	std::string indicesIndex = GetValue(meshes[meshID], "indices");
 
 	std::string accessInfo = GetPart(file, "accessors", {'[', ']'});
@@ -212,6 +213,15 @@ void ModelLoader::GetGltfInfo(const std::string& name, size_t meshID)
 		std::string viewContent = views[std::stoi(GetValue(accessContent, "bufferView"))];
 		info.attributes[AttributeType::Normal] = GetAttribute(accessContent, viewContent);
 		info.size = std::max(info.size, std::stoul(info.attributes[AttributeType::Normal].count));
+	}
+
+	if (coordinatesIndex != "")
+	{
+		info.vertexConfig = Bitmask::SetFlag(info.vertexConfig, Coordinate);
+		std::string accessContent = accessors[std::stoi(coordinatesIndex)];
+		std::string viewContent = views[std::stoi(GetValue(accessContent, "bufferView"))];
+		info.attributes[AttributeType::Coordinate] = GetAttribute(accessContent, viewContent);
+		info.size = std::max(info.size, std::stoul(info.attributes[AttributeType::Coordinate].count));
 	}
 
 	if (indicesIndex != "")
