@@ -11,12 +11,40 @@
 #include <map>
 
 #define CST(a) static_cast<size_t>(a)
+#define C8(a) static_cast<uint8_t>(a)
 #define C16(a) static_cast<uint16_t>(a)
 #define C32(a) static_cast<uint32_t>(a)
 
 enum class ModelType { None, Obj, Gltf };
 enum class AttributeType { None, Position, Normal, Coordinate, Color, Index };
 enum class ImageType { None, Jpg, Png };
+enum class ImageMarker 
+	{ 
+		SOI = 0xD8,
+		EOI = 0xD9,
+		SOS = 0xDA,
+		SOF0 = 0xC0,
+		APP0 = 0xE0,
+		APP1 = 0xE1,
+		APP2 = 0xE2,
+		APP3 = 0xE3,
+		APP4 = 0xE4,
+		APP5 = 0xE5,
+		APP6 = 0xE6,
+		APP7 = 0xE7,
+		APP8 = 0xE8,
+		APP9 = 0xE9,
+		APP10 = 0xEA,
+		APP11 = 0xEB,
+		APP12 = 0xEC,
+		APP13 = 0xED,
+		APP14 = 0xEE,
+		APP15 = 0xEF,
+		COM = 0xFE,
+		DQT = 0xDB,
+		DHT = 0xC4,
+		DRI = 0xDD,
+	};
 
 struct AttributeInfo
 {
@@ -56,7 +84,8 @@ struct ModelInfo
 
 struct ImageInfo
 {
-	
+	std::string name = "";
+	ImageType type = ImageType::None;
 };
 
 class ByteReader
@@ -75,6 +104,9 @@ class ByteReader
 		uint16_t Read16();
 		uint32_t Read32();
 		void Skip(size_t bytes);
+
+		bool AtMarker(ImageMarker marker);
+		ImageMarker NextMarker();
 };
 
 class ModelLoader

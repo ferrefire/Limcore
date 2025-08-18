@@ -192,6 +192,13 @@ void End()
 
 int main(int argc, char** argv)
 {
+	//std::cout << sizeof(char) << std::endl;
+	//std::cout << sizeof(uint8_t) << std::endl;
+
+	ImageLoader imageLoader("rubber_duck_toy_diff", ImageType::Jpg);
+
+	exit(EXIT_SUCCESS);
+
 	//uint8_t data[] = {1, 2, 3, 4, 5};
 	//uint32_t data = 6;
 	//ByteReader br((uint8_t*)&data, sizeof(data));

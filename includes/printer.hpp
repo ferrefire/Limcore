@@ -44,8 +44,8 @@ constexpr auto CreateMap(int val, std::index_sequence<elements...> sequence)
 template <typename T>
 constexpr std::string_view EnumName(T val)
 {
-	if (static_cast<int>(val) < 0 || static_cast<int>(val) > 127) return ("UNKOWN");
-	const auto map = CreateMap<T>(static_cast<int>(val), std::make_index_sequence<128>{});
+	if (static_cast<int>(val) < 0 || static_cast<int>(val) > 255) return ("UNKOWN");
+	const auto map = CreateMap<T>(static_cast<int>(val), std::make_index_sequence<256>{});
 	return (map.names[static_cast<int>(val)]);
 }
 

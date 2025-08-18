@@ -2,6 +2,7 @@
 
 #include "utilities.hpp"
 #include "bitmask.hpp"
+#include "printer.hpp"
 
 #include <fstream>
 #include <sstream>
@@ -56,6 +57,30 @@ void ByteReader::Skip(size_t bytes)
 	if (BytesLeft() < bytes) throw (std::runtime_error("Byte reader out of bounds (Skip)"));
 
 	position += bytes;
+}
+
+bool ByteReader::AtMarker(ImageMarker marker)
+{
+	if (Read8() != 0xff) return (false);
+
+	uint8_t byte = Read8();
+
+	while (byte == 0xff) { byte = Read8(); }
+	
+	if (byte != C8(marker)) return (false);
+	
+	return (true);
+}
+
+ImageMarker ByteReader::NextMarker()
+{
+	while (Read8() != 0xff) { continue; }
+
+	uint8_t byte = Read8();
+
+	while (byte == 0xff) { byte = Read8(); }
+
+	return (static_cast<ImageMarker>(byte));
 }
 
 point3D AttributeInfo::Translation() const
@@ -261,7 +286,12 @@ void ModelLoader::GetBytes(char* address, const AttributeType& type)
 
 ImageLoader::ImageLoader(const std::string& name, const ImageType& type)
 {
-
+	switch (type)
+	{
+		case ImageType::Jpg: GetJpgInfo(name); break;
+		case ImageType::Png: return; break;
+		default: throw (std::runtime_error("Not a valid image type"));
+	}
 }
 
 ImageLoader::~ImageLoader()
@@ -271,5 +301,76 @@ ImageLoader::~ImageLoader()
 
 void ImageLoader::GetJpgInfo(const std::string& name)
 {
-	
+	info.name = name;
+	info.type = ImageType::Jpg;
+
+	std::string path = Utilities::GetPath() + "/resources/textures/" + name + ".jpg";
+	std::string file = Utilities::FileToString(path);
+	const uint8_t* data = reinterpret_cast<const uint8_t*>(file.c_str());
+
+	ByteReader br(data, file.size());
+
+	std::cout << "Total size: " << br.BytesLeft() << std::endl;
+	std::cout << std::endl;
+
+	if (br.AtMarker(ImageMarker::SOI)) std::cout << "SOI: " << br.BytesLeft() << std::endl << std::endl;
+
+	while (br.BytesLeft() > 1)
+	{
+		ImageMarker next = br.NextMarker();
+
+		if (next == ImageMarker::SOS)
+		{
+			std::cout << "SOS: " << br.BytesLeft() << std::endl;
+
+			size_t length = CST(br.Read16()) - 2;
+			std::cout << "Skipping: " << length << std::endl << std::endl;
+			br.Skip(length);
+		}
+		else if (next == ImageMarker::SOF0)
+		{
+			std::cout << "SOF0: " << br.BytesLeft() << std::endl;
+			std::cout << "Length: " << (int)br.Read16() << std::endl;
+			std::cout << "Precision: " << (int)br.Read8() << std::endl;
+			std::cout << "Height: " << (int)br.Read16() << std::endl;
+			std::cout << "Width: " << (int)br.Read16() << std::endl;
+			std::cout << "Components: " << (int)br.Read8() << std::endl;
+			std::cout << std::endl;
+		}
+		else if (next == ImageMarker::EOI)
+		{
+			std::cout << "EOI: " << br.BytesLeft() << std::endl;
+			std::cout << std::endl;
+		}
+		else if ((next >= ImageMarker::APP0 && next <= ImageMarker::APP15) || next == ImageMarker::COM)
+		{
+			size_t length = CST(br.Read16()) - 2;
+			std::cout << "Skipping: " << length << std::endl << std::endl;
+			br.Skip(length);
+		}
+		else if (next == ImageMarker::DQT)
+		{
+			std::cout << "DQT: " << br.BytesLeft() << std::endl;
+
+			size_t length = CST(br.Read16()) - 2;
+			std::cout << "Skipping: " << length << std::endl << std::endl;
+			br.Skip(length);
+		}
+		else if (next == ImageMarker::DHT)
+		{
+			std::cout << "DHT: " << br.BytesLeft() << std::endl;
+
+			size_t length = CST(br.Read16()) - 2;
+			std::cout << "Skipping: " << length << std::endl << std::endl;
+			br.Skip(length);
+		}
+		else if (next == ImageMarker::DRI)
+		{
+			std::cout << "DRI: " << br.BytesLeft() << std::endl;
+
+			size_t length = CST(br.Read16()) - 2;
+			std::cout << "Skipping: " << length << std::endl << std::endl;
+			br.Skip(length);
+		}
+	}
 }
