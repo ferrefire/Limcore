@@ -160,7 +160,7 @@ VertexInfo Mesh<V, I>::GetVertexInfo()
 	VertexInfo vertexInfo{};
 
 	vertexInfo.bindingCount = 1;
-	vertexInfo.attributeCount = hasPosition + hasCoordinate + hasNormal + hasColor;
+	vertexInfo.attributeCount = hasPosition + hasNormal + hasCoordinate + hasColor;
 	vertexInfo.attributeDescriptions.resize(vertexInfo.attributeCount);
 	
 	vertexInfo.bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -177,15 +177,6 @@ VertexInfo Mesh<V, I>::GetVertexInfo()
 		vertexInfo.bindingDescription.stride += sizeof(point3D);
 		index++;
 	}
-	if (hasCoordinate)
-	{
-		vertexInfo.attributeDescriptions[index].binding = 0;
-		vertexInfo.attributeDescriptions[index].location = index;
-		vertexInfo.attributeDescriptions[index].format = VK_FORMAT_R32G32_SFLOAT;
-		vertexInfo.attributeDescriptions[index].offset = vertexInfo.bindingDescription.stride;
-		vertexInfo.bindingDescription.stride += sizeof(point2D);
-		index++;
-	}
 	if (hasNormal)
 	{
 		vertexInfo.attributeDescriptions[index].binding = 0;
@@ -193,6 +184,15 @@ VertexInfo Mesh<V, I>::GetVertexInfo()
 		vertexInfo.attributeDescriptions[index].format = VK_FORMAT_R32G32B32_SFLOAT;
 		vertexInfo.attributeDescriptions[index].offset = vertexInfo.bindingDescription.stride;
 		vertexInfo.bindingDescription.stride += sizeof(point3D);
+		index++;
+	}
+	if (hasCoordinate)
+	{
+		vertexInfo.attributeDescriptions[index].binding = 0;
+		vertexInfo.attributeDescriptions[index].location = index;
+		vertexInfo.attributeDescriptions[index].format = VK_FORMAT_R32G32_SFLOAT;
+		vertexInfo.attributeDescriptions[index].offset = vertexInfo.bindingDescription.stride;
+		vertexInfo.bindingDescription.stride += sizeof(point2D);
 		index++;
 	}
 	if (hasColor)

@@ -70,6 +70,18 @@ void Shape<V, I>::Create(ModelLoader loader)
 		}
 	}
 
+	if constexpr (hasCoordinate)
+	{
+		if (Bitmask::HasFlag(info.vertexConfig, Coordinate))
+		{
+			std::vector<point2D> coordinates(info.GetAttribute(AttributeType::Coordinate).Count());
+			loader.GetBytes(reinterpret_cast<char*>(coordinates.data()), AttributeType::Coordinate);
+
+			size_t i = 0;
+			for (const point2D& point : coordinates) { vertices[i++].coordinate = point; }
+		}
+	}
+
 	if constexpr (hasIndices)
 	{
 		if (info.indexConfig != VK_INDEX_TYPE_NONE_KHR)
@@ -111,20 +123,20 @@ void Shape<V, I>::CreateQuad()
 		
 	}
 
-	if constexpr (hasCoordinate)
-	{
-		vertices[0].coordinate = point2D(0.0f, 0.0f);
-		vertices[1].coordinate = point2D(1.0f, 0.0f);
-		vertices[2].coordinate = point2D(1.0f, 1.0f);
-		vertices[3].coordinate = point2D(0.0f, 1.0f);
-	}
-
 	if constexpr (hasNormal)
 	{
 		vertices[0].normal = point3D(0, 0, 1);
 		vertices[1].normal = point3D(0, 0, 1);
 		vertices[2].normal = point3D(0, 0, 1);
 		vertices[3].normal = point3D(0, 0, 1);
+	}
+
+	if constexpr (hasCoordinate)
+	{
+		vertices[0].coordinate = point2D(0.0f, 0.0f);
+		vertices[1].coordinate = point2D(1.0f, 0.0f);
+		vertices[2].coordinate = point2D(1.0f, 1.0f);
+		vertices[3].coordinate = point2D(0.0f, 1.0f);
 	}
 
 	if constexpr (hasIndices)
