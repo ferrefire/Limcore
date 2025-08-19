@@ -195,7 +195,12 @@ int main(int argc, char** argv)
 	//std::cout << sizeof(char) << std::endl;
 	//std::cout << sizeof(uint8_t) << std::endl;
 
+	//ImageLoader imageLoader("rubber_duck_toy_diff", ImageType::Jpg);
+
+	//std::vector<int> vals = { 90, 40, 0, 5, 0, 0, 4, 0, 0, 0 };
+
 	ImageLoader imageLoader("rubber_duck_toy_diff", ImageType::Jpg);
+	//ImageLoader imageLoader("croissant_diff", ImageType::Jpg);
 
 	exit(EXIT_SUCCESS);
 

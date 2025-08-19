@@ -330,11 +330,31 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 		else if (next == ImageMarker::SOF0)
 		{
 			std::cout << "SOF0: " << br.BytesLeft() << std::endl;
-			std::cout << "Length: " << (int)br.Read16() << std::endl;
-			std::cout << "Precision: " << (int)br.Read8() << std::endl;
-			std::cout << "Height: " << (int)br.Read16() << std::endl;
-			std::cout << "Width: " << (int)br.Read16() << std::endl;
-			std::cout << "Components: " << (int)br.Read8() << std::endl;
+
+			info.startOfFrameInfo.length = CST(br.Read16());
+			info.startOfFrameInfo.precision = CST(br.Read8());
+			info.startOfFrameInfo.height = CST(br.Read16());
+			info.startOfFrameInfo.width = CST(br.Read16());
+			info.startOfFrameInfo.componentCount = CST(br.Read8());
+			info.startOfFrameInfo.components.resize(info.startOfFrameInfo.componentCount);
+			for (point4D& component : info.startOfFrameInfo.components)
+			{
+				component.x() = CST(br.Read8());
+				uint8_t HV = br.Read8();
+				component.y() = HV >> 4;
+				component.z() = HV & 0x0F;
+				component.w() = CST(br.Read8());
+			}
+
+			std::cout << "Length: " << info.startOfFrameInfo.length << std::endl;
+			std::cout << "Precision: " << info.startOfFrameInfo.precision << std::endl;
+			std::cout << "Height: " << info.startOfFrameInfo.height << std::endl;
+			std::cout << "Width: " << info.startOfFrameInfo.width << std::endl;
+			std::cout << "Component count: " << info.startOfFrameInfo.componentCount << std::endl;
+			for (const point4D& component : info.startOfFrameInfo.components)
+			{
+				std::cout << component << std::endl;
+			}
 			std::cout << std::endl;
 		}
 		else if (next == ImageMarker::EOI)
@@ -352,9 +372,31 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 		{
 			std::cout << "DQT: " << br.BytesLeft() << std::endl;
 
-			size_t length = CST(br.Read16()) - 2;
-			std::cout << "Skipping: " << length << std::endl << std::endl;
-			br.Skip(length);
+			DQTInfo quantizationTable{};
+			quantizationTable.length = CST(br.Read16());
+			uint8_t PT = br.Read8();
+			quantizationTable.precision = CST(PT >> 4);
+			quantizationTable.ID = CST(PT & 0x0F);
+
+			for (size_t i = 0; i < 64; i++)
+			{
+				quantizationTable.values[zigzagTable[i]] = br.Read8();
+			}
+
+			info.quantizationTables.push_back(quantizationTable);
+
+			std::cout << "Length: " << quantizationTable.length << std::endl;
+			std::cout << "Precision: " << quantizationTable.precision << std::endl;
+			std::cout << "ID: " << quantizationTable.ID << std::endl;
+			for (size_t r = 0; r < 8; r++)
+			{
+				for (size_t c = 0; c < 8; c++)
+				{
+					std::cout << CST(quantizationTable.values[r * 8 + c]);
+				}
+				std::cout << std::endl;
+			}
+			std::cout << std::endl;
 		}
 		else if (next == ImageMarker::DHT)
 		{

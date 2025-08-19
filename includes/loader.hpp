@@ -9,11 +9,24 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <array>
 
 #define CST(a) static_cast<size_t>(a)
 #define C8(a) static_cast<uint8_t>(a)
 #define C16(a) static_cast<uint16_t>(a)
 #define C32(a) static_cast<uint32_t>(a)
+
+static const std::array<size_t, 64> zigzagTable = 
+	{
+		0, 1, 8, 16, 9, 2, 3, 10,
+		17, 24, 32, 25, 18, 11, 4, 5,
+		12, 19, 26, 33, 40, 48, 41, 34,
+		27, 20, 13, 6, 7, 14, 21, 28,
+		35, 42, 49, 56, 57, 50, 43, 36,
+		29, 22, 15, 23, 30, 37, 44, 51,
+		58, 59, 52, 45, 38, 31, 39, 46,
+		53, 60, 61, 54, 47, 55, 62, 63
+	};
 
 enum class ModelType { None, Obj, Gltf };
 enum class AttributeType { None, Position, Normal, Coordinate, Color, Index };
@@ -82,10 +95,31 @@ struct ModelInfo
 	const AttributeInfo& GetAttribute(const AttributeType& type) const;
 };
 
+struct SOF0Info
+{
+	size_t length = 0;
+	size_t precision = 0;
+	size_t height = 0;
+	size_t width = 0;
+	size_t componentCount = 0;
+	std::vector<point4D> components;
+};
+
+struct DQTInfo
+{
+	size_t length = 0;
+	size_t precision = 0;
+	size_t ID = 0;
+	std::array<uint8_t, 64> values{};
+};
+
 struct ImageInfo
 {
 	std::string name = "";
 	ImageType type = ImageType::None;
+
+	SOF0Info startOfFrameInfo{};
+	std::vector<DQTInfo> quantizationTables;
 };
 
 class ByteReader
