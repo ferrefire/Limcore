@@ -113,6 +113,27 @@ struct DQTInfo
 	std::array<uint8_t, 64> values{};
 };
 
+struct HuffmanCode
+{
+	uint8_t symbol;
+	uint8_t length;
+	uint16_t code;
+};
+
+struct DHTInfo
+{
+	size_t length = 0;
+	size_t type = 0;
+	size_t ID = 0;
+};
+
+struct SOSInfo
+{
+	size_t length = 0;
+	size_t componentCount = 0;
+	std::map<size_t, std::pair<size_t, size_t>> componentTables{};
+};
+
 struct ImageInfo
 {
 	std::string name = "";
@@ -120,6 +141,8 @@ struct ImageInfo
 
 	SOF0Info startOfFrameInfo{};
 	std::vector<DQTInfo> quantizationTables;
+	std::vector<DHTInfo> huffmanTables;
+	SOSInfo startOfScanInfo{};
 };
 
 class ByteReader

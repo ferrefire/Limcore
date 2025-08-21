@@ -319,15 +319,7 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 	{
 		ImageMarker next = br.NextMarker();
 
-		if (next == ImageMarker::SOS)
-		{
-			std::cout << "SOS: " << br.BytesLeft() << std::endl;
-
-			size_t length = CST(br.Read16()) - 2;
-			std::cout << "Skipping: " << length << std::endl << std::endl;
-			br.Skip(length);
-		}
-		else if (next == ImageMarker::SOF0)
+		if (next == ImageMarker::SOF0)
 		{
 			std::cout << "SOF0: " << br.BytesLeft() << std::endl;
 
@@ -340,17 +332,19 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 			for (point4D& component : info.startOfFrameInfo.components)
 			{
 				component.x() = CST(br.Read8());
+
 				uint8_t HV = br.Read8();
 				component.y() = HV >> 4;
 				component.z() = HV & 0x0F;
+
 				component.w() = CST(br.Read8());
 			}
 
-			std::cout << "Length: " << info.startOfFrameInfo.length << std::endl;
-			std::cout << "Precision: " << info.startOfFrameInfo.precision << std::endl;
-			std::cout << "Height: " << info.startOfFrameInfo.height << std::endl;
-			std::cout << "Width: " << info.startOfFrameInfo.width << std::endl;
-			std::cout << "Component count: " << info.startOfFrameInfo.componentCount << std::endl;
+			std::cout << VAR_VAL(info.startOfFrameInfo.length) << std::endl;
+			std::cout << VAR_VAL(info.startOfFrameInfo.precision) << std::endl;
+			std::cout << VAR_VAL(info.startOfFrameInfo.height) << std::endl;
+			std::cout << VAR_VAL(info.startOfFrameInfo.width) << std::endl;
+			std::cout << VAR_VAL(info.startOfFrameInfo.componentCount) << std::endl;
 			for (const point4D& component : info.startOfFrameInfo.components)
 			{
 				std::cout << component << std::endl;
@@ -373,7 +367,9 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 			std::cout << "DQT: " << br.BytesLeft() << std::endl;
 
 			DQTInfo quantizationTable{};
+
 			quantizationTable.length = CST(br.Read16());
+
 			uint8_t PT = br.Read8();
 			quantizationTable.precision = CST(PT >> 4);
 			quantizationTable.ID = CST(PT & 0x0F);
@@ -385,9 +381,9 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 
 			info.quantizationTables.push_back(quantizationTable);
 
-			std::cout << "Length: " << quantizationTable.length << std::endl;
-			std::cout << "Precision: " << quantizationTable.precision << std::endl;
-			std::cout << "ID: " << quantizationTable.ID << std::endl;
+			std::cout << VAR_VAL(quantizationTable.length) << std::endl;
+			std::cout << VAR_VAL(quantizationTable.precision) << std::endl;
+			std::cout << VAR_VAL(quantizationTable.ID) << std::endl;
 			for (size_t r = 0; r < 8; r++)
 			{
 				for (size_t c = 0; c < 8; c++)
@@ -402,9 +398,73 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 		{
 			std::cout << "DHT: " << br.BytesLeft() << std::endl;
 
-			size_t length = CST(br.Read16()) - 2;
-			std::cout << "Skipping: " << length << std::endl << std::endl;
-			br.Skip(length);
+			DHTInfo huffmanTable{};
+
+			huffmanTable.length = CST(br.Read16());
+
+			uint8_t CH = br.Read8();
+			huffmanTable.type = CST(CH >> 4);
+			huffmanTable.ID = CST(CH & 0x0F);
+
+			uint8_t counts[16]{};
+			size_t total = 0;
+			for (size_t i = 0; i < 16; i++)
+			{
+				counts[i] = br.Read8();
+				total += CST(counts[i]);
+				//std::cout << CST(counts[i]) << ", ";
+			}
+			std::cout << std::endl;
+			std::cout << std::endl;
+
+			std::vector<uint8_t> symbols(total);
+			for (size_t i = 0; i < total; i++)
+			{
+				symbols[i] = br.Read8();
+				//std::cout << CST(symbols[i]) << ", ";
+			}
+			std::cout << std::endl;
+			std::cout << std::endl;
+
+			uint16_t code = 0;
+			uint16_t firstCodes[16]{};
+			for (size_t i = 0; i < 16; i++)
+			{
+				firstCodes[i] = code;
+				code = (code + counts[i]) << 1;
+				//std::cout << CST(firstCodes[i]) << ", ";
+			}
+			std::cout << std::endl;
+			std::cout << std::endl;
+
+			size_t symbolIndex = 0;
+			size_t symbolCode = 0;
+			std::vector<HuffmanCode> huffmanCodes;
+			for (size_t i = 0; i < 16; i++)
+			{
+				symbolCode = firstCodes[i];
+				for (size_t j = 0; j < counts[i]; j++)
+				{
+					HuffmanCode huffmanCode{};
+					huffmanCode.symbol = symbols[symbolIndex];
+					huffmanCode.length = i + 1;
+					huffmanCode.code = symbolCode;
+					symbolIndex++;
+					symbolCode++;
+					huffmanCodes.push_back(huffmanCode);
+					//std::cout << "S: " << CST(huffmanCode.symbol) << " L: " << CST(huffmanCode.length) << " C: " << Utilities::ToBits(huffmanCode.code) << std::endl;
+				}
+			}
+			std::cout << std::endl;
+
+			info.huffmanTables.push_back(huffmanTable);
+
+			std::cout << VAR_VAL(huffmanTable.length) << std::endl;
+			std::cout << VAR_VAL(huffmanTable.type) << std::endl;
+			std::cout << VAR_VAL(huffmanTable.ID) << std::endl;
+			std::cout << VAR_VAL(total) << std::endl;
+
+			std::cout << std::endl;
 		}
 		else if (next == ImageMarker::DRI)
 		{
@@ -413,6 +473,28 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 			size_t length = CST(br.Read16()) - 2;
 			std::cout << "Skipping: " << length << std::endl << std::endl;
 			br.Skip(length);
+		}
+		else if (next == ImageMarker::SOS)
+		{
+			std::cout << "SOS: " << br.BytesLeft() << std::endl;
+
+			info.startOfScanInfo.length = CST(br.Read16());
+			info.startOfScanInfo.componentCount = CST(br.Read8());
+			for (size_t i = 0; i < info.startOfScanInfo.componentCount; i++)
+			{
+				size_t componentID = CST(br.Read8());
+				uint8_t AD = CST(br.Read8());
+				std::pair<size_t, size_t> tables{ CST(AD >> 4), CST(AD & 0x0F)};
+				info.startOfScanInfo.componentTables[componentID] = tables;
+			}
+
+			std::cout << VAR_VAL(info.startOfScanInfo.length) << std::endl;
+			std::cout << VAR_VAL(info.startOfScanInfo.componentCount) << std::endl;
+			for (auto tables : info.startOfScanInfo.componentTables)
+			{
+				std::cout << VAR_VAL(tables.first) << std::endl;
+				std::cout << VAR_VAL(tables.second.first) << " | " << VAR_VAL(tables.second.second) << std::endl;
+			}
 		}
 	}
 }
