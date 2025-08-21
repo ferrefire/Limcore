@@ -200,10 +200,10 @@ int main(int argc, char** argv)
 
 	//std::vector<int> vals = { 90, 40, 0, 5, 0, 0, 4, 0, 0, 0 };
 
-	ImageLoader imageLoader("rubber_duck_toy_diff", ImageType::Jpg);
+	//ImageLoader imageLoader("rubber_duck_toy_diff", ImageType::Jpg);
 	//ImageLoader imageLoader("croissant_diff", ImageType::Jpg);
 
-	exit(EXIT_SUCCESS);
+	//exit(EXIT_SUCCESS);
 
 	//uint8_t data[] = {1, 2, 3, 4, 5};
 	//uint32_t data = 6;

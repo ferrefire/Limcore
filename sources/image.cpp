@@ -1,6 +1,7 @@
 #include "image.hpp"
 
 #include "manager.hpp"
+#include "bitmask.hpp"
 
 #include <stdexcept>
 
@@ -24,6 +25,7 @@ void Image::Create(const ImageConfig& imageConfig, Device* imageDevice = nullptr
 	CreateImage();
 	AllocateMemory();
 	CreateView();
+	CreateSampler();
 }
 
 void Image::CreateImage()
@@ -53,6 +55,34 @@ void Image::CreateImage()
 void Image::CreateView()
 {
 	Image::CreateView(view, image, config.viewConfig, device);
+}
+
+void Image::CreateSampler()
+{
+	if (!Bitmask::HasFlag(config.usage, VK_IMAGE_USAGE_SAMPLED_BIT)) return;
+	if (sampler) throw (std::runtime_error("Image sampler already exists"));
+	if (!device) throw (std::runtime_error("Device does not exist"));
+
+	VkSamplerCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	createInfo.magFilter = config.samplerConfig.magFilter;
+	createInfo.minFilter = config.samplerConfig.minFilter;
+	createInfo.mipmapMode = config.samplerConfig.mipmapMode;
+	createInfo.addressModeU = config.samplerConfig.repeatMode;
+	createInfo.addressModeV = config.samplerConfig.repeatMode;
+	createInfo.addressModeW = config.samplerConfig.repeatMode;
+	createInfo.mipLodBias = config.samplerConfig.lodBias;
+	createInfo.anisotropyEnable = config.samplerConfig.anisotropyEnabled;
+	createInfo.maxAnisotropy = config.samplerConfig.maxAnisotropy;
+	createInfo.compareEnable = config.samplerConfig.compareEnabled;
+	createInfo.compareOp = config.samplerConfig.compareOperation;
+	createInfo.minLod = config.samplerConfig.lodRange.x();
+	createInfo.maxLod = config.samplerConfig.lodRange.y();
+	createInfo.borderColor = config.samplerConfig.borderColor;
+	createInfo.unnormalizedCoordinates = config.samplerConfig.unnormalizedCoordinates;
+
+	if (vkCreateSampler(device->GetLogicalDevice(), &createInfo, nullptr, &sampler) != VK_SUCCESS)
+		throw (std::runtime_error("Failed to create image sampler"));
 }
 
 void Image::AllocateMemory()
@@ -96,6 +126,12 @@ void Image::Destroy()
 	{
 		vkDestroyImageView(device->GetLogicalDevice(), view, nullptr);
 		view = nullptr;
+	}
+
+	if (sampler)
+	{
+		vkDestroySampler(device->GetLogicalDevice(), sampler, nullptr);
+		sampler = nullptr;
 	}
 }
 

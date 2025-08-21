@@ -1,9 +1,26 @@
 #pragma once
 
 #include "device.hpp"
+#include "point.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+
+struct ImageSamplerConfig
+{
+	VkFilter magFilter = VK_FILTER_LINEAR;
+	VkFilter minFilter = VK_FILTER_LINEAR;
+	VkSamplerMipmapMode mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	VkSamplerAddressMode repeatMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	float lodBias = 0;
+	VkBool32 anisotropyEnabled = VK_FALSE;
+	float maxAnisotropy = 0;
+	VkBool32 compareEnabled = VK_FALSE;
+	VkCompareOp compareOperation = VK_COMPARE_OP_ALWAYS;
+	point2D lodRange = point2D(0);
+	VkBorderColor borderColor = VK_BORDER_COLOR_INT_TRANSPARENT_BLACK;
+	VkBool32 unnormalizedCoordinates = VK_FALSE;
+};
 
 struct ImageViewConfig
 {
@@ -27,6 +44,7 @@ struct ImageConfig
 	VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL; 
 
 	ImageViewConfig viewConfig{};
+	ImageSamplerConfig samplerConfig{};
 };
 
 class Image
@@ -37,10 +55,12 @@ class Image
 
 		VkImage image = nullptr;
 		VkImageView view = nullptr;
+		VkSampler sampler = nullptr;
 		VkDeviceMemory memory = nullptr;
 
 		void CreateImage();
 		void CreateView();
+		void CreateSampler();
 		void AllocateMemory();
 
 	public:
