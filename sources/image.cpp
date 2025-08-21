@@ -104,6 +104,12 @@ void Image::AllocateMemory()
 
 	if (vkBindImageMemory(device->GetLogicalDevice(), image, memory, 0) != VK_SUCCESS)
 		throw (std::runtime_error("Failed to bind memory"));
+
+	if (config.mapped)
+	{
+		if (vkMapMemory(device->GetLogicalDevice(), memory, 0, (config.width * config.height) * 4, 0, &address) != VK_SUCCESS)
+			throw (std::runtime_error("Failed to map memory"));
+	}
 }
 
 void Image::Destroy()
@@ -118,6 +124,12 @@ void Image::Destroy()
 
 	if (memory)
 	{
+		if (address)
+		{
+			vkUnmapMemory(device->GetLogicalDevice(), memory);
+			address = nullptr;
+		}
+
 		vkFreeMemory(device->GetLogicalDevice(), memory, nullptr);
 		memory = nullptr;
 	}
@@ -140,6 +152,20 @@ VkImageView& Image::GetView()
 	if (!view) throw (std::runtime_error("Image view requested but not yet created"));
 
 	return (view);
+}
+
+VkSampler& Image::GetSampler()
+{
+	if (!sampler) throw (std::runtime_error("Image sampler requested but not yet created"));
+
+	return (sampler);
+}
+
+const void* Image::GetAddress() const
+{
+	if (!config.mapped) throw (std::runtime_error("Requested image address but image is not mapped"));
+
+	return (address);
 }
 
 ImageViewConfig Image::DefaultViewConfig()

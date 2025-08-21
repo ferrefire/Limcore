@@ -48,6 +48,8 @@ size_t hammerSet;
 //Buffer croissantBuffer;
 //size_t croissantSet;
 
+Image image;
+
 float angle = 0;
 
 void Start()
@@ -97,9 +99,18 @@ void Start()
 	//duckBuffer.Create(bufferConfig, device, &duckData);
 	//croissantBuffer.Create(bufferConfig, device, &croissantData);
 
-	std::vector<DescriptorConfig> descriptorConfigs(1);
+	ImageConfig imageConfig{};
+	//imageConfig.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageConfig.width = 1024;
+	imageConfig.height = 1024;
+	imageConfig.viewConfig = Image::DefaultViewConfig();
+	image.Create(imageConfig, device);
+
+	std::vector<DescriptorConfig> descriptorConfigs(2);
 	descriptorConfigs[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	descriptorConfigs[0].stages = VK_SHADER_STAGE_VERTEX_BIT;
+	descriptorConfigs[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorConfigs[1].stages = VK_SHADER_STAGE_FRAGMENT_BIT;
 	descriptor.Create(descriptorConfigs, device);
 
 	hammerSet = descriptor.GetNewSet();
@@ -110,6 +121,12 @@ void Start()
 	hammerBufferInfo.buffer = hammerBuffer.GetBuffer();
 	hammerBufferInfo.range = sizeof(hammerData);
 	descriptor.Update(hammerSet, 0, &hammerBufferInfo, nullptr);
+
+	VkDescriptorImageInfo imageInfo{};
+	imageInfo.sampler = image.GetSampler();
+	imageInfo.imageView = image.GetView();
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+	descriptor.Update(hammerSet, 1, nullptr, &imageInfo);
 
 	//VkDescriptorBufferInfo duckBufferInfo{};
 	//duckBufferInfo.buffer = duckBuffer.GetBuffer();
@@ -187,6 +204,7 @@ void End()
 	hammerBuffer.Destroy();
 	//duckBuffer.Destroy();
 	//croissantBuffer.Destroy();
+	image.Destroy();
 	descriptor.Destroy();
 	pipeline.Destroy();
 }

@@ -41,7 +41,8 @@ struct ImageConfig
 	uint32_t arrayLayers = 1;
 	VkImageUsageFlags usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-	VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL; 
+	VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+	bool mapped = false;
 
 	ImageViewConfig viewConfig{};
 	ImageSamplerConfig samplerConfig{};
@@ -57,6 +58,7 @@ class Image
 		VkImageView view = nullptr;
 		VkSampler sampler = nullptr;
 		VkDeviceMemory memory = nullptr;
+		void* address = nullptr;
 
 		void CreateImage();
 		void CreateView();
@@ -72,6 +74,8 @@ class Image
 		void Destroy();
 
 		VkImageView& GetView();
+		VkSampler& GetSampler();
+		const void* GetAddress() const;
 
 		static ImageViewConfig DefaultViewConfig();
 		static ImageConfig DefaultDepthConfig();
