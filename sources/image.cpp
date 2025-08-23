@@ -2,6 +2,8 @@
 
 #include "manager.hpp"
 #include "bitmask.hpp"
+#include "command.hpp"
+#include "buffer.hpp"
 
 #include <stdexcept>
 
@@ -26,6 +28,7 @@ void Image::Create(const ImageConfig& imageConfig, Device* imageDevice = nullptr
 	AllocateMemory();
 	CreateView();
 	CreateSampler();
+	TransitionLayout();
 }
 
 void Image::CreateImage()
@@ -46,7 +49,7 @@ void Image::CreateImage()
 	createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 	createInfo.usage = config.usage;
 	createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	createInfo.initialLayout = config.initialLayout;
+	createInfo.initialLayout = config.currentLayout;
 
 	if (vkCreateImage(device->GetLogicalDevice(), &createInfo, nullptr, &image) != VK_SUCCESS)
 		throw (std::runtime_error("Failed to create image"));
@@ -104,12 +107,6 @@ void Image::AllocateMemory()
 
 	if (vkBindImageMemory(device->GetLogicalDevice(), image, memory, 0) != VK_SUCCESS)
 		throw (std::runtime_error("Failed to bind memory"));
-
-	if (config.mapped)
-	{
-		if (vkMapMemory(device->GetLogicalDevice(), memory, 0, (config.width * config.height) * 4, 0, &address) != VK_SUCCESS)
-			throw (std::runtime_error("Failed to map memory"));
-	}
 }
 
 void Image::Destroy()
@@ -124,12 +121,6 @@ void Image::Destroy()
 
 	if (memory)
 	{
-		if (address)
-		{
-			vkUnmapMemory(device->GetLogicalDevice(), memory);
-			address = nullptr;
-		}
-
 		vkFreeMemory(device->GetLogicalDevice(), memory, nullptr);
 		memory = nullptr;
 	}
@@ -147,6 +138,13 @@ void Image::Destroy()
 	}
 }
 
+VkImage& Image::GetImage()
+{
+	if (!image) throw (std::runtime_error("Image requested but not yet created"));
+
+	return (image);
+}
+
 VkImageView& Image::GetView()
 {
 	if (!view) throw (std::runtime_error("Image view requested but not yet created"));
@@ -161,11 +159,66 @@ VkSampler& Image::GetSampler()
 	return (sampler);
 }
 
-const void* Image::GetAddress() const
+const ImageConfig& Image::GetConfig() const
 {
-	if (!config.mapped) throw (std::runtime_error("Requested image address but image is not mapped"));
+	return (config);
+}
 
-	return (address);
+void Image::TransitionLayout()
+{
+	if (config.currentLayout == config.targetLayout) return;
+	if (!image) throw (std::runtime_error("Image does not exist"));
+	if (!device) throw (std::runtime_error("Image has no device"));
+	//Check if src and dst are supported
+
+	VkImageMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.image = image;
+	barrier.oldLayout = config.currentLayout;
+	barrier.newLayout = config.targetLayout;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.subresourceRange = config.viewConfig.subresourceRange;
+	barrier.srcAccessMask = transitionAccesses[config.currentLayout];
+	barrier.dstAccessMask = transitionAccesses[config.targetLayout];
+
+	VkPipelineStageFlags srcStage = transitionStages[config.currentLayout];
+	VkPipelineStageFlags dstStage = transitionStages[config.targetLayout];
+
+	Command command;
+	CommandConfig commandConfig{};
+	commandConfig.queueIndex = device->GetQueueIndex(QueueType::Graphics);
+	command.Create(commandConfig, device);
+	command.Begin();
+
+	vkCmdPipelineBarrier(command.GetBuffer(), srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+	command.End();
+	command.Submit();
+
+	config.currentLayout = config.targetLayout;
+}
+
+void Image::Update(unsigned char* data, size_t size, size_t offset)
+{
+	if (!image) throw (std::runtime_error("Image does not exist"));
+	if (!device) throw (std::runtime_error("Image has no device"));
+
+	VkImageLayout originalLayout = config.currentLayout;
+	config.targetLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
+	TransitionLayout();
+
+	Buffer stagingBuffer;
+	BufferConfig stagingConfig = Buffer::StagingConfig();
+	stagingConfig.size = size;
+	stagingBuffer.Create(stagingConfig, device, data);
+	stagingBuffer.CopyTo(*this);
+	stagingBuffer.Destroy();
+
+	config.targetLayout = originalLayout;
+
+	TransitionLayout();
 }
 
 ImageViewConfig Image::DefaultViewConfig()
@@ -191,7 +244,7 @@ ImageConfig Image::DefaultDepthConfig()
 	config.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 	config.width = Manager::GetWindow().GetConfig().extent.width;
 	config.height = Manager::GetWindow().GetConfig().extent.height;
-	config.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	config.targetLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	config.viewConfig = Image::DefaultViewConfig();
 	config.viewConfig.format = config.format;
 	config.viewConfig.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -218,3 +271,17 @@ void Image::CreateView(VkImageView& view, const VkImage& image, const ImageViewC
 	if (vkCreateImageView(device->GetLogicalDevice(), &createInfo, nullptr, &view) != VK_SUCCESS)
 		throw (std::runtime_error("Failed to create image view"));
 }
+
+std::map<VkImageLayout, VkAccessFlags> Image::transitionAccesses =
+	{
+		std::pair<VkImageLayout, VkAccessFlags>{VK_IMAGE_LAYOUT_UNDEFINED, 0},
+		std::pair<VkImageLayout, VkAccessFlags>{VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+		std::pair<VkImageLayout, VkAccessFlags>{VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
+	};
+
+std::map<VkImageLayout, VkPipelineStageFlags> Image::transitionStages = 
+	{
+		std::pair<VkImageLayout, VkPipelineStageFlags>{VK_IMAGE_LAYOUT_UNDEFINED, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT},
+		std::pair<VkImageLayout, VkPipelineStageFlags>{VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT},
+		std::pair<VkImageLayout, VkPipelineStageFlags>{VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT},
+	};

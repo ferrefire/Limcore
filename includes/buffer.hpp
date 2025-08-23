@@ -1,6 +1,7 @@
 #pragma once
 
 #include "device.hpp"
+#include "image.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -44,6 +45,7 @@ class Buffer
 		const void* GetAddress() const;
 
 		void CopyTo(VkBuffer target);
+		void CopyTo(Image& target);
 		void Update(void* data, size_t size);
 
 		static BufferConfig StagingConfig();

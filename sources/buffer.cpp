@@ -158,6 +158,37 @@ void Buffer::CopyTo(VkBuffer target)
 	command.Submit();
 }
 
+void Buffer::CopyTo(Image& target)
+{
+	if (!buffer) throw (std::runtime_error("Buffer does not exist"));
+	//if (!target) throw (std::runtime_error("Buffer copy target does not exist"));
+	if (!device) throw (std::runtime_error("Buffer has no device"));
+
+	const ImageConfig& imageConfig = target.GetConfig();
+
+	Command command;
+	CommandConfig commandConfig{};
+	commandConfig.queueIndex = device->GetQueueIndex(QueueType::Graphics);
+	command.Create(commandConfig, device);
+	command.Begin();
+
+	VkBufferImageCopy copyInfo{};
+	copyInfo.imageOffset = {0, 0, 0};
+	copyInfo.imageExtent = {imageConfig.width, imageConfig.height, 1};
+	copyInfo.bufferOffset = 0;
+	copyInfo.bufferRowLength = 0;
+	copyInfo.bufferImageHeight = 0;
+	copyInfo.imageSubresource.aspectMask = imageConfig.viewConfig.subresourceRange.aspectMask;
+	copyInfo.imageSubresource.mipLevel = 0;
+	copyInfo.imageSubresource.baseArrayLayer = 0;
+	copyInfo.imageSubresource.layerCount = imageConfig.arrayLayers;
+
+	vkCmdCopyBufferToImage(command.GetBuffer(), buffer, target.GetImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyInfo);
+
+	command.End();
+	command.Submit();
+}
+
 void Buffer::Update(void *data, size_t size = 0)
 {
 	if (!config.mapped) throw (std::runtime_error("Cannot update buffer because it is not mapped"));

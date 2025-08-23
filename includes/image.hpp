@@ -6,6 +6,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <map>
+
 struct ImageSamplerConfig
 {
 	VkFilter magFilter = VK_FILTER_LINEAR;
@@ -41,8 +43,8 @@ struct ImageConfig
 	uint32_t arrayLayers = 1;
 	VkImageUsageFlags usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-	VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL;
-	bool mapped = false;
+	VkImageLayout currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	VkImageLayout targetLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 	ImageViewConfig viewConfig{};
 	ImageSamplerConfig samplerConfig{};
@@ -51,6 +53,9 @@ struct ImageConfig
 class Image
 {
 	private:
+		static std::map<VkImageLayout, VkAccessFlags> transitionAccesses;
+		static std::map<VkImageLayout, VkPipelineStageFlags> transitionStages;
+
 		ImageConfig config{};
 		Device* device = nullptr;
 
@@ -58,7 +63,6 @@ class Image
 		VkImageView view = nullptr;
 		VkSampler sampler = nullptr;
 		VkDeviceMemory memory = nullptr;
-		void* address = nullptr;
 
 		void CreateImage();
 		void CreateView();
@@ -73,11 +77,16 @@ class Image
 
 		void Destroy();
 
+		VkImage& GetImage();
 		VkImageView& GetView();
 		VkSampler& GetSampler();
-		const void* GetAddress() const;
+		const ImageConfig& GetConfig() const;
+
+		void TransitionLayout();
+		void Update(unsigned char* data, size_t size, size_t offset);
 
 		static ImageViewConfig DefaultViewConfig();
 		static ImageConfig DefaultDepthConfig();
+
 		static void CreateView(VkImageView& view, const VkImage& image, const ImageViewConfig& config, Device* device);
 };

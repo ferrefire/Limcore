@@ -100,11 +100,22 @@ void Start()
 	//croissantBuffer.Create(bufferConfig, device, &croissantData);
 
 	ImageConfig imageConfig{};
-	//imageConfig.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageConfig.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageConfig.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	imageConfig.width = 1024;
 	imageConfig.height = 1024;
 	imageConfig.viewConfig = Image::DefaultViewConfig();
 	image.Create(imageConfig, device);
+
+	std::array<unsigned char, (1024 * 1024) * 4> pixels{};
+	for (size_t i = 0; i < (1024 * 1024) * 4; i++)
+	{ 
+		pixels[i] = 255;
+		pixels[++i] = 0;
+		pixels[++i] = 0;
+		pixels[++i] = 255;
+	}
+	image.Update(&pixels[0], (1024 * 1024) * 4, 0);
 
 	std::vector<DescriptorConfig> descriptorConfigs(2);
 	descriptorConfigs[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -125,7 +136,7 @@ void Start()
 	VkDescriptorImageInfo imageInfo{};
 	imageInfo.sampler = image.GetSampler();
 	imageInfo.imageView = image.GetView();
-	imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+	imageInfo.imageLayout = image.GetConfig().currentLayout;
 	descriptor.Update(hammerSet, 1, nullptr, &imageInfo);
 
 	//VkDescriptorBufferInfo duckBufferInfo{};
