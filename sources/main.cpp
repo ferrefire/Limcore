@@ -30,15 +30,23 @@ struct UniformData
 
 //Mesh<Position | Normal, VK_INDEX_TYPE_UINT16> mesh;
 Mesh<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT16> hammer;
+Mesh<Position | Coordinate, VK_INDEX_TYPE_UINT16> quad;
 //Mesh<Position | Normal, VK_INDEX_TYPE_UINT32> duck;
 //Mesh<Position | Normal, VK_INDEX_TYPE_UINT32> croissant;
 Pass pass;
+
 Pipeline pipeline;
 Descriptor descriptor;
+
+Pipeline quadPipeline;
 
 UniformData hammerData;
 Buffer hammerBuffer;
 size_t hammerSet;
+
+UniformData quadData;
+Buffer quadBuffer;
+size_t quadSet;
 
 //UniformData duckData;
 //Buffer duckBuffer;
@@ -64,6 +72,12 @@ void Start()
 	hammer.SetShape(shape);
 	hammer.Create(device);
 
+	Shape<Position | Coordinate, VK_INDEX_TYPE_UINT16> quadShape;
+	quadShape.Create(ShapeType::Quad);
+	quadShape.Scalarize();
+	quad.SetShape(quadShape);
+	quad.Create(device);
+
 	//shape.Create(ModelLoader("horse_statue", ModelType::Gltf));
 	////shape.Create(ShapeType::Cube);
 	//shape.Scalarize();
@@ -83,6 +97,10 @@ void Start()
 	hammerData.view = Manager::GetCamera().GetView();
 	hammerData.projection = Manager::GetCamera().GetProjection();
 
+	quadData.model = mat4::Identity();
+	quadData.view = Manager::GetCamera().GetView();
+	quadData.projection = Manager::GetCamera().GetProjection();
+
 	//duckData.model = mat4::Identity();
 	//duckData.view = Manager::GetCamera().GetView();
 	//duckData.projection = Manager::GetCamera().GetProjection();
@@ -98,6 +116,7 @@ void Start()
 	hammerBuffer.Create(bufferConfig, device, &hammerData);
 	//duckBuffer.Create(bufferConfig, device, &duckData);
 	//croissantBuffer.Create(bufferConfig, device, &croissantData);
+	quadBuffer.Create(bufferConfig, device, &quadData);
 
 	ImageConfig imageConfig{};
 	imageConfig.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -110,9 +129,11 @@ void Start()
 	std::array<unsigned char, (1024 * 1024) * 4> pixels{};
 	for (size_t i = 0; i < (1024 * 1024) * 4; i++)
 	{ 
-		pixels[i] = 255;
+		//pixels[i] = (i < 2097152 ? 255 : 0);
+		pixels[i] = ((i / 4) % 1024 < 512 ? 255 : 0);
 		pixels[++i] = 0;
-		pixels[++i] = 0;
+		//pixels[++i] = (i >= 2097152 ? 255 : 0);
+		pixels[++i] = ((i / 4) % 1024 >= 512 ? 255 : 0);
 		pixels[++i] = 255;
 	}
 	image.Update(&pixels[0], (1024 * 1024) * 4, 0);
@@ -127,17 +148,24 @@ void Start()
 	hammerSet = descriptor.GetNewSet();
 	//duckSet = descriptor.GetNewSet();
 	//croissantSet = descriptor.GetNewSet();
+	quadSet = descriptor.GetNewSet();
 
 	VkDescriptorBufferInfo hammerBufferInfo{};
 	hammerBufferInfo.buffer = hammerBuffer.GetBuffer();
 	hammerBufferInfo.range = sizeof(hammerData);
 	descriptor.Update(hammerSet, 0, &hammerBufferInfo, nullptr);
 
+	VkDescriptorBufferInfo quadBufferInfo{};
+	quadBufferInfo.buffer = quadBuffer.GetBuffer();
+	quadBufferInfo.range = sizeof(quadData);
+	descriptor.Update(quadSet, 0, &quadBufferInfo, nullptr);
+
 	VkDescriptorImageInfo imageInfo{};
 	imageInfo.sampler = image.GetSampler();
 	imageInfo.imageView = image.GetView();
 	imageInfo.imageLayout = image.GetConfig().currentLayout;
 	descriptor.Update(hammerSet, 1, nullptr, &imageInfo);
+	descriptor.Update(quadSet, 1, nullptr, &imageInfo);
 
 	//VkDescriptorBufferInfo duckBufferInfo{};
 	//duckBufferInfo.buffer = duckBuffer.GetBuffer();
@@ -157,6 +185,14 @@ void Start()
 	//pipelineConfig.rasterization.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	//pipelineConfig.rasterization.cullMode = VK_CULL_MODE_NONE;
 	pipeline.Create(pipelineConfig, device);
+
+	PipelineConfig quadPipelineConfig = Pipeline::DefaultConfig();
+	quadPipelineConfig.shader = "textureQuad";
+	quadPipelineConfig.vertexInfo = quad.GetVertexInfo();
+	quadPipelineConfig.renderpass = pass.GetRenderpass();
+	quadPipelineConfig.descriptorLayouts = { descriptor.GetLayout() };
+	quadPipelineConfig.rasterization.cullMode = VK_CULL_MODE_NONE;
+	quadPipeline.Create(quadPipelineConfig, device);
 
 	Renderer::AddPass(&pass);
 }
@@ -178,6 +214,12 @@ void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 	hammerData.model.Translate(point3D(-2.0, 0, 2.0));
 	hammerBuffer.Update(&hammerData, sizeof(UniformData));
 
+	quadData.view = Manager::GetCamera().GetView();
+	quadData.model = mat4::Identity();
+	//quadData.model.Rotate(angle + 45, Axis::y);
+	quadData.model.Translate(point3D(0.0, 0, 2.0));
+	quadBuffer.Update(&quadData, sizeof(UniformData));
+
 	//duckData.view = Manager::GetCamera().GetView();
 	//duckData.model = mat4::Identity();
 	//duckData.model.Rotate(angle, Axis::y);
@@ -191,11 +233,15 @@ void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 	//croissantData.model.Translate(point3D(0.0, 0, 2.0));
 	//croissantBuffer.Update(&croissantData, sizeof(UniformData));
 
-	pipeline.Bind(commandBuffer);
+	//pipeline.Bind(commandBuffer);
+	//descriptor.Bind(hammerSet, commandBuffer, pipeline.GetLayout());
+	//hammer.Bind(commandBuffer);
+	//vkCmdDrawIndexed(commandBuffer, CUI(hammer.GetIndices().size()), 1, 0, 0, 0);
 
-	descriptor.Bind(hammerSet, commandBuffer, pipeline.GetLayout());
-	hammer.Bind(commandBuffer);
-	vkCmdDrawIndexed(commandBuffer, CUI(hammer.GetIndices().size()), 1, 0, 0, 0);
+	quadPipeline.Bind(commandBuffer);
+	descriptor.Bind(quadSet, commandBuffer, quadPipeline.GetLayout());
+	quad.Bind(commandBuffer);
+	vkCmdDrawIndexed(commandBuffer, CUI(quad.GetIndices().size()), 1, 0, 0, 0);
 
 	//descriptor.Bind(duckSet, commandBuffer, pipeline.GetLayout());
 	//duck.Bind(commandBuffer);
@@ -209,15 +255,18 @@ void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 void End()
 {
 	hammer.Destroy();
+	quad.Destroy();
 	//duck.Destroy();
 	//croissant.Destroy();
 	pass.Destroy();
 	hammerBuffer.Destroy();
+	quadBuffer.Destroy();
 	//duckBuffer.Destroy();
 	//croissantBuffer.Destroy();
 	image.Destroy();
 	descriptor.Destroy();
 	pipeline.Destroy();
+	quadPipeline.Destroy();
 }
 
 int main(int argc, char** argv)
