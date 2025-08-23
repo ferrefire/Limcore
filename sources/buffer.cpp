@@ -137,7 +137,7 @@ const void* Buffer::GetAddress() const
 	return (address);
 }
 
-void Buffer::CopyTo(VkBuffer target)
+void Buffer::CopyTo(VkBuffer target, size_t offset)
 {
 	if (!buffer) throw (std::runtime_error("Buffer does not exist"));
 	if (!target) throw (std::runtime_error("Buffer copy target does not exist"));
@@ -150,7 +150,8 @@ void Buffer::CopyTo(VkBuffer target)
 	command.Begin();
 
 	VkBufferCopy copyInfo{};
-	copyInfo.size = config.size;
+	copyInfo.size = static_cast<VkDeviceSize>(config.size);
+	copyInfo.dstOffset = static_cast<VkDeviceSize>(offset);
 
 	vkCmdCopyBuffer(command.GetBuffer(), buffer, target, 1, &copyInfo);
 
@@ -158,7 +159,7 @@ void Buffer::CopyTo(VkBuffer target)
 	command.Submit();
 }
 
-void Buffer::CopyTo(Image& target)
+void Buffer::CopyTo(Image& target, Point<uint32_t, 3> extent, Point<int32_t, 3> offset)
 {
 	if (!buffer) throw (std::runtime_error("Buffer does not exist"));
 	//if (!target) throw (std::runtime_error("Buffer copy target does not exist"));
@@ -173,8 +174,8 @@ void Buffer::CopyTo(Image& target)
 	command.Begin();
 
 	VkBufferImageCopy copyInfo{};
-	copyInfo.imageOffset = {0, 0, 0};
-	copyInfo.imageExtent = {imageConfig.width, imageConfig.height, 1};
+	copyInfo.imageOffset = {offset.x(), offset.y(), offset.z()};
+	copyInfo.imageExtent = {extent.x(), extent.y(), extent.z()};
 	copyInfo.bufferOffset = 0;
 	copyInfo.bufferRowLength = 0;
 	copyInfo.bufferImageHeight = 0;

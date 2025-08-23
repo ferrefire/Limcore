@@ -83,7 +83,7 @@ class Image
 		const ImageConfig& GetConfig() const;
 
 		void TransitionLayout();
-		void Update(unsigned char* data, size_t size, size_t offset);
+		void Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent = {}, Point<int32_t, 3> offset = {});
 
 		static ImageViewConfig DefaultViewConfig();
 		static ImageConfig DefaultDepthConfig();

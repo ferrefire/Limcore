@@ -199,7 +199,7 @@ void Image::TransitionLayout()
 	config.currentLayout = config.targetLayout;
 }
 
-void Image::Update(unsigned char* data, size_t size, size_t offset)
+void Image::Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent, Point<int32_t, 3> offset)
 {
 	if (!image) throw (std::runtime_error("Image does not exist"));
 	if (!device) throw (std::runtime_error("Image has no device"));
@@ -213,7 +213,7 @@ void Image::Update(unsigned char* data, size_t size, size_t offset)
 	BufferConfig stagingConfig = Buffer::StagingConfig();
 	stagingConfig.size = size;
 	stagingBuffer.Create(stagingConfig, device, data);
-	stagingBuffer.CopyTo(*this);
+	stagingBuffer.CopyTo(*this, extent, offset);
 	stagingBuffer.Destroy();
 
 	config.targetLayout = originalLayout;

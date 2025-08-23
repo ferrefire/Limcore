@@ -129,14 +129,22 @@ void Start()
 	std::array<unsigned char, (1024 * 1024) * 4> pixels{};
 	for (size_t i = 0; i < (1024 * 1024) * 4; i++)
 	{ 
-		//pixels[i] = (i < 2097152 ? 255 : 0);
-		pixels[i] = ((i / 4) % 1024 < 512 ? 255 : 0);
+		pixels[i] = (i < 2097152 ? 255 : 0);
 		pixels[++i] = 0;
-		//pixels[++i] = (i >= 2097152 ? 255 : 0);
-		pixels[++i] = ((i / 4) % 1024 >= 512 ? 255 : 0);
+		pixels[++i] = (i >= 2097152 ? 255 : 0);
 		pixels[++i] = 255;
 	}
-	image.Update(&pixels[0], (1024 * 1024) * 4, 0);
+	image.Update(&pixels[0], (1024 * 1024) * 4, {1024, 1024, 1});
+
+	//std::array<unsigned char, (256 * 256) * 4> square{};
+	//for (size_t i = 0; i < (256 * 256) * 4; i++)
+	//{ 
+	//	square[i] = 0;
+	//	square[++i] = 255;
+	//	square[++i] = 0;
+	//	square[++i] = 255;
+	//}
+	//image.Update(&square[0], (256 * 256) * 4, {256, 256, 1}, {384, 384, 0});
 
 	std::vector<DescriptorConfig> descriptorConfigs(2);
 	descriptorConfigs[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -199,6 +207,30 @@ void Start()
 
 void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 {
+	static size_t xp = 0;
+	static size_t yp = 0;
+
+	if (yp < 1024)
+	{
+		std::array<unsigned char, 256 * 4> pixels{};
+
+		for (size_t i = 0; i < 256 * 4; i++)
+		{
+			pixels[i] = 0;
+			pixels[++i] = 255;
+			pixels[++i] = 0;
+			pixels[++i] = 255;
+		}
+
+		image.Update(&pixels[0], 256 * 4, {256, 1, 1}, { xp, yp, 0 });
+		xp += 256;
+		if (xp >= 1024)
+		{
+			xp = 0;
+			yp += 1;
+		}
+	}
+
 	angle += Time::deltaTime * 60;
 
 	Manager::GetCamera().UpdateView();

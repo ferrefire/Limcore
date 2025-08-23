@@ -97,6 +97,7 @@ struct ModelInfo
 
 struct SOF0Info
 {
+	size_t start = 0;
 	size_t length = 0;
 	size_t precision = 0;
 	size_t height = 0;
@@ -107,6 +108,7 @@ struct SOF0Info
 
 struct DQTInfo
 {
+	size_t start = 0;
 	size_t length = 0;
 	size_t precision = 0;
 	size_t ID = 0;
@@ -122,6 +124,7 @@ struct HuffmanCode
 
 struct DHTInfo
 {
+	size_t start = 0;
 	size_t length = 0;
 	size_t type = 0;
 	size_t ID = 0;
@@ -129,6 +132,7 @@ struct DHTInfo
 
 struct SOSInfo
 {
+	size_t start = 0;
 	size_t length = 0;
 	size_t componentCount = 0;
 	std::map<size_t, std::pair<size_t, size_t>> componentTables{};
