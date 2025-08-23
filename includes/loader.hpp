@@ -2,6 +2,7 @@
 
 #include "point.hpp"
 #include "vertex.hpp"
+#include "structures.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -10,6 +11,7 @@
 #include <string>
 #include <map>
 #include <array>
+#include <string>
 
 #define CST(a) static_cast<size_t>(a)
 #define C8(a) static_cast<uint8_t>(a)
@@ -128,6 +130,8 @@ struct DHTInfo
 	size_t length = 0;
 	size_t type = 0;
 	size_t ID = 0;
+
+	std::vector<HuffmanCode> huffmanCodes;
 };
 
 struct SOSInfo
@@ -145,7 +149,8 @@ struct ImageInfo
 
 	SOF0Info startOfFrameInfo{};
 	std::vector<DQTInfo> quantizationTables;
-	std::vector<DHTInfo> huffmanTables;
+	std::vector<DHTInfo> huffmanInfos;
+	std::vector<BinaryTree<std::pair<bool, HuffmanCode>>> huffmanTables;
 	SOSInfo startOfScanInfo{};
 };
 
@@ -196,10 +201,12 @@ class ImageLoader
 		ImageInfo info{};
 
 		void GetJpgInfo(const std::string& name);
+		void BuildHuffmanTree(std::string current, BinaryTree<std::pair<bool, HuffmanCode>>& start, std::vector<HuffmanCode>& codes);
+		std::pair<bool, HuffmanCode> FindCode(std::string code, BinaryTree<std::pair<bool, HuffmanCode>>& root);
 
 	public:
 		ImageLoader(const std::string& name, const ImageType& type);
 		~ImageLoader();
 
-
+		void LoadEntropyData();
 };

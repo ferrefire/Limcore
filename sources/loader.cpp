@@ -310,10 +310,11 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 
 	ByteReader br(data, file.size());
 
-	std::cout << "Total size: " << br.BytesLeft() << std::endl;
-	std::cout << std::endl;
+	//std::cout << "Total size: " << br.BytesLeft() << std::endl;
+	//std::cout << std::endl;
 
-	if (br.AtMarker(ImageMarker::SOI)) std::cout << "SOI: " << br.BytesLeft() << std::endl << std::endl;
+	//if (br.AtMarker(ImageMarker::SOI)) std::cout << "SOI: " << br.BytesLeft() << std::endl << std::endl;
+	if (!br.AtMarker(ImageMarker::SOI)) throw (std::runtime_error("Invalid JPG file."));
 
 	while (br.BytesLeft() > 1)
 	{
@@ -344,28 +345,28 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 				br.Skip(info.startOfFrameInfo.length - (info.startOfFrameInfo.start - br.BytesLeft()));
 			}
 
-			std::cout << VAR_VAL(info.startOfFrameInfo.start) << std::endl;
-			std::cout << VAR_VAL(info.startOfFrameInfo.length) << std::endl;
-			std::cout << VAR_VAL(info.startOfFrameInfo.precision) << std::endl;
-			std::cout << VAR_VAL(info.startOfFrameInfo.height) << std::endl;
-			std::cout << VAR_VAL(info.startOfFrameInfo.width) << std::endl;
-			std::cout << VAR_VAL(info.startOfFrameInfo.componentCount) << std::endl;
-			for (const point4D& component : info.startOfFrameInfo.components)
-			{
-				std::cout << component << std::endl;
-			}
-			std::cout << br.BytesLeft() << std::endl;
-			std::cout << std::endl;
+			//std::cout << VAR_VAL(info.startOfFrameInfo.start) << std::endl;
+			//std::cout << VAR_VAL(info.startOfFrameInfo.length) << std::endl;
+			//std::cout << VAR_VAL(info.startOfFrameInfo.precision) << std::endl;
+			//std::cout << VAR_VAL(info.startOfFrameInfo.height) << std::endl;
+			//std::cout << VAR_VAL(info.startOfFrameInfo.width) << std::endl;
+			//std::cout << VAR_VAL(info.startOfFrameInfo.componentCount) << std::endl;
+			//for (const point4D& component : info.startOfFrameInfo.components)
+			//{
+			//	std::cout << component << std::endl;
+			//}
+			//std::cout << br.BytesLeft() << std::endl;
+			//std::cout << std::endl;
 		}
 		else if (next == ImageMarker::EOI)
 		{
-			std::cout << "EOI: " << br.BytesLeft() << std::endl;
-			std::cout << std::endl;
+			//std::cout << "EOI: " << br.BytesLeft() << std::endl;
+			//std::cout << std::endl;
 		}
 		else if ((next >= ImageMarker::APP0 && next <= ImageMarker::APP15) || next == ImageMarker::COM)
 		{
 			size_t length = CST(br.Read16()) - 2;
-			std::cout << "Skipping: " << length << std::endl << std::endl;
+			//std::cout << "Skipping: " << length << std::endl << std::endl;
 			br.Skip(length);
 		}
 		else if (next == ImageMarker::DQT)
@@ -391,31 +392,31 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 				br.Skip(quantizationTable.length - (quantizationTable.start - br.BytesLeft()));
 			}
 
-			std::cout << VAR_VAL(quantizationTable.start) << std::endl;
-			std::cout << VAR_VAL(quantizationTable.length) << std::endl;
-			std::cout << VAR_VAL(quantizationTable.precision) << std::endl;
-			std::cout << VAR_VAL(quantizationTable.ID) << std::endl;
-			for (size_t r = 0; r < 8; r++)
-			{
-				for (size_t c = 0; c < 8; c++)
-				{
-					std::cout << CST(quantizationTable.values[r * 8 + c]);
-				}
-				std::cout << std::endl;
-			}
-			std::cout << br.BytesLeft() << std::endl;
-			std::cout << std::endl;
+			//std::cout << VAR_VAL(quantizationTable.start) << std::endl;
+			//std::cout << VAR_VAL(quantizationTable.length) << std::endl;
+			//std::cout << VAR_VAL(quantizationTable.precision) << std::endl;
+			//std::cout << VAR_VAL(quantizationTable.ID) << std::endl;
+			//for (size_t r = 0; r < 8; r++)
+			//{
+			//	for (size_t c = 0; c < 8; c++)
+			//	{
+			//		std::cout << CST(quantizationTable.values[r * 8 + c]);
+			//	}
+			//	std::cout << std::endl;
+			//}
+			//std::cout << br.BytesLeft() << std::endl;
+			//std::cout << std::endl;
 		}
 		else if (next == ImageMarker::DHT)
 		{
-			DHTInfo huffmanTable{};
+			DHTInfo huffmanInfo{};
 
-			huffmanTable.start = br.BytesLeft();
-			huffmanTable.length = CST(br.Read16());
+			huffmanInfo.start = br.BytesLeft();
+			huffmanInfo.length = CST(br.Read16());
 
 			uint8_t CH = br.Read8();
-			huffmanTable.type = CST(CH >> 4);
-			huffmanTable.ID = CST(CH & 0x0F);
+			huffmanInfo.type = CST(CH >> 4);
+			huffmanInfo.ID = CST(CH & 0x0F);
 
 			uint8_t counts[16]{};
 			size_t total = 0;
@@ -425,8 +426,8 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 				total += CST(counts[i]);
 				//std::cout << CST(counts[i]) << ", ";
 			}
-			std::cout << std::endl;
-			std::cout << std::endl;
+			//std::cout << std::endl;
+			//std::cout << std::endl;
 
 			std::vector<uint8_t> symbols(total);
 			for (size_t i = 0; i < total; i++)
@@ -434,8 +435,8 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 				symbols[i] = br.Read8();
 				//std::cout << CST(symbols[i]) << ", ";
 			}
-			std::cout << std::endl;
-			std::cout << std::endl;
+			//std::cout << std::endl;
+			//std::cout << std::endl;
 
 			uint16_t code = 0;
 			uint16_t firstCodes[16]{};
@@ -445,12 +446,12 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 				code = (code + counts[i]) << 1;
 				//std::cout << CST(firstCodes[i]) << ", ";
 			}
-			std::cout << std::endl;
-			std::cout << std::endl;
+			//std::cout << std::endl;
+			//std::cout << std::endl;
 
 			size_t symbolIndex = 0;
 			size_t symbolCode = 0;
-			std::vector<HuffmanCode> huffmanCodes;
+			//std::vector<HuffmanCode> huffmanCodes;
 			for (size_t i = 0; i < 16; i++)
 			{
 				symbolCode = firstCodes[i];
@@ -462,33 +463,46 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 					huffmanCode.code = symbolCode;
 					symbolIndex++;
 					symbolCode++;
-					huffmanCodes.push_back(huffmanCode);
-					//std::cout << "S: " << CST(huffmanCode.symbol) << " L: " << CST(huffmanCode.length) << " C: " << Utilities::ToBits(huffmanCode.code) << std::endl;
+					huffmanInfo.huffmanCodes.push_back(huffmanCode);
+					//std::cout << "S: " << CST(huffmanCode.symbol) << " L: " << CST(huffmanCode.length) << " C: " << Utilities::ToBits(huffmanCode.code).substr(16 - CST(huffmanCode.length)) << std::endl;
 				}
 			}
-			std::cout << std::endl;
+			//std::cout << std::endl;
 
-			info.huffmanTables.push_back(huffmanTable);
+			//if (info.huffmanInfos.size() == 1)
+			//{
+			//	BinaryTree<std::pair<bool, HuffmanCode>> root({false, {}});
+			//	BuildHuffmanTree("", root, huffmanCodes);
+			//	std::pair<bool, HuffmanCode> result = FindCode("1111111111111110", root);
+			//	std::cout << std::endl;
+			//	std::cout << "Result: ";
+			//	if (result.first) std::cout << CST(result.second.symbol) << std::endl;
+			//	exit(EXIT_SUCCESS);
+			//}
 
-			if (huffmanTable.start - br.BytesLeft() < huffmanTable.length)
+			//BuildHuffmanTree("", huffmanInfo.huffmanTree, huffmanCodes);
+
+			info.huffmanInfos.push_back(huffmanInfo);
+
+			if (huffmanInfo.start - br.BytesLeft() < huffmanInfo.length)
 			{
-				br.Skip(huffmanTable.length - (huffmanTable.start - br.BytesLeft()));
+				br.Skip(huffmanInfo.length - (huffmanInfo.start - br.BytesLeft()));
 			}
 
-			std::cout << VAR_VAL(huffmanTable.start) << std::endl;
-			std::cout << VAR_VAL(huffmanTable.length) << std::endl;
-			std::cout << VAR_VAL(huffmanTable.type) << std::endl;
-			std::cout << VAR_VAL(huffmanTable.ID) << std::endl;
-			std::cout << VAR_VAL(total) << std::endl;
-			std::cout << br.BytesLeft() << std::endl;
-			std::cout << std::endl;
+			//std::cout << VAR_VAL(huffmanInfo.start) << std::endl;
+			//std::cout << VAR_VAL(huffmanInfo.length) << std::endl;
+			//std::cout << VAR_VAL(huffmanInfo.type) << std::endl;
+			//std::cout << VAR_VAL(huffmanInfo.ID) << std::endl;
+			//std::cout << VAR_VAL(total) << std::endl;
+			//std::cout << br.BytesLeft() << std::endl;
+			//std::cout << std::endl;
 		}
 		else if (next == ImageMarker::DRI)
 		{
-			std::cout << "DRI: " << br.BytesLeft() << std::endl;
+			//std::cout << "DRI: " << br.BytesLeft() << std::endl;
 
 			size_t length = CST(br.Read16()) - 2;
-			std::cout << "Skipping: " << length << std::endl << std::endl;
+			//std::cout << "Skipping: " << length << std::endl << std::endl;
 			br.Skip(length);
 		}
 		else if (next == ImageMarker::SOS)
@@ -509,15 +523,82 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 				br.Skip(info.startOfScanInfo.length - (info.startOfScanInfo.start - br.BytesLeft()));
 			}
 
-			std::cout << VAR_VAL(info.startOfScanInfo.start) << std::endl;
-			std::cout << VAR_VAL(info.startOfScanInfo.length) << std::endl;
-			std::cout << VAR_VAL(info.startOfScanInfo.componentCount) << std::endl;
-			for (auto tables : info.startOfScanInfo.componentTables)
-			{
-				std::cout << VAR_VAL(tables.first) << std::endl;
-				std::cout << VAR_VAL(tables.second.first) << " | " << VAR_VAL(tables.second.second) << std::endl;
-			}
-			std::cout << br.BytesLeft() << std::endl;
+			//std::cout << VAR_VAL(info.startOfScanInfo.start) << std::endl;
+			//std::cout << VAR_VAL(info.startOfScanInfo.length) << std::endl;
+			//std::cout << VAR_VAL(info.startOfScanInfo.componentCount) << std::endl;
+			//for (auto tables : info.startOfScanInfo.componentTables)
+			//{
+			//	std::cout << VAR_VAL(tables.first) << std::endl;
+			//	std::cout << VAR_VAL(tables.second.first) << " | " << VAR_VAL(tables.second.second) << std::endl;
+			//}
+			//std::cout << br.BytesLeft() << std::endl;
 		}
 	}
+}
+
+void ImageLoader::BuildHuffmanTree(std::string current, BinaryTree<std::pair<bool, HuffmanCode>>& start, std::vector<HuffmanCode>& codes)
+{
+	if (current.size() >= 16) return;
+
+	std::string leftCode = current + "0";
+	std::string rightCode = current + "1";
+
+	for (const HuffmanCode& code : codes)
+	{
+		std::string codeString = Utilities::ToBits(code.code).substr(16 - CST(code.length));
+
+		if (codeString == leftCode)
+		{
+			start.Expand({true, code}, Left);
+		}
+		else if (codeString == rightCode)
+		{
+			start.Expand({true, code}, Right);
+		}
+	}
+
+	if (!start.HasSide(Left))
+	{
+		start.Expand({false, {}}, Left);
+		BuildHuffmanTree(leftCode, *start.GetSide(Left), codes);
+	}
+	if (!start.HasSide(Right))
+	{
+		start.Expand({false, {}}, Right);
+		BuildHuffmanTree(rightCode, *start.GetSide(Right), codes);
+	}
+}
+
+std::pair<bool, HuffmanCode> ImageLoader::FindCode(std::string code, BinaryTree<std::pair<bool, HuffmanCode>>& root)
+{
+	std::pair<bool, HuffmanCode> result = {false, {}};
+	BinaryTree<std::pair<bool, HuffmanCode>>* node = &root;
+
+	for (size_t i = 0; i < code.size(); i++)
+	{
+		BinaryTreeSide side = (code[i] == '0' ? Left : Right);
+
+		if (!node->HasSide(side)) return (result);
+
+		node = node->GetSide(side);
+		if (node->GetValue().first && (i + 1 == code.size())) return (node->GetValue());
+	}
+
+	return (result);
+}
+
+void ImageLoader::LoadEntropyData()
+{
+	info.huffmanTables.resize(info.huffmanInfos.size(), BinaryTree<std::pair<bool, HuffmanCode>>({false, {}}));
+	size_t i = 0;
+	for (BinaryTree<std::pair<bool, HuffmanCode>>& table : info.huffmanTables)
+	{
+		BuildHuffmanTree("", table, info.huffmanInfos[i].huffmanCodes);
+		i++;
+	}
+
+	//std::pair<bool, HuffmanCode> result = FindCode("010", info.huffmanTables[0]);
+	//std::cout << std::endl;
+	//std::cout << "Result: ";
+	//if (result.first) std::cout << CST(result.second.symbol) << std::endl;
 }

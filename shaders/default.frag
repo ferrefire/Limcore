@@ -25,11 +25,11 @@ void main()
 	//vec3 color = vec3(r, g, b);
 	//pixelColor = vec4(color, 1.0);
 
-	vec3 color = texture(tex, worldCoordinate).rgb;
+	//vec3 color = texture(tex, worldCoordinate).rgb;
 	//pixelColor = vec4(texColor, 1.0);
-	//pixelColor = vec4(worldCoordinate.x, worldCoordinate.y, 1.0, 1.0);
+	pixelColor = vec4(worldCoordinate.x, worldCoordinate.y, 1.0, 1.0);
 
 	//vec3 diffuse = DiffuseLighting(normalize(worldNormal), normalize(vec3(0.2, 1, 0.4)), vec3(0.25, 0.0, 0.75));
-	vec3 diffuse = DiffuseLighting(normalize(worldNormal), normalize(vec3(0.2, 1, 0.4)), color);
-	pixelColor = vec4(diffuse, 1.0);
+	//vec3 diffuse = DiffuseLighting(normalize(worldNormal), normalize(vec3(0.2, 1, 0.4)), color);
+	//pixelColor = vec4(diffuse, 1.0);
 }

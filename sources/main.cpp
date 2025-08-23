@@ -126,15 +126,15 @@ void Start()
 	imageConfig.viewConfig = Image::DefaultViewConfig();
 	image.Create(imageConfig, device);
 
-	std::array<unsigned char, (1024 * 1024) * 4> pixels{};
-	for (size_t i = 0; i < (1024 * 1024) * 4; i++)
-	{ 
-		pixels[i] = (i < 2097152 ? 255 : 0);
-		pixels[++i] = 0;
-		pixels[++i] = (i >= 2097152 ? 255 : 0);
-		pixels[++i] = 255;
-	}
-	image.Update(&pixels[0], (1024 * 1024) * 4, {1024, 1024, 1});
+	//std::array<unsigned char, (1024 * 1024) * 4> pixels{};
+	//for (size_t i = 0; i < (1024 * 1024) * 4; i++)
+	//{ 
+	//	pixels[i] = (i < 2097152 ? 255 : 0);
+	//	pixels[++i] = 0;
+	//	pixels[++i] = (i >= 2097152 ? 255 : 0);
+	//	pixels[++i] = 255;
+	//}
+	//image.Update(&pixels[0], (1024 * 1024) * 4, {1024, 1024, 1});
 
 	//std::array<unsigned char, (256 * 256) * 4> square{};
 	//for (size_t i = 0; i < (256 * 256) * 4; i++)
@@ -207,7 +207,7 @@ void Start()
 
 void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 {
-	static size_t xp = 0;
+	/*static size_t xp = 0;
 	static size_t yp = 0;
 
 	if (yp < 1024)
@@ -229,7 +229,7 @@ void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 			xp = 0;
 			yp += 1;
 		}
-	}
+	}*/
 
 	angle += Time::deltaTime * 60;
 
@@ -265,10 +265,10 @@ void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 	//croissantData.model.Translate(point3D(0.0, 0, 2.0));
 	//croissantBuffer.Update(&croissantData, sizeof(UniformData));
 
-	//pipeline.Bind(commandBuffer);
-	//descriptor.Bind(hammerSet, commandBuffer, pipeline.GetLayout());
-	//hammer.Bind(commandBuffer);
-	//vkCmdDrawIndexed(commandBuffer, CUI(hammer.GetIndices().size()), 1, 0, 0, 0);
+	pipeline.Bind(commandBuffer);
+	descriptor.Bind(hammerSet, commandBuffer, pipeline.GetLayout());
+	hammer.Bind(commandBuffer);
+	vkCmdDrawIndexed(commandBuffer, CUI(hammer.GetIndices().size()), 1, 0, 0, 0);
 
 	quadPipeline.Bind(commandBuffer);
 	descriptor.Bind(quadSet, commandBuffer, quadPipeline.GetLayout());
@@ -310,10 +310,12 @@ int main(int argc, char** argv)
 
 	//std::vector<int> vals = { 90, 40, 0, 5, 0, 0, 4, 0, 0, 0 };
 
-	//ImageLoader imageLoader("rubber_duck_toy_diff", ImageType::Jpg);
+	ImageLoader imageLoader("rubber_duck_toy_diff", ImageType::Jpg);
 	//ImageLoader imageLoader("croissant_diff", ImageType::Jpg);
 
-	//exit(EXIT_SUCCESS);
+	imageLoader.LoadEntropyData();
+
+	exit(EXIT_SUCCESS);
 
 	//uint8_t data[] = {1, 2, 3, 4, 5};
 	//uint32_t data = 6;
