@@ -58,6 +58,9 @@ size_t quadSet;
 
 Image image;
 
+ImageLoader imageLoader("wooden_hammer_diff", ImageType::Jpg);
+bool loaded = false;
+
 float angle = 0;
 
 void Start()
@@ -66,7 +69,7 @@ void Start()
 
 	//mesh.SetShape(Shape<Position | Normal, VK_INDEX_TYPE_UINT32>(ShapeType::Cube));
 	Shape<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT16> shape;
-	shape.Create(ModelLoader("rubber_duck_toy", ModelType::Gltf));
+	shape.Create(ModelLoader("wooden_hammer", ModelType::Gltf));
 	//shape.Create(ShapeType::Cube);
 	shape.Scalarize();
 	hammer.SetShape(shape);
@@ -126,15 +129,15 @@ void Start()
 	imageConfig.viewConfig = Image::DefaultViewConfig();
 	image.Create(imageConfig, device);
 
-	//std::array<unsigned char, (1024 * 1024) * 4> pixels{};
-	//for (size_t i = 0; i < (1024 * 1024) * 4; i++)
-	//{ 
-	//	pixels[i] = (i < 2097152 ? 255 : 0);
-	//	pixels[++i] = 0;
-	//	pixels[++i] = (i >= 2097152 ? 255 : 0);
-	//	pixels[++i] = 255;
-	//}
-	//image.Update(&pixels[0], (1024 * 1024) * 4, {1024, 1024, 1});
+	std::array<unsigned char, (1024 * 1024) * 4> pixels{};
+	for (size_t i = 0; i < (1024 * 1024) * 4; i++)
+	{ 
+		pixels[i] = (i < 2097152 ? 255 : 0);
+		pixels[++i] = 0;
+		pixels[++i] = (i >= 2097152 ? 255 : 0);
+		pixels[++i] = 255;
+	}
+	image.Update(&pixels[0], (1024 * 1024) * 4, {1024, 1024, 1});
 
 	//std::array<unsigned char, (256 * 256) * 4> square{};
 	//for (size_t i = 0; i < (256 * 256) * 4; i++)
@@ -207,10 +210,10 @@ void Start()
 
 void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 {
-	/*static size_t xp = 0;
+	static size_t xp = 0;
 	static size_t yp = 0;
 
-	if (yp < 1024)
+	/*if (yp < 1024)
 	{
 		std::array<unsigned char, 256 * 4> pixels{};
 
@@ -230,6 +233,35 @@ void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 			yp += 1;
 		}
 	}*/
+
+	if (Input::GetKey(GLFW_KEY_L).pressed)
+	{
+		imageLoader.LoadEntropyData();
+		loaded = true;
+	}
+	else if (loaded && yp < 64)
+	{
+		//std::array<unsigned char, (1024 * 1024) * 4> pixels{};
+		//for (size_t i = 0; i < (1024 * 1024) * 4; i++)
+		//{ 
+		//	pixels[i] = 0;
+		//	pixels[++i] = 255;
+		//	pixels[++i] = 0;
+		//	pixels[++i] = 255;
+		//}
+		//image.Update(&pixels[0], (1024 * 1024) * 4, {1024, 1024, 1});
+
+		std::array<unsigned char, (16 * 16) * 4> pixels{};
+		imageLoader.LoadPixels(pixels, yp * 64 + xp);
+		image.Update(&pixels[0], (16 * 16) * 4, {16, 16, 1}, {xp * 16, yp * 16, 0});
+
+		xp += 1;
+		if (xp >= 64)
+		{
+			xp = 0;
+			yp += 1;
+		}
+	}
 
 	angle += Time::deltaTime * 60;
 
@@ -310,12 +342,43 @@ int main(int argc, char** argv)
 
 	//std::vector<int> vals = { 90, 40, 0, 5, 0, 0, 4, 0, 0, 0 };
 
-	ImageLoader imageLoader("rubber_duck_toy_diff", ImageType::Jpg);
-	//ImageLoader imageLoader("croissant_diff", ImageType::Jpg);
+	//std::cout << std::stoi("010", nullptr, 2) << std::endl;
+	//exit(EXIT_SUCCESS);
 
-	imageLoader.LoadEntropyData();
+	/*std::array<int, 64> test{};
 
-	exit(EXIT_SUCCESS);
+	test[0] = 1;
+	bool check = true;
+
+	for (size_t i = 1; i < 64; i++)
+	{
+		if (check)
+		{
+			check = false;
+			for (size_t j = 0; j < 16; j++)
+			{
+				test[i] = 2;
+				if (j + 1 < 16) i++;
+			}
+			continue;
+		}
+
+		test[i] = i + 1;
+	}
+
+	for (size_t i = 0; i < 64; i++)
+	{
+		std::cout << test[i] << ", ";
+		if ((i + 1) % 8 == 0) std::cout << std::endl;
+	}
+
+	exit(EXIT_SUCCESS);*/
+
+	//ImageLoader imageLoader("rubber_duck_toy_diff", ImageType::Jpg);
+	////ImageLoader imageLoader("croissant_diff", ImageType::Jpg);
+	//std::cout << imageLoader.GetInfo() << std::endl;
+	//imageLoader.LoadEntropyData();
+	//exit(EXIT_SUCCESS);
 
 	//uint8_t data[] = {1, 2, 3, 4, 5};
 	//uint32_t data = 6;
@@ -337,6 +400,8 @@ int main(int argc, char** argv)
 	//std::cout << range.first << " " << range.second << std::endl;
 	//std::cout << str.substr(range.first + 1, range.second - range.first - 1) << std::endl;
 	//exit(EXIT_SUCCESS);
+
+	std::cout << imageLoader.GetInfo() << std::endl;
 
 	Manager::ParseArguments(argv, argc);
 	Manager::Create();

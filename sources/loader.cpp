@@ -306,9 +306,9 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 
 	std::string path = Utilities::GetPath() + "/resources/textures/" + name + ".jpg";
 	std::string file = Utilities::FileToString(path);
-	const uint8_t* data = reinterpret_cast<const uint8_t*>(file.c_str());
+	const uint8_t* rawData = reinterpret_cast<const uint8_t*>(file.c_str());
 
-	ByteReader br(data, file.size());
+	ByteReader br(rawData, file.size());
 
 	//std::cout << "Total size: " << br.BytesLeft() << std::endl;
 	//std::cout << std::endl;
@@ -322,14 +322,15 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 
 		if (next == ImageMarker::SOF0)
 		{
-			info.startOfFrameInfo.start = br.BytesLeft();
+			//info.startOfFrameInfo.start = br.BytesLeft();
+			info.startOfFrameInfo.start = br.Offset(rawData);
 			info.startOfFrameInfo.length = CST(br.Read16());
 			info.startOfFrameInfo.precision = CST(br.Read8());
 			info.startOfFrameInfo.height = CST(br.Read16());
 			info.startOfFrameInfo.width = CST(br.Read16());
 			info.startOfFrameInfo.componentCount = CST(br.Read8());
 			info.startOfFrameInfo.components.resize(info.startOfFrameInfo.componentCount);
-			for (point4D& component : info.startOfFrameInfo.components)
+			for (Point<size_t, 4>& component : info.startOfFrameInfo.components)
 			{
 				component.x() = CST(br.Read8());
 
@@ -340,23 +341,12 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 				component.w() = CST(br.Read8());
 			}
 
-			if (info.startOfFrameInfo.start - br.BytesLeft() < info.startOfFrameInfo.length)
+			if (info.startOfFrameInfo.start + info.startOfFrameInfo.length > br.Offset(rawData))
 			{
-				br.Skip(info.startOfFrameInfo.length - (info.startOfFrameInfo.start - br.BytesLeft()));
+				br.Skip((info.startOfFrameInfo.start + info.startOfFrameInfo.length) - br.Offset(rawData));
 			}
 
-			//std::cout << VAR_VAL(info.startOfFrameInfo.start) << std::endl;
-			//std::cout << VAR_VAL(info.startOfFrameInfo.length) << std::endl;
-			//std::cout << VAR_VAL(info.startOfFrameInfo.precision) << std::endl;
-			//std::cout << VAR_VAL(info.startOfFrameInfo.height) << std::endl;
-			//std::cout << VAR_VAL(info.startOfFrameInfo.width) << std::endl;
-			//std::cout << VAR_VAL(info.startOfFrameInfo.componentCount) << std::endl;
-			//for (const point4D& component : info.startOfFrameInfo.components)
-			//{
-			//	std::cout << component << std::endl;
-			//}
-			//std::cout << br.BytesLeft() << std::endl;
-			//std::cout << std::endl;
+			
 		}
 		else if (next == ImageMarker::EOI)
 		{
@@ -373,7 +363,7 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 		{
 			DQTInfo quantizationTable{};
 
-			quantizationTable.start = br.BytesLeft();
+			quantizationTable.start = br.Offset(rawData);
 			quantizationTable.length = CST(br.Read16());
 
 			uint8_t PT = br.Read8();
@@ -382,36 +372,21 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 
 			for (size_t i = 0; i < 64; i++)
 			{
-				quantizationTable.values[zigzagTable[i]] = br.Read8();
+				quantizationTable.values[zigzagTable[i]] = C16(br.Read8());
 			}
 
 			info.quantizationTables.push_back(quantizationTable);
 
-			if (quantizationTable.start - br.BytesLeft() < quantizationTable.length)
+			if (quantizationTable.start + quantizationTable.length > br.Offset(rawData))
 			{
-				br.Skip(quantizationTable.length - (quantizationTable.start - br.BytesLeft()));
+				br.Skip((quantizationTable.start + quantizationTable.length) - br.Offset(rawData));
 			}
-
-			//std::cout << VAR_VAL(quantizationTable.start) << std::endl;
-			//std::cout << VAR_VAL(quantizationTable.length) << std::endl;
-			//std::cout << VAR_VAL(quantizationTable.precision) << std::endl;
-			//std::cout << VAR_VAL(quantizationTable.ID) << std::endl;
-			//for (size_t r = 0; r < 8; r++)
-			//{
-			//	for (size_t c = 0; c < 8; c++)
-			//	{
-			//		std::cout << CST(quantizationTable.values[r * 8 + c]);
-			//	}
-			//	std::cout << std::endl;
-			//}
-			//std::cout << br.BytesLeft() << std::endl;
-			//std::cout << std::endl;
 		}
 		else if (next == ImageMarker::DHT)
 		{
 			DHTInfo huffmanInfo{};
 
-			huffmanInfo.start = br.BytesLeft();
+			huffmanInfo.start = br.Offset(rawData);
 			huffmanInfo.length = CST(br.Read16());
 
 			uint8_t CH = br.Read8();
@@ -452,6 +427,7 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 			size_t symbolIndex = 0;
 			size_t symbolCode = 0;
 			//std::vector<HuffmanCode> huffmanCodes;
+			//std::cout << std::endl;
 			for (size_t i = 0; i < 16; i++)
 			{
 				symbolCode = firstCodes[i];
@@ -484,18 +460,10 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 
 			info.huffmanInfos.push_back(huffmanInfo);
 
-			if (huffmanInfo.start - br.BytesLeft() < huffmanInfo.length)
+			if (huffmanInfo.start + huffmanInfo.length > br.Offset(rawData))
 			{
-				br.Skip(huffmanInfo.length - (huffmanInfo.start - br.BytesLeft()));
+				br.Skip((huffmanInfo.start + huffmanInfo.length) - br.Offset(rawData));
 			}
-
-			//std::cout << VAR_VAL(huffmanInfo.start) << std::endl;
-			//std::cout << VAR_VAL(huffmanInfo.length) << std::endl;
-			//std::cout << VAR_VAL(huffmanInfo.type) << std::endl;
-			//std::cout << VAR_VAL(huffmanInfo.ID) << std::endl;
-			//std::cout << VAR_VAL(total) << std::endl;
-			//std::cout << br.BytesLeft() << std::endl;
-			//std::cout << std::endl;
 		}
 		else if (next == ImageMarker::DRI)
 		{
@@ -507,7 +475,7 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 		}
 		else if (next == ImageMarker::SOS)
 		{
-			info.startOfScanInfo.start = br.BytesLeft();
+			info.startOfScanInfo.start = br.Offset(rawData);
 			info.startOfScanInfo.length = CST(br.Read16());
 			info.startOfScanInfo.componentCount = CST(br.Read8());
 			for (size_t i = 0; i < info.startOfScanInfo.componentCount; i++)
@@ -518,25 +486,15 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 				info.startOfScanInfo.componentTables[componentID] = tables;
 			}
 
-			if (info.startOfScanInfo.start - br.BytesLeft() < info.startOfScanInfo.length)
+			if (info.startOfScanInfo.start + info.startOfScanInfo.length > br.Offset(rawData))
 			{
-				br.Skip(info.startOfScanInfo.length - (info.startOfScanInfo.start - br.BytesLeft()));
+				br.Skip((info.startOfScanInfo.start + info.startOfScanInfo.length) - br.Offset(rawData));
 			}
-
-			//std::cout << VAR_VAL(info.startOfScanInfo.start) << std::endl;
-			//std::cout << VAR_VAL(info.startOfScanInfo.length) << std::endl;
-			//std::cout << VAR_VAL(info.startOfScanInfo.componentCount) << std::endl;
-			//for (auto tables : info.startOfScanInfo.componentTables)
-			//{
-			//	std::cout << VAR_VAL(tables.first) << std::endl;
-			//	std::cout << VAR_VAL(tables.second.first) << " | " << VAR_VAL(tables.second.second) << std::endl;
-			//}
-			//std::cout << br.BytesLeft() << std::endl;
 		}
 	}
 }
 
-void ImageLoader::BuildHuffmanTree(std::string current, BinaryTree<std::pair<bool, HuffmanCode>>& start, std::vector<HuffmanCode>& codes)
+void ImageLoader::BuildHuffmanTree(std::string current, HuffmanTree& start, std::vector<HuffmanCode>& codes)
 {
 	if (current.size() >= 16) return;
 
@@ -569,10 +527,342 @@ void ImageLoader::BuildHuffmanTree(std::string current, BinaryTree<std::pair<boo
 	}
 }
 
-std::pair<bool, HuffmanCode> ImageLoader::FindCode(std::string code, BinaryTree<std::pair<bool, HuffmanCode>>& root)
+DataBlock ImageLoader::IDCTBlock(const DataBlock& input)
 {
-	std::pair<bool, HuffmanCode> result = {false, {}};
-	BinaryTree<std::pair<bool, HuffmanCode>>* node = &root;
+	DataBlock result{};
+
+	for (int y = 0; y < 8; y++)
+	{
+		for (int x = 0; x < 8; x++)
+		{
+			float sum = 0;
+
+			for (int v = 0; v < 8; v++)
+			{
+				for (int u = 0; u < 8; u++)
+				{
+					float AU = (u == 0) ? sqrt12 : 1;
+					float AV = (v == 0) ? sqrt12 : 1;
+					sum += AU * AV * input[v * 8 + u] * 
+						cos(((2 * x + 1) * u * M_PI) / 16.0) * 
+						cos(((2 * y + 1) * v * M_PI) / 16.0);
+				}
+			}
+
+			int16_t intSum = static_cast<int16_t>(sum * 0.25);
+			intSum += 128;
+			if (intSum < 0) intSum = 0;
+			if (intSum > 255) intSum = 255;
+
+			result[y * 8 + x] = intSum;
+		}
+	}
+
+	return (result);
+}
+
+const ImageInfo& ImageLoader::GetInfo() const
+{
+	return (info);
+}
+
+void ImageLoader::LoadEntropyData()
+{
+	size_t totalBlockCount = 0;
+	size_t maxH = 0;
+	size_t maxV = 0;
+	for (const Point<size_t, 4>& component : info.startOfFrameInfo.components)
+	{
+		totalBlockCount += component.y() * component.z();
+		maxH = std::max(maxH, component.y());
+		maxV = std::max(maxV, component.z());
+	}
+	data.MCUCount.x() = std::ceil(info.startOfFrameInfo.width / (maxH * 8));
+	data.MCUCount.y() = std::ceil(info.startOfFrameInfo.height / (maxV * 8));
+	data.MCUCount.z() = data.MCUCount.x() * data.MCUCount.y();
+
+	data.blocks.resize(totalBlockCount * data.MCUCount.z());
+	for (size_t i = 0; i < data.blocks.size(); i++)
+	{
+		data.blocks[i] = DataBlock{};
+	}
+
+	data.huffmanTables.resize(info.huffmanInfos.size(), HuffmanTree({false, {}}));
+	size_t HI = 0;
+	for (HuffmanTree& table : data.huffmanTables)
+	{
+		BuildHuffmanTree("", table, info.huffmanInfos[HI].huffmanCodes);
+		HI++;
+	}
+
+	std::string path = Utilities::GetPath() + "/resources/textures/" + info.name + ".jpg";
+	std::string file = Utilities::FileToString(path);
+	const uint8_t* rawData = reinterpret_cast<const uint8_t*>(file.c_str());
+
+	ByteReader br(rawData, file.size());
+	br.Skip(info.startOfScanInfo.start + info.startOfScanInfo.length);
+
+	//uint8_t symbol = GetSymbol(br, data.huffmanTables[0]);
+
+	size_t blockIndex = 0;
+	uint8_t symbol;
+	int value;
+	int DCs[info.startOfFrameInfo.components.size()]{};
+
+	EntropyReader er(br);
+
+	for (size_t MCU = 0; MCU < data.MCUCount.z(); MCU++)
+	{
+		size_t componentIndex = 0;
+		for (auto table : info.startOfScanInfo.componentTables)
+		{
+			Point<size_t, 4> currentComponent;
+			for (Point<size_t, 4> componentInfo : info.startOfFrameInfo.components)
+			{
+				if (componentInfo.x() == table.first)
+				{
+					currentComponent = componentInfo;
+					break;
+				}
+			}
+
+			int DCIndex = -1;
+			int ACIndex = -1;
+
+			for (size_t i = 0; i < info.huffmanInfos.size(); i++)
+			{
+				if (info.huffmanInfos[i].type == 0 && info.huffmanInfos[i].ID == table.second.first) DCIndex = i;
+				if (info.huffmanInfos[i].type == 1 && info.huffmanInfos[i].ID == table.second.second) ACIndex = i;
+			}
+
+			if (DCIndex == -1 || ACIndex == -1) throw (std::runtime_error("No valid tables found"));
+
+			size_t blockCount = currentComponent.y() * currentComponent.z();
+			for (size_t BI = 0; BI < blockCount; BI++)
+			{
+				symbol = er.NextSymbol(data.huffmanTables[DCIndex]);
+				if (symbol > 0)	{ value = er.ReadBits(symbol); }
+				else { value = 0; }
+
+				DCs[componentIndex] += value;
+
+				data.blocks[blockIndex][0] = static_cast<int16_t>(DCs[componentIndex]);
+
+				for (size_t i = 1; i < 64; i++)
+				{
+					symbol = er.NextSymbol(data.huffmanTables[ACIndex]);
+
+					if (symbol == 0x00) break;
+					if (symbol == 0xF0)
+					{
+						for (size_t j = 0; j < 16; j++)
+						{
+							if (i >= 64) throw (std::runtime_error("16 zero run length: out of block bounds"));
+
+							data.blocks[blockIndex][zigzagTable[i]] = 0;
+							if (j + 1 < 16) i++;
+						}
+						continue;
+					}
+
+					int run = symbol >> 4;
+					int size = symbol & 0x0F;
+
+					if (size == 0) throw (std::runtime_error("size equals zero"));
+
+					for (int j = 0; j < run; j++)
+					{
+						if (i >= 64) throw (std::runtime_error("size run length: out of block bounds"));
+
+						data.blocks[blockIndex][zigzagTable[i]] = 0;
+						i++;
+					}
+
+					value = er.ReadBits(size);
+					data.blocks[blockIndex][zigzagTable[i]] = static_cast<int16_t>(value);
+				}
+
+				for (size_t i = 0; i < 64; i++)
+				{
+					data.blocks[blockIndex][i] *= info.quantizationTables[currentComponent.w()].values[i];
+				}
+
+				data.blocks[blockIndex] = IDCTBlock(data.blocks[blockIndex]);
+
+				blockIndex++;
+			}
+
+			componentIndex++;
+		}
+
+		/*DataBlock res = IDCTBlock(data.blocks[0]);
+
+		for (size_t j = 0; j < 64; j++)
+		{
+			std::cout << res[j] << ", ";
+			if ((j + 1) % 8 == 0) std::cout << std::endl;
+		}
+		std::cout << std::endl;*/
+
+		//for (size_t i = 0; i < 6; i++)
+		//{
+		//	for (size_t j = 0; j < 64; j++)
+		//	{
+		//		std::cout << data.blocks[i][j] << ", ";
+		//		if ((j + 1) % 8 == 0) std::cout << std::endl;
+		//	}
+		//	std::cout << std::endl;
+		//}
+		//exit(EXIT_SUCCESS);
+	}
+
+	/*symbol = er.NextSymbol(data.huffmanTables[0]);
+
+	if (symbol > 0)	{ value = er.ReadBits(symbol); }
+	else { value = 0; }
+
+	DCs[0] += value;
+
+	data.block[0] = C16(DCs[0]);
+
+	for (size_t i = 1; i < 64; i++)
+	{
+		symbol = er.NextSymbol(data.huffmanTables[1]);
+
+		if (symbol == 0x00) break;
+		if (symbol == 0xF0)
+		{
+			for (size_t j = 0; j < 16; j++)
+			{
+				if (i >= 64) throw (std::runtime_error("16 zero run length: out of block bounds"));
+
+				data.block[zigzagTable[i]] = 0;
+				if (j + 1 < 16) i++;
+			}
+			continue;
+		}
+
+		int run = symbol >> 4;
+		int size = symbol & 0x0F;
+
+		if (size == 0) throw (std::runtime_error("size equals zero"));
+
+		for (int j = 0; j < run; j++)
+		{
+			if (i >= 64) throw (std::runtime_error("size run length: out of block bounds"));
+
+			data.block[zigzagTable[i]] = 0;
+			i++;
+		}
+
+		value = er.ReadBits(size);
+		data.block[zigzagTable[i]] = C16(value);
+	}*/
+
+	std::cout << "Done" << std::endl;
+}
+
+void ImageLoader::LoadPixels(std::array<unsigned char, (16 * 16) * 4>& buffer, size_t offset)
+{
+	size_t pixelIndex = 0;
+	size_t blockIndex = 0;
+
+	for (size_t y = 0; y < 16; y++)
+	{
+		for (size_t x = 0; x < 16; x++)
+		{
+			int yi = y;
+			int xi = x;
+			if (y < 8 && x < 8)
+			{
+				blockIndex = 0;
+			}
+			else if (y < 8 && x >= 8)
+			{
+				blockIndex = 1;
+				xi -= 8;
+			}
+			else if (y >= 8 && x < 8)
+			{
+				blockIndex = 2;
+				yi -= 8;
+			}
+			else
+			{
+				blockIndex = 3;
+				xi -= 8;
+				yi -= 8;
+			}
+
+			double Y = static_cast<double>(data.blocks[blockIndex + (6 * offset)][yi * 8 + xi]);
+			double Cb = static_cast<double>(data.blocks[4 + (6 * offset)][yi * 8 + xi]);
+			double Cr = static_cast<double>(data.blocks[5 + (6 * offset)][yi * 8 + xi]);
+
+			double R = (Y + 1.402 * (Cr - 128));
+			double G = (Y - 0.34414 * (Cb - 128) - 0.71414 * (Cr - 128));
+			double B = (Y + 1.772 * (Cb - 128));
+
+			if (R < 0) R = 0;
+			if (R > 255) R = 255;
+			if (G < 0) G = 0;
+			if (G > 255) G = 255;
+			if (B < 0) B = 0;
+			if (B > 255) B = 255;
+
+			unsigned char r = static_cast<unsigned char>(R);
+			unsigned char g = static_cast<unsigned char>(G);
+			unsigned char b = static_cast<unsigned char>(B);
+
+			buffer[pixelIndex++] = r;
+			buffer[pixelIndex++] = g;
+			buffer[pixelIndex++] = b;
+			buffer[pixelIndex++] = 255;
+		}
+	}
+}
+
+EntropyReader::EntropyReader(ByteReader& br) : br(br)
+{
+	
+}
+
+int EntropyReader::Extend(int v, int n)
+{
+	int vt = 1 << (n - 1);
+	return (v < vt) ? (v - ((1 << n) - 1)) : v;
+}
+
+void EntropyReader::FillBits()
+{
+	index = 0;
+	bits = "";
+			
+	uint8_t byte = br.Read8();
+
+	if (byte == 0x00 && previous == 0xFF)
+	{
+		previous = byte;
+		FillBits();
+		return;
+	}
+
+	previous = byte;
+
+	bits += Utilities::ToBits(byte);
+}
+
+void EntropyReader::ReadBit()
+{
+	if (index >= bits.size()) FillBits();
+
+	currentCode += bits[index];
+	index++;
+}
+
+HuffmanResult EntropyReader::FindCode(std::string code, HuffmanTree& root)
+{
+	HuffmanResult result = {false, {}};
+	HuffmanTree* node = &root;
 
 	for (size_t i = 0; i < code.size(); i++)
 	{
@@ -587,18 +877,86 @@ std::pair<bool, HuffmanCode> ImageLoader::FindCode(std::string code, BinaryTree<
 	return (result);
 }
 
-void ImageLoader::LoadEntropyData()
+uint8_t EntropyReader::NextSymbol(HuffmanTree& tree)
 {
-	info.huffmanTables.resize(info.huffmanInfos.size(), BinaryTree<std::pair<bool, HuffmanCode>>({false, {}}));
-	size_t i = 0;
-	for (BinaryTree<std::pair<bool, HuffmanCode>>& table : info.huffmanTables)
+	while (true)
 	{
-		BuildHuffmanTree("", table, info.huffmanInfos[i].huffmanCodes);
-		i++;
+		ReadBit();
+
+		HuffmanResult result = FindCode(currentCode, tree);
+		if (result.first)
+		{
+			//std::cout << "Code: " << currentCode << std::endl;
+			currentCode = "";
+			return (result.second.symbol);
+		}
+	}
+}
+
+int EntropyReader::ReadBits(size_t amount)
+{
+	int result = 0;
+
+	for (size_t i = 0; i < amount; i++)
+	{
+		ReadBit();
 	}
 
-	//std::pair<bool, HuffmanCode> result = FindCode("010", info.huffmanTables[0]);
-	//std::cout << std::endl;
-	//std::cout << "Result: ";
-	//if (result.first) std::cout << CST(result.second.symbol) << std::endl;
+	result = std::stoi(currentCode, nullptr, 2);
+	currentCode = "";
+
+	return (Extend(result, amount));
+}
+
+std::ostream& operator<<(std::ostream& out, const ImageInfo& info)
+{
+	out << VAR_VAL(info.startOfFrameInfo.start) << std::endl;
+	out << VAR_VAL(info.startOfFrameInfo.length) << std::endl;
+	out << VAR_VAL(info.startOfFrameInfo.precision) << std::endl;
+	out << VAR_VAL(info.startOfFrameInfo.height) << std::endl;
+	out << VAR_VAL(info.startOfFrameInfo.width) << std::endl;
+	out << VAR_VAL(info.startOfFrameInfo.componentCount) << std::endl;
+	for (const point4D& component : info.startOfFrameInfo.components)
+	{
+		out << component << std::endl;
+	}
+	out << std::endl;
+
+	for (const DQTInfo& quantizationTable : info.quantizationTables)
+	{
+		out << VAR_VAL(quantizationTable.start) << std::endl;
+		out << VAR_VAL(quantizationTable.length) << std::endl;
+		out << VAR_VAL(quantizationTable.precision) << std::endl;
+		out << VAR_VAL(quantizationTable.ID) << std::endl;
+		for (size_t r = 0; r < 8; r++)
+		{
+			for (size_t c = 0; c < 8; c++)
+			{
+				out << CST(quantizationTable.values[r * 8 + c]);
+			}
+			out << std::endl;
+		}
+		out << std::endl;
+	}
+
+	for (const DHTInfo& huffmanInfo : info.huffmanInfos)
+	{
+		out << VAR_VAL(huffmanInfo.start) << std::endl;
+		out << VAR_VAL(huffmanInfo.length) << std::endl;
+		out << VAR_VAL(huffmanInfo.type) << std::endl;
+		out << VAR_VAL(huffmanInfo.ID) << std::endl;
+		out << std::endl;
+	}
+
+	out << VAR_VAL(info.startOfScanInfo.start) << std::endl;
+	out << VAR_VAL(info.startOfScanInfo.length) << std::endl;
+	out << VAR_VAL(info.startOfScanInfo.componentCount) << std::endl;
+	for (auto tables : info.startOfScanInfo.componentTables)
+	{
+		out << VAR_VAL(tables.first) << std::endl;
+		out << VAR_VAL(tables.second.first) << " | " << VAR_VAL(tables.second.second) << std::endl;
+	}
+	out << std::endl;
+
+	return (out);
 }

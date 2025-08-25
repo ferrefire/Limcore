@@ -12,6 +12,7 @@
 #include <map>
 #include <array>
 #include <string>
+#include <iostream>
 
 #define CST(a) static_cast<size_t>(a)
 #define C8(a) static_cast<uint8_t>(a)
@@ -29,6 +30,8 @@ static const std::array<size_t, 64> zigzagTable =
 		58, 59, 52, 45, 38, 31, 39, 46,
 		53, 60, 61, 54, 47, 55, 62, 63
 	};
+
+static const float sqrt12 = 1.0 / sqrt(2);
 
 enum class ModelType { None, Obj, Gltf };
 enum class AttributeType { None, Position, Normal, Coordinate, Color, Index };
@@ -105,7 +108,7 @@ struct SOF0Info
 	size_t height = 0;
 	size_t width = 0;
 	size_t componentCount = 0;
-	std::vector<point4D> components;
+	std::vector<Point<size_t, 4>> components;
 };
 
 struct DQTInfo
@@ -114,7 +117,7 @@ struct DQTInfo
 	size_t length = 0;
 	size_t precision = 0;
 	size_t ID = 0;
-	std::array<uint8_t, 64> values{};
+	std::array<uint16_t, 64> values{};
 };
 
 struct HuffmanCode
@@ -142,6 +145,10 @@ struct SOSInfo
 	std::map<size_t, std::pair<size_t, size_t>> componentTables{};
 };
 
+typedef std::pair<bool, HuffmanCode> HuffmanResult;
+typedef BinaryTree<HuffmanResult> HuffmanTree;
+typedef std::array<int16_t, 64> DataBlock;
+
 struct ImageInfo
 {
 	std::string name = "";
@@ -150,8 +157,15 @@ struct ImageInfo
 	SOF0Info startOfFrameInfo{};
 	std::vector<DQTInfo> quantizationTables;
 	std::vector<DHTInfo> huffmanInfos;
-	std::vector<BinaryTree<std::pair<bool, HuffmanCode>>> huffmanTables;
 	SOSInfo startOfScanInfo{};
+};
+
+struct ImageData
+{
+	Point<size_t, 3> MCUCount{};
+
+	std::vector<HuffmanTree> huffmanTables;
+	std::vector<DataBlock> blocks;
 };
 
 class ByteReader
@@ -173,6 +187,27 @@ class ByteReader
 
 		bool AtMarker(ImageMarker marker);
 		ImageMarker NextMarker();
+};
+
+class EntropyReader
+{
+	private:
+		ByteReader& br;
+		std::string currentCode = "";
+		std::string bits = "";
+		size_t index = 0;
+		uint8_t previous = 0;
+
+		int Extend(int v, int n);
+		void FillBits();
+		void ReadBit();
+
+	public:
+		EntropyReader(ByteReader& br);
+
+		HuffmanResult FindCode(std::string code, HuffmanTree& root);
+		uint8_t NextSymbol(HuffmanTree& tree);
+		int ReadBits(size_t amount);
 };
 
 class ModelLoader
@@ -199,14 +234,20 @@ class ImageLoader
 {
 	private:
 		ImageInfo info{};
+		ImageData data{};
 
 		void GetJpgInfo(const std::string& name);
-		void BuildHuffmanTree(std::string current, BinaryTree<std::pair<bool, HuffmanCode>>& start, std::vector<HuffmanCode>& codes);
-		std::pair<bool, HuffmanCode> FindCode(std::string code, BinaryTree<std::pair<bool, HuffmanCode>>& root);
+		void BuildHuffmanTree(std::string current, HuffmanTree& start, std::vector<HuffmanCode>& codes);
+		DataBlock IDCTBlock(const DataBlock& input);
 
 	public:
 		ImageLoader(const std::string& name, const ImageType& type);
 		~ImageLoader();
 
+		const ImageInfo& GetInfo() const;
+
 		void LoadEntropyData();
+		void LoadPixels(std::array<unsigned char, (16 * 16) * 4>& buffer, size_t offset);
 };
+
+std::ostream& operator<<(std::ostream& out, const ImageInfo& info);
