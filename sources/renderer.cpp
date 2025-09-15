@@ -144,22 +144,12 @@ void Renderer::Frame()
 	VkResult acquireResult = vkAcquireNextImageKHR(device->GetLogicalDevice(), swapchain->GetSwapchain(), UINT64_MAX, 
 		renderSemaphores[currentFrame], VK_NULL_HANDLE, &renderIndex);
 
-	if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR)
-	{
-		Manager::Resize();
-		return;
-	}
-	else if (acquireResult != VK_SUCCESS)
-	{
-		throw (std::runtime_error("Failed to aquire next render image index"));
-	}
+	if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR) { Manager::Resize(); return; }
+	else if (acquireResult == VK_SUBOPTIMAL_KHR) Manager::Resize(false);
+	else if (acquireResult != VK_SUCCESS) throw (std::runtime_error("Failed to aquire next render image index"));
 
 	if (vkResetFences(device->GetLogicalDevice(), 1, &fences[currentFrame]) != VK_SUCCESS)
 		throw (std::runtime_error("Failed to reset fence"));
-
-	//if (vkAcquireNextImageKHR(device->GetLogicalDevice(), swapchain->GetSwapchain(), UINT64_MAX, 
-	//	renderSemaphores[currentFrame], VK_NULL_HANDLE, &renderIndex) != VK_SUCCESS)
-	//		throw (std::runtime_error("Failed to aquire next render image index"));
 
 	RecordCommands();
 	PresentFrame();
@@ -186,18 +176,6 @@ void Renderer::RecordCommands()
 		passInfo.pass->End(commands[currentFrame].GetBuffer());
 	}
 
-	/*for (Pass* pass : passes)
-	{
-		pass->Begin(commands[currentFrame].GetBuffer(), renderIndex);
-
-		for (std::function<void(VkCommandBuffer, uint32_t)> call : calls)
-		{
-			call(commands[currentFrame].GetBuffer(), currentFrame);
-		}
-
-		pass->End(commands[currentFrame].GetBuffer());
-	}*/
-
 	commands[currentFrame].End();
 
 	commands[currentFrame].Submit();
@@ -215,11 +193,9 @@ void Renderer::PresentFrame()
 
 	VkResult presentResult = vkQueuePresentKHR(device->GetQueue(device->GetQueueIndex(QueueType::Graphics)), &presentInfo);
 
-	if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR) Manager::Resize();
+	if (presentResult == VK_ERROR_OUT_OF_DATE_KHR) Manager::Resize();
+	else if (presentResult == VK_SUBOPTIMAL_KHR) Manager::Resize(false);
 	else if (presentResult != VK_SUCCESS) throw (std::runtime_error("Failed to present frame"));
-
-	//if (vkQueuePresentKHR(device->GetQueue(device->GetQueueIndex(QueueType::Graphics)), &presentInfo) != VK_SUCCESS)
-	//	throw (std::runtime_error("Failed to present frame"));
 }
 
 void Renderer::AddPass(PassInfo passInfo)

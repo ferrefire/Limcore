@@ -55,7 +55,7 @@ class Manager
 		static void Run();
 		static void Start();
 		static void Frame();
-		static void Resize();
+		static void Resize(bool force = true);
 		
 		static void ParseArguments(char **arguments, const int& count);
 		static bool ShouldClose();

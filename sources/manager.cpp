@@ -162,8 +162,14 @@ void Manager::Frame()
 	if (Input::GetKey(GLFW_KEY_ESCAPE).pressed) stopping = true;
 }
 
-void Manager::Resize()
+void Manager::Resize(bool force)
 {
+	if (!force)
+	{
+		resizing = true;
+		return;
+	}
+
 	resizing = false;
 
 	window.Resize(device);
