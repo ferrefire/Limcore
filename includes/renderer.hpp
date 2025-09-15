@@ -11,6 +11,14 @@
 #include <vector>
 #include <functional>
 
+struct PassInfo
+{
+	Pass* pass = nullptr;
+	std::vector<std::function<void(VkCommandBuffer, uint32_t)>> calls;
+	VkViewport viewport{};
+	VkRect2D scissor{};
+};
+
 class Renderer
 {
 	private:
@@ -25,8 +33,9 @@ class Renderer
 		static std::vector<VkSemaphore> renderSemaphores;
 		static std::vector<VkSemaphore> presentSemaphores;
 		static std::vector<Command> commands;
-		static std::vector<Pass*> passes;
-		static std::vector<std::function<void(VkCommandBuffer, uint32_t)>> calls;
+		static std::vector<PassInfo> passes;
+		//static std::vector<Pass*> passes;
+		//static std::vector<std::function<void(VkCommandBuffer, uint32_t)>> calls;
 
 		static void CreateFences();
 		static void CreateSemaphores();
@@ -46,5 +55,6 @@ class Renderer
 		static void Frame();
 
 		static void AddPass(Pass* pass);
-		static void RegisterCall(std::function<void(VkCommandBuffer, uint32_t)> call);
+		static void RegisterCall(size_t index, std::function<void(VkCommandBuffer, uint32_t)> call);
+		//static void RegisterCall(std::function<void(VkCommandBuffer, uint32_t)> call);
 };

@@ -64,6 +64,82 @@ bool updating = false;
 
 float angle = 0;
 
+void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
+{
+	if (Input::GetKey(GLFW_KEY_M).pressed)
+	{
+		Input::TriggerMouse();
+	}
+
+	if (Input::GetKey(GLFW_KEY_L).pressed)
+	{		
+		if (!loaded)
+		{
+			loaded = true;
+			imageLoader.LoadEntropyData();
+		}
+		else if (!updating)
+		{
+			updating = true;
+			std::vector<unsigned char> pixels{};
+			imageLoader.LoadPixels(pixels);
+			image.Update(&pixels[0], pixels.size(), {1024, 1024, 1});
+		}
+	}
+
+	angle += Time::deltaTime * 60;
+
+	Manager::GetCamera().UpdateView();
+
+	mat4 rotation = mat4::Rotation(angle * 0.5, Axis::x);
+	rotation.Rotate(angle * 2, Axis::y);
+	rotation.Rotate(angle * 0.25, Axis::z);
+
+	hammerData.view = Manager::GetCamera().GetView();
+	hammerData.model = mat4::Identity();
+	//hammerData.model *= rotation;
+	hammerData.model.Rotate(angle + 45, Axis::y);
+	hammerData.model.Translate(point3D(-2.0, 0, 2.0));
+	hammerBuffer.Update(&hammerData, sizeof(UniformData));
+
+	quadData.view = Manager::GetCamera().GetView();
+	quadData.model = mat4::Identity();
+	//quadData.model.Rotate(angle + 45, Axis::y);
+	quadData.model.Translate(point3D(0.0, 0, 2.0));
+	quadBuffer.Update(&quadData, sizeof(UniformData));
+
+	//duckData.view = Manager::GetCamera().GetView();
+	//duckData.model = mat4::Identity();
+	//duckData.model.Rotate(angle, Axis::y);
+	//duckData.model.Translate(point3D(2.0, 0, 2.0));
+	//duckBuffer.Update(&duckData, sizeof(UniformData));
+
+	//croissantData.view = Manager::GetCamera().GetView();
+	//croissantData.model = mat4::Identity();
+	////croissantData.model.Rotate(angle, Axis::y);
+	//croissantData.model.Rotate(angle + 135, Axis::y);
+	//croissantData.model.Translate(point3D(0.0, 0, 2.0));
+	//croissantBuffer.Update(&croissantData, sizeof(UniformData));
+
+	pipeline.Bind(commandBuffer);
+	descriptor.Bind(hammerSet, commandBuffer, pipeline.GetLayout());
+	hammer.Bind(commandBuffer);
+	vkCmdDrawIndexed(commandBuffer, CUI(hammer.GetIndices().size()), 1, 0, 0, 0);
+
+	quadPipeline.Bind(commandBuffer);
+	descriptor.Bind(quadSet, commandBuffer, quadPipeline.GetLayout());
+	quad.Bind(commandBuffer);
+	vkCmdDrawIndexed(commandBuffer, CUI(quad.GetIndices().size()), 1, 0, 0, 0);
+
+	//descriptor.Bind(duckSet, commandBuffer, pipeline.GetLayout());
+	//duck.Bind(commandBuffer);
+	//vkCmdDrawIndexed(commandBuffer, CUI(duck.GetIndices().size()), 1, 0, 0, 0);
+
+	//descriptor.Bind(croissantSet, commandBuffer, pipeline.GetLayout());
+	//croissant.Bind(commandBuffer);
+	//vkCmdDrawIndexed(commandBuffer, CUI(croissant.GetIndices().size()), 1, 0, 0, 0);
+}
+
 void Start()
 {
 	Device* device = &Manager::GetDevice();
@@ -207,134 +283,7 @@ void Start()
 	quadPipeline.Create(quadPipelineConfig, device);
 
 	Renderer::AddPass(&pass);
-}
-
-void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
-{
-	static size_t xp = 0;
-	static size_t yp = 0;
-
-	/*if (yp < 1024)
-	{
-		std::array<unsigned char, 256 * 4> pixels{};
-
-		for (size_t i = 0; i < 256 * 4; i++)
-		{
-			pixels[i] = 0;
-			pixels[++i] = 255;
-			pixels[++i] = 0;
-			pixels[++i] = 255;
-		}
-
-		image.Update(&pixels[0], 256 * 4, {256, 1, 1}, { xp, yp, 0 });
-		xp += 256;
-		if (xp >= 1024)
-		{
-			xp = 0;
-			yp += 1;
-		}
-	}*/
-
-	if (Input::GetKey(GLFW_KEY_M).pressed)
-	{
-		Input::TriggerMouse();
-	}
-
-	if (Input::GetKey(GLFW_KEY_L).pressed)
-	{		
-		if (!loaded)
-		{
-			loaded = true;
-			imageLoader.LoadEntropyData();
-		}
-		else if (!updating)
-		{
-			updating = true;
-			std::vector<unsigned char> pixels{};
-			imageLoader.LoadPixels(pixels);
-			image.Update(&pixels[0], pixels.size(), {1024, 1024, 1});
-		}
-	}
-	/*else if (loaded && !updating && Input::GetKey(GLFW_KEY_P).pressed)
-	{
-		updating = true;
-	}
-	else if (updating && yp < 64)
-	{
-		for (size_t i = 0; i < 16; i++)
-		{
-			if (yp < 64)
-			{
-				std::array<unsigned char, (16 * 16) * 4> pixels{};
-				imageLoader.LoadBlock(pixels, yp * 64 + xp);
-				image.Update(&pixels[0], (16 * 16) * 4, {16, 16, 1}, {xp * 16, yp * 16, 0});
-
-				xp += 1;
-				if (xp >= 64)
-				{
-					xp = 0;
-					yp += 1;
-				}
-			}
-		}
-
-		yp = 64;
-		std::vector<unsigned char> pixels{};
-		imageLoader.LoadPixels(pixels);
-		image.Update(&pixels[0], pixels.size(), {1024, 1024, 1});
-	}*/
-
-	angle += Time::deltaTime * 60;
-
-	Manager::GetCamera().UpdateView();
-
-	mat4 rotation = mat4::Rotation(angle * 0.5, Axis::x);
-	rotation.Rotate(angle * 2, Axis::y);
-	rotation.Rotate(angle * 0.25, Axis::z);
-
-	hammerData.view = Manager::GetCamera().GetView();
-	hammerData.model = mat4::Identity();
-	//hammerData.model *= rotation;
-	hammerData.model.Rotate(angle + 45, Axis::y);
-	hammerData.model.Translate(point3D(-2.0, 0, 2.0));
-	hammerBuffer.Update(&hammerData, sizeof(UniformData));
-
-	quadData.view = Manager::GetCamera().GetView();
-	quadData.model = mat4::Identity();
-	//quadData.model.Rotate(angle + 45, Axis::y);
-	quadData.model.Translate(point3D(0.0, 0, 2.0));
-	quadBuffer.Update(&quadData, sizeof(UniformData));
-
-	//duckData.view = Manager::GetCamera().GetView();
-	//duckData.model = mat4::Identity();
-	//duckData.model.Rotate(angle, Axis::y);
-	//duckData.model.Translate(point3D(2.0, 0, 2.0));
-	//duckBuffer.Update(&duckData, sizeof(UniformData));
-
-	//croissantData.view = Manager::GetCamera().GetView();
-	//croissantData.model = mat4::Identity();
-	////croissantData.model.Rotate(angle, Axis::y);
-	//croissantData.model.Rotate(angle + 135, Axis::y);
-	//croissantData.model.Translate(point3D(0.0, 0, 2.0));
-	//croissantBuffer.Update(&croissantData, sizeof(UniformData));
-
-	pipeline.Bind(commandBuffer);
-	descriptor.Bind(hammerSet, commandBuffer, pipeline.GetLayout());
-	hammer.Bind(commandBuffer);
-	vkCmdDrawIndexed(commandBuffer, CUI(hammer.GetIndices().size()), 1, 0, 0, 0);
-
-	quadPipeline.Bind(commandBuffer);
-	descriptor.Bind(quadSet, commandBuffer, quadPipeline.GetLayout());
-	quad.Bind(commandBuffer);
-	vkCmdDrawIndexed(commandBuffer, CUI(quad.GetIndices().size()), 1, 0, 0, 0);
-
-	//descriptor.Bind(duckSet, commandBuffer, pipeline.GetLayout());
-	//duck.Bind(commandBuffer);
-	//vkCmdDrawIndexed(commandBuffer, CUI(duck.GetIndices().size()), 1, 0, 0, 0);
-
-	//descriptor.Bind(croissantSet, commandBuffer, pipeline.GetLayout());
-	//croissant.Bind(commandBuffer);
-	//vkCmdDrawIndexed(commandBuffer, CUI(croissant.GetIndices().size()), 1, 0, 0, 0);
+	Renderer::RegisterCall(0, Frame);
 }
 
 void End()
@@ -428,7 +377,6 @@ int main(int argc, char** argv)
 	Manager::Create();
 
 	Manager::RegisterStartCall(Start);
-	Renderer::RegisterCall(Frame);
 	Manager::RegisterEndCall(End);
 
 	Manager::Run();

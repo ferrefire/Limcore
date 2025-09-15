@@ -123,7 +123,14 @@ void Renderer::Destroy()
 
 void Renderer::Frame()
 {
-	if (passes.size() == 0 || calls.size() == 0) return;
+	if (passes.size() == 0) return;
+
+	for (const PassInfo& passInfo : passes)
+	{
+		if (passInfo.pass == nullptr) return;
+		if (passInfo.calls.size() == 0) return;
+	}
+	//if (passes.size() == 0 || calls.size() == 0) return;
 
 	if (vkWaitForFences(device->GetLogicalDevice(), 1, &fences[currentFrame], VK_TRUE, UINT64_MAX) != VK_SUCCESS)
 		throw (std::runtime_error("Failed to wait for fence"));
@@ -145,7 +152,19 @@ void Renderer::RecordCommands()
 {
 	commands[currentFrame].Begin();
 
-	for (Pass* pass : passes)
+	for (PassInfo& passInfo : passes)
+	{
+		passInfo.pass->Begin(commands[currentFrame].GetBuffer(), renderIndex);
+
+		for (std::function<void(VkCommandBuffer, uint32_t)> call : passInfo.calls)
+		{
+			call(commands[currentFrame].GetBuffer(), currentFrame);
+		}
+
+		passInfo.pass->End(commands[currentFrame].GetBuffer());
+	}
+
+	/*for (Pass* pass : passes)
 	{
 		pass->Begin(commands[currentFrame].GetBuffer(), renderIndex);
 
@@ -155,7 +174,7 @@ void Renderer::RecordCommands()
 		}
 
 		pass->End(commands[currentFrame].GetBuffer());
-	}
+	}*/
 
 	commands[currentFrame].End();
 
@@ -180,13 +199,23 @@ void Renderer::AddPass(Pass* pass)
 {
 	if (!pass) throw (std::runtime_error("Cannot add pass because it does not exist"));
 
-	passes.push_back(pass);
+	PassInfo passInfo{};
+	passInfo.pass = pass;
+
+	passes.push_back(passInfo);
 }
 
-void Renderer::RegisterCall(std::function<void(VkCommandBuffer, uint32_t)> call)
+void Renderer::RegisterCall(size_t index, std::function<void(VkCommandBuffer, uint32_t)> call)
 {
-	calls.push_back(call);
+	if (passes.size() <= index) return;
+
+	passes[index].calls.push_back(call);
 }
+
+//void Renderer::RegisterCall(std::function<void(VkCommandBuffer, uint32_t)> call)
+//{
+//	calls.push_back(call);
+//}
 
 Device* Renderer::device = nullptr;
 Swapchain* Renderer::swapchain = nullptr;
@@ -199,5 +228,6 @@ std::vector<VkFence> Renderer::fences;
 std::vector<VkSemaphore> Renderer::renderSemaphores;
 std::vector<VkSemaphore> Renderer::presentSemaphores;
 std::vector<Command> Renderer::commands;
-std::vector<Pass*> Renderer::passes;
-std::vector<std::function<void(VkCommandBuffer, uint32_t)>> Renderer::calls;
+std::vector<PassInfo> Renderer::passes;
+//std::vector<Pass*> Renderer::passes;
+//std::vector<std::function<void(VkCommandBuffer, uint32_t)>> Renderer::calls;
