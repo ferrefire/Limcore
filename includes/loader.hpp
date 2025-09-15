@@ -14,6 +14,7 @@
 #include <string>
 #include <iostream>
 
+#define FAST_BITS 8
 #define CST(a) static_cast<size_t>(a)
 #define C8(a) static_cast<uint8_t>(a)
 #define C16(a) static_cast<uint16_t>(a)
@@ -149,6 +150,12 @@ typedef std::pair<bool, HuffmanCode> HuffmanResult;
 typedef BinaryTree<HuffmanResult> HuffmanTree;
 typedef std::array<int16_t, 64> DataBlock;
 
+struct HuffmanTreeInfo
+{
+	HuffmanTree& root;
+	std::map<std::string, uint8_t> mappedCodes;
+};
+
 struct ImageInfo
 {
 	std::string name = "";
@@ -165,6 +172,8 @@ struct ImageData
 	Point<size_t, 3> MCUCount{};
 
 	std::vector<HuffmanTree> huffmanTables;
+	std::vector<std::array<int16_t, 1 << FAST_BITS>> fastHuffmanTables;
+
 	std::vector<DataBlock> blocks;
 };
 
@@ -200,14 +209,19 @@ class EntropyReader
 
 		int Extend(int v, int n);
 		void FillBits();
+		void AddBits();
 		void ReadBit();
 
 	public:
 		EntropyReader(ByteReader& br);
 
-		HuffmanResult FindCode(std::string code, HuffmanTree& root);
+		HuffmanResult FindCode(const std::string& code, HuffmanTree& root) const;
 		uint8_t NextSymbol(HuffmanTree& tree);
+		uint8_t NextSymbolFast(const HuffmanTree& tree);
+		std::pair<bool, uint8_t> NextSymbolFast(const std::array<int16_t, 1 << FAST_BITS>& table, const std::vector<HuffmanCode>& codes);
+		//uint8_t NextSymbolFast(HuffmanTreeInfo& treeInfo);
 		int ReadBits(size_t amount);
+		int ReadBitsFast(size_t amount);
 };
 
 class ModelLoader
@@ -238,7 +252,10 @@ class ImageLoader
 
 		void GetJpgInfo(const std::string& name);
 		void BuildHuffmanTree(std::string current, HuffmanTree& start, std::vector<HuffmanCode>& codes);
+		std::array<int16_t, 1 << FAST_BITS> BuildFastHuffmanTable(std::vector<HuffmanCode>& codes);
+		uint8_t NextEntropySymbol(EntropyReader& er, size_t tableIndex);
 		DataBlock IDCTBlock(const DataBlock& input);
+		DataBlock FIDCTBlock(const DataBlock& input);
 
 	public:
 		ImageLoader(const std::string& name, const ImageType& type);
@@ -247,7 +264,8 @@ class ImageLoader
 		const ImageInfo& GetInfo() const;
 
 		void LoadEntropyData();
-		void LoadPixels(std::array<unsigned char, (16 * 16) * 4>& buffer, size_t offset);
+		void LoadBlock(std::array<unsigned char, (16 * 16) * 4>& buffer, size_t offset);
+		void LoadPixels(std::vector<unsigned char>& buffer);
 };
 
 std::ostream& operator<<(std::ostream& out, const ImageInfo& info);

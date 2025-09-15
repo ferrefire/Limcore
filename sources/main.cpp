@@ -29,7 +29,7 @@ struct UniformData
 };
 
 //Mesh<Position | Normal, VK_INDEX_TYPE_UINT16> mesh;
-Mesh<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT16> hammer;
+Mesh<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT32> hammer;
 Mesh<Position | Coordinate, VK_INDEX_TYPE_UINT16> quad;
 //Mesh<Position | Normal, VK_INDEX_TYPE_UINT32> duck;
 //Mesh<Position | Normal, VK_INDEX_TYPE_UINT32> croissant;
@@ -58,8 +58,9 @@ size_t quadSet;
 
 Image image;
 
-ImageLoader imageLoader("wooden_hammer_diff", ImageType::Jpg);
+ImageLoader imageLoader("cannon_diff", ImageType::Jpg);
 bool loaded = false;
+bool updating = false;
 
 float angle = 0;
 
@@ -68,8 +69,8 @@ void Start()
 	Device* device = &Manager::GetDevice();
 
 	//mesh.SetShape(Shape<Position | Normal, VK_INDEX_TYPE_UINT32>(ShapeType::Cube));
-	Shape<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT16> shape;
-	shape.Create(ModelLoader("wooden_hammer", ModelType::Gltf));
+	Shape<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT32> shape;
+	shape.Create(ModelLoader("cannon", ModelType::Gltf));
 	//shape.Create(ShapeType::Cube);
 	shape.Scalarize();
 	hammer.SetShape(shape);
@@ -235,33 +236,48 @@ void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 	}*/
 
 	if (Input::GetKey(GLFW_KEY_L).pressed)
-	{
-		imageLoader.LoadEntropyData();
-		loaded = true;
-	}
-	else if (loaded && yp < 64)
-	{
-		//std::array<unsigned char, (1024 * 1024) * 4> pixels{};
-		//for (size_t i = 0; i < (1024 * 1024) * 4; i++)
-		//{ 
-		//	pixels[i] = 0;
-		//	pixels[++i] = 255;
-		//	pixels[++i] = 0;
-		//	pixels[++i] = 255;
-		//}
-		//image.Update(&pixels[0], (1024 * 1024) * 4, {1024, 1024, 1});
-
-		std::array<unsigned char, (16 * 16) * 4> pixels{};
-		imageLoader.LoadPixels(pixels, yp * 64 + xp);
-		image.Update(&pixels[0], (16 * 16) * 4, {16, 16, 1}, {xp * 16, yp * 16, 0});
-
-		xp += 1;
-		if (xp >= 64)
+	{		
+		if (!loaded)
 		{
-			xp = 0;
-			yp += 1;
+			loaded = true;
+			imageLoader.LoadEntropyData();
+		}
+		else if (!updating)
+		{
+			updating = true;
+			std::vector<unsigned char> pixels{};
+			imageLoader.LoadPixels(pixels);
+			image.Update(&pixels[0], pixels.size(), {1024, 1024, 1});
 		}
 	}
+	/*else if (loaded && !updating && Input::GetKey(GLFW_KEY_P).pressed)
+	{
+		updating = true;
+	}
+	else if (updating && yp < 64)
+	{
+		for (size_t i = 0; i < 16; i++)
+		{
+			if (yp < 64)
+			{
+				std::array<unsigned char, (16 * 16) * 4> pixels{};
+				imageLoader.LoadBlock(pixels, yp * 64 + xp);
+				image.Update(&pixels[0], (16 * 16) * 4, {16, 16, 1}, {xp * 16, yp * 16, 0});
+
+				xp += 1;
+				if (xp >= 64)
+				{
+					xp = 0;
+					yp += 1;
+				}
+			}
+		}
+
+		yp = 64;
+		std::vector<unsigned char> pixels{};
+		imageLoader.LoadPixels(pixels);
+		image.Update(&pixels[0], pixels.size(), {1024, 1024, 1});
+	}*/
 
 	angle += Time::deltaTime * 60;
 
@@ -401,7 +417,7 @@ int main(int argc, char** argv)
 	//std::cout << str.substr(range.first + 1, range.second - range.first - 1) << std::endl;
 	//exit(EXIT_SUCCESS);
 
-	std::cout << imageLoader.GetInfo() << std::endl;
+	//std::cout << imageLoader.GetInfo() << std::endl;
 
 	Manager::ParseArguments(argv, argc);
 	Manager::Create();

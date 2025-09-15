@@ -3,6 +3,7 @@
 #include "utilities.hpp"
 #include "bitmask.hpp"
 #include "printer.hpp"
+#include "time.hpp"
 
 #include <fstream>
 #include <sstream>
@@ -527,6 +528,31 @@ void ImageLoader::BuildHuffmanTree(std::string current, HuffmanTree& start, std:
 	}
 }
 
+std::array<int16_t, 1 << FAST_BITS> ImageLoader::BuildFastHuffmanTable(std::vector<HuffmanCode>& codes)
+{
+	std::array<int16_t, 1 << FAST_BITS> table{};
+
+	for (size_t i = 0; i < (1 << FAST_BITS); i++) table[i] = -1;
+
+	for (size_t i = 0; i < codes.size(); i++)
+	{
+		int length = codes[i].length;
+		if (length <= FAST_BITS)
+		{
+			int shift = FAST_BITS - length;
+			int base = codes[i].code << shift;
+			int repetitions = 1 << shift;
+
+			for (size_t r = 0; r < repetitions; r++)
+			{
+				table[base + r] = i;
+			}
+		}
+	}
+
+	return (table);
+}
+
 DataBlock ImageLoader::IDCTBlock(const DataBlock& input)
 {
 	DataBlock result{};
@@ -561,13 +587,95 @@ DataBlock ImageLoader::IDCTBlock(const DataBlock& input)
 	return (result);
 }
 
+DataBlock ImageLoader::FIDCTBlock(const DataBlock& input)
+{
+	static std::array<float, 64> transform{};
+	static bool computed = false;
+
+	if (!computed)
+	{
+		computed = true;
+		for (int v = 0; v < 8; v++)
+		{
+			for (int u = 0; u < 8; u++)
+			{
+				float AU = (u == 0) ? sqrt12 : 1;
+				transform[v * 8 + u] = 0.5f * AU * cos(((2 * v + 1) * u * M_PI) / 16.0);
+			}
+		}
+	}
+
+	DataBlock result{};
+	std::array<float, 64> temp{};
+
+	for (int x = 0; x < 8; x++)
+	{
+		for (int y = 0; y < 8; y++)
+		{
+			float sum = 0;
+
+			for (int k = 0; k < 8; k++)
+			{
+				sum += transform[y * 8 + k] * input[k * 8 + x];
+			}
+
+			temp[y * 8 + x] = sum;
+		}
+	}
+
+	for (int y = 0; y < 8; y++)
+	{
+		for (int x = 0; x < 8; x++)
+		{
+			float sum = 0;
+
+			for (int k = 0; k < 8; k++)
+			{
+				sum += transform[x * 8 + k] * temp[y * 8 + k];
+			}
+
+			int intSum = std::lround(sum + 128);
+			if (intSum < 0) intSum = 0;
+			if (intSum > 255) intSum = 255;
+
+			result[y * 8 + x] = static_cast<int16_t>(intSum);
+		}
+	}
+
+	return (result);
+}
+
 const ImageInfo& ImageLoader::GetInfo() const
 {
 	return (info);
 }
 
+//static size_t fastFound = 0;
+//static size_t slowFound = 0;
+
+uint8_t ImageLoader::NextEntropySymbol(EntropyReader& er, size_t tableIndex)
+{
+	const std::pair<bool, uint8_t> fastResult = er.NextSymbolFast(data.fastHuffmanTables[tableIndex], info.huffmanInfos[tableIndex].huffmanCodes);
+	
+	if (fastResult.first)
+	{
+		//fastFound++;
+		return (fastResult.second);
+	}
+	else
+	{
+		//slowFound++;
+		return (er.NextSymbolFast(data.huffmanTables[tableIndex]));
+	}
+}
+
+static double addTime = 0;
+static double restTime = 0;
+
 void ImageLoader::LoadEntropyData()
 {
+	double start = Time::GetCurrentTime();
+
 	size_t totalBlockCount = 0;
 	size_t maxH = 0;
 	size_t maxV = 0;
@@ -587,17 +695,28 @@ void ImageLoader::LoadEntropyData()
 		data.blocks[i] = DataBlock{};
 	}
 
+	double treeStart = Time::GetCurrentTime();
+
 	data.huffmanTables.resize(info.huffmanInfos.size(), HuffmanTree({false, {}}));
+	data.fastHuffmanTables.resize(info.huffmanInfos.size());
 	size_t HI = 0;
 	for (HuffmanTree& table : data.huffmanTables)
 	{
 		BuildHuffmanTree("", table, info.huffmanInfos[HI].huffmanCodes);
+		data.fastHuffmanTables[HI] = BuildFastHuffmanTable(info.huffmanInfos[HI].huffmanCodes);
+		//data.huffmanTableInfos.push_back({table});
 		HI++;
 	}
+
+	std::cout << "Trees build in: " << (Time::GetCurrentTime() - treeStart) << std::endl;
+
+	double fileStart = Time::GetCurrentTime();
 
 	std::string path = Utilities::GetPath() + "/resources/textures/" + info.name + ".jpg";
 	std::string file = Utilities::FileToString(path);
 	const uint8_t* rawData = reinterpret_cast<const uint8_t*>(file.c_str());
+
+	std::cout << "File loaded in: " << (Time::GetCurrentTime() - fileStart) << std::endl;
 
 	ByteReader br(rawData, file.size());
 	br.Skip(info.startOfScanInfo.start + info.startOfScanInfo.length);
@@ -610,6 +729,12 @@ void ImageLoader::LoadEntropyData()
 	int DCs[info.startOfFrameInfo.components.size()]{};
 
 	EntropyReader er(br);
+
+	double entropyStart = Time::GetCurrentTime();
+
+	double treeTime = 0;
+	double transformTime = 0;
+	double readTime = 0;
 
 	for (size_t MCU = 0; MCU < data.MCUCount.z(); MCU++)
 	{
@@ -640,17 +765,32 @@ void ImageLoader::LoadEntropyData()
 			size_t blockCount = currentComponent.y() * currentComponent.z();
 			for (size_t BI = 0; BI < blockCount; BI++)
 			{
-				symbol = er.NextSymbol(data.huffmanTables[DCIndex]);
+				double treeTimeStart = Time::GetCurrentTime();
+
+				//symbol = er.NextSymbolFast(data.huffmanTables[DCIndex]);
+				symbol = NextEntropySymbol(er, DCIndex);
+
+				treeTime += (Time::GetCurrentTime() - treeTimeStart);
+
+				double readTimeStart = Time::GetCurrentTime();
+
 				if (symbol > 0)	{ value = er.ReadBits(symbol); }
 				else { value = 0; }
 
+				readTime += (Time::GetCurrentTime() - readTimeStart);
+
 				DCs[componentIndex] += value;
 
-				data.blocks[blockIndex][0] = static_cast<int16_t>(DCs[componentIndex]);
+				data.blocks[blockIndex][0] = static_cast<int16_t>(DCs[componentIndex]  * info.quantizationTables[currentComponent.w()].values[0]);
 
 				for (size_t i = 1; i < 64; i++)
 				{
-					symbol = er.NextSymbol(data.huffmanTables[ACIndex]);
+					treeTimeStart = Time::GetCurrentTime();
+
+					//symbol = er.NextSymbolFast(data.huffmanTables[ACIndex]);
+					symbol = NextEntropySymbol(er, ACIndex);
+
+					treeTime += (Time::GetCurrentTime() - treeTimeStart);
 
 					if (symbol == 0x00) break;
 					if (symbol == 0xF0)
@@ -678,91 +818,49 @@ void ImageLoader::LoadEntropyData()
 						i++;
 					}
 
-					value = er.ReadBits(size);
+					readTimeStart = Time::GetCurrentTime();
+
+					value = er.ReadBits(size) * info.quantizationTables[currentComponent.w()].values[zigzagTable[i]];
+
+					readTime += (Time::GetCurrentTime() - readTimeStart);
+
 					data.blocks[blockIndex][zigzagTable[i]] = static_cast<int16_t>(value);
 				}
 
-				for (size_t i = 0; i < 64; i++)
-				{
-					data.blocks[blockIndex][i] *= info.quantizationTables[currentComponent.w()].values[i];
-				}
+				//for (size_t i = 0; i < 64; i++)
+				//{
+				//	data.blocks[blockIndex][i] *= info.quantizationTables[currentComponent.w()].values[i];
+				//}
 
-				data.blocks[blockIndex] = IDCTBlock(data.blocks[blockIndex]);
+				double transformTimeStart = Time::GetCurrentTime();
+
+				//data.blocks[blockIndex] = IDCTBlock(data.blocks[blockIndex]);
+				data.blocks[blockIndex] = FIDCTBlock(data.blocks[blockIndex]);
+
+				transformTime += (Time::GetCurrentTime() - transformTimeStart);
 
 				blockIndex++;
 			}
 
 			componentIndex++;
 		}
-
-		/*DataBlock res = IDCTBlock(data.blocks[0]);
-
-		for (size_t j = 0; j < 64; j++)
-		{
-			std::cout << res[j] << ", ";
-			if ((j + 1) % 8 == 0) std::cout << std::endl;
-		}
-		std::cout << std::endl;*/
-
-		//for (size_t i = 0; i < 6; i++)
-		//{
-		//	for (size_t j = 0; j < 64; j++)
-		//	{
-		//		std::cout << data.blocks[i][j] << ", ";
-		//		if ((j + 1) % 8 == 0) std::cout << std::endl;
-		//	}
-		//	std::cout << std::endl;
-		//}
-		//exit(EXIT_SUCCESS);
 	}
 
-	/*symbol = er.NextSymbol(data.huffmanTables[0]);
+	std::cout << "Tree search time: " << treeTime << std::endl;
 
-	if (symbol > 0)	{ value = er.ReadBits(symbol); }
-	else { value = 0; }
+	std::cout << "Read time: " << readTime << std::endl;
 
-	DCs[0] += value;
+	std::cout << "Transform time: " << transformTime << std::endl;
 
-	data.block[0] = C16(DCs[0]);
+	std::cout << "Entropy loaded in: " << (Time::GetCurrentTime() - entropyStart) << std::endl;
 
-	for (size_t i = 1; i < 64; i++)
-	{
-		symbol = er.NextSymbol(data.huffmanTables[1]);
+	std::cout << "Completed in: " << (Time::GetCurrentTime() - start) << std::endl;
 
-		if (symbol == 0x00) break;
-		if (symbol == 0xF0)
-		{
-			for (size_t j = 0; j < 16; j++)
-			{
-				if (i >= 64) throw (std::runtime_error("16 zero run length: out of block bounds"));
-
-				data.block[zigzagTable[i]] = 0;
-				if (j + 1 < 16) i++;
-			}
-			continue;
-		}
-
-		int run = symbol >> 4;
-		int size = symbol & 0x0F;
-
-		if (size == 0) throw (std::runtime_error("size equals zero"));
-
-		for (int j = 0; j < run; j++)
-		{
-			if (i >= 64) throw (std::runtime_error("size run length: out of block bounds"));
-
-			data.block[zigzagTable[i]] = 0;
-			i++;
-		}
-
-		value = er.ReadBits(size);
-		data.block[zigzagTable[i]] = C16(value);
-	}*/
-
-	std::cout << "Done" << std::endl;
+	//std::cout << "Fast found: " << fastFound << " Slow found: " << slowFound << std::endl;
+	std::cout << "Add time: " << addTime << " Rest time: " << restTime << std::endl;
 }
 
-void ImageLoader::LoadPixels(std::array<unsigned char, (16 * 16) * 4>& buffer, size_t offset)
+void ImageLoader::LoadBlock(std::array<unsigned char, (16 * 16) * 4>& buffer, size_t offset)
 {
 	size_t pixelIndex = 0;
 	size_t blockIndex = 0;
@@ -773,6 +871,8 @@ void ImageLoader::LoadPixels(std::array<unsigned char, (16 * 16) * 4>& buffer, s
 		{
 			int yi = y;
 			int xi = x;
+			int yci = y / 2;
+			int xci = x / 2;
 			if (y < 8 && x < 8)
 			{
 				blockIndex = 0;
@@ -795,8 +895,8 @@ void ImageLoader::LoadPixels(std::array<unsigned char, (16 * 16) * 4>& buffer, s
 			}
 
 			double Y = static_cast<double>(data.blocks[blockIndex + (6 * offset)][yi * 8 + xi]);
-			double Cb = static_cast<double>(data.blocks[4 + (6 * offset)][yi * 8 + xi]);
-			double Cr = static_cast<double>(data.blocks[5 + (6 * offset)][yi * 8 + xi]);
+			double Cb = static_cast<double>(data.blocks[4 + (6 * offset)][yci * 8 + xci]);
+			double Cr = static_cast<double>(data.blocks[5 + (6 * offset)][yci * 8 + xci]);
 
 			double R = (Y + 1.402 * (Cr - 128));
 			double G = (Y - 0.34414 * (Cb - 128) - 0.71414 * (Cr - 128));
@@ -817,6 +917,35 @@ void ImageLoader::LoadPixels(std::array<unsigned char, (16 * 16) * 4>& buffer, s
 			buffer[pixelIndex++] = g;
 			buffer[pixelIndex++] = b;
 			buffer[pixelIndex++] = 255;
+		}
+	}
+}
+
+void ImageLoader::LoadPixels(std::vector<unsigned char>& buffer)
+{
+	buffer.resize((info.startOfFrameInfo.width * info.startOfFrameInfo.height) * 4);
+
+	for (size_t y = 0; y < data.MCUCount.y(); y++)
+	{
+		for (size_t x = 0; x < data.MCUCount.x(); x++)
+		{
+			std::array<unsigned char, (16 * 16) * 4> blockPixels{};
+			LoadBlock(blockPixels, y * data.MCUCount.x() + x);
+
+			for (size_t by = 0; by < 16; by++)
+			{
+				for (size_t bx = 0; bx < 16; bx++)
+				{
+
+					size_t bufferIndex = (y * 16 + by) * info.startOfFrameInfo.width * 4 + (x * 16 + bx) * 4;
+					size_t blockIndex = by * 16 * 4 + bx * 4;
+
+					buffer[bufferIndex++] = blockPixels[blockIndex++];
+					buffer[bufferIndex++] = blockPixels[blockIndex++];
+					buffer[bufferIndex++] = blockPixels[blockIndex++];
+					buffer[bufferIndex++] = blockPixels[blockIndex++];
+				}
+			}
 		}
 	}
 }
@@ -851,6 +980,22 @@ void EntropyReader::FillBits()
 	bits += Utilities::ToBits(byte);
 }
 
+void EntropyReader::AddBits()
+{			
+	uint8_t byte = br.Read8();
+
+	if (byte == 0x00 && previous == 0xFF)
+	{
+		previous = byte;
+		AddBits();
+		return;
+	}
+
+	previous = byte;
+
+	bits += Utilities::ToBits(byte);
+}
+
 void EntropyReader::ReadBit()
 {
 	if (index >= bits.size()) FillBits();
@@ -859,7 +1004,7 @@ void EntropyReader::ReadBit()
 	index++;
 }
 
-HuffmanResult EntropyReader::FindCode(std::string code, HuffmanTree& root)
+HuffmanResult EntropyReader::FindCode(const std::string& code, HuffmanTree& root) const
 {
 	HuffmanResult result = {false, {}};
 	HuffmanTree* node = &root;
@@ -886,12 +1031,95 @@ uint8_t EntropyReader::NextSymbol(HuffmanTree& tree)
 		HuffmanResult result = FindCode(currentCode, tree);
 		if (result.first)
 		{
-			//std::cout << "Code: " << currentCode << std::endl;
 			currentCode = "";
 			return (result.second.symbol);
 		}
 	}
 }
+
+uint8_t EntropyReader::NextSymbolFast(const HuffmanTree& tree)
+{
+	const HuffmanTree* node = &tree;
+	int bit = -1;
+
+	while (true)
+	{
+		bit++;
+
+		ReadBit();
+
+		node = node->GetSide(currentCode[bit] == '0' ? Left : Right);
+		HuffmanResult result = node->GetValue();
+		if (result.first && (CST(bit + 1) == currentCode.size()))
+		{
+			currentCode = "";
+			return (result.second.symbol);
+		}
+	}
+}
+
+std::pair<bool, uint8_t> EntropyReader::NextSymbolFast(const std::array<int16_t, 1 << FAST_BITS>& table, const std::vector<HuffmanCode>& codes)
+{
+	double start = Time::GetCurrentTime();
+
+	if (index > 0) bits = bits.substr(index);
+	index = 0;
+
+	while (index + FAST_BITS > bits.size()) { AddBits(); }
+
+	addTime += (Time::GetCurrentTime() - start);
+
+	start = Time::GetCurrentTime();
+
+	int bitVal = std::stoi(bits, nullptr, 2);
+
+	int key = (bitVal >> (bits.size() - FAST_BITS)) & ((1 << FAST_BITS) - 1);
+	int fastResult = table[key];
+
+	restTime += (Time::GetCurrentTime() - start);
+
+	if (fastResult >= 0)
+	{
+		int length = codes[fastResult].length;
+		//bits = bits.substr(length); // maybe just set index
+		index = length;
+		return (std::pair<bool, uint8_t>{true, codes[fastResult].symbol});
+	}
+
+	return (std::pair<bool, uint8_t>{false, 0});
+}
+
+/*uint8_t EntropyReader::NextSymbolFast(HuffmanTreeInfo& treeInfo)
+{
+	HuffmanTree* node = &treeInfo.root;
+	int bit = -1;
+
+	while (true)
+	{
+		bit++;
+
+		ReadBit();
+
+		if (treeInfo.mappedCodes.contains(currentCode))
+		{
+			uint8_t result = treeInfo.mappedCodes[currentCode];
+			currentCode = "";
+			return (result);
+		}
+
+		BinaryTreeSide side = (currentCode[bit] == '0' ? Left : Right);
+		
+		if (!node->HasSide(side)) continue;
+
+		node = node->GetSide(side);
+		if (node->GetValue().first && (bit + 1 == currentCode.size()))
+		{
+			treeInfo.mappedCodes[currentCode] = node->GetValue().second.symbol;
+			currentCode = "";
+			return (node->GetValue().second.symbol);
+		}
+	}
+}*/
 
 int EntropyReader::ReadBits(size_t amount)
 {
@@ -901,6 +1129,21 @@ int EntropyReader::ReadBits(size_t amount)
 	{
 		ReadBit();
 	}
+
+	result = std::stoi(currentCode, nullptr, 2);
+	currentCode = "";
+
+	return (Extend(result, amount));
+}
+
+int EntropyReader::ReadBitsFast(size_t amount)
+{
+	int result = 0;
+
+	while (index + amount >= bits.size()) AddBits();
+	
+	currentCode += bits.substr(index, amount);
+	index += amount;
 
 	result = std::stoi(currentCode, nullptr, 2);
 	currentCode = "";
