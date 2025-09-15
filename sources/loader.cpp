@@ -726,7 +726,8 @@ void ImageLoader::LoadEntropyData()
 	size_t blockIndex = 0;
 	uint8_t symbol;
 	int value;
-	int DCs[info.startOfFrameInfo.components.size()]{};
+	//int DCs[info.startOfFrameInfo.components.size()]{};
+	std::vector<int> DCs(info.startOfFrameInfo.components.size());
 
 	EntropyReader er(br);
 
