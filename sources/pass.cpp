@@ -130,18 +130,9 @@ void Pass::Destroy()
 {
 	if (!device) return;
 
-	for (Image* image : images)
-	{
-		image->Destroy();
-		delete(image);
-	}
-	images.clear();
+	DestroyImages();
 
-	for (int i = 0; i < framebuffers.size(); i++) 
-	{
-		vkDestroyFramebuffer(device->GetLogicalDevice(), framebuffers[i], nullptr);
-	}
-	framebuffers.clear();
+	DestroyFramebuffers();
 
 	if (renderpass)
 	{
@@ -150,6 +141,25 @@ void Pass::Destroy()
 	}
 
 	//std::cout << "Pass destroyed" << std::endl;
+}
+
+void Pass::DestroyImages()
+{
+	for (Image* image : images)
+	{
+		image->Destroy();
+		delete(image);
+	}
+	images.clear();
+}
+
+void Pass::DestroyFramebuffers()
+{
+	for (size_t i = 0; i < framebuffers.size(); i++) 
+	{
+		vkDestroyFramebuffer(device->GetLogicalDevice(), framebuffers[i], nullptr);
+	}
+	framebuffers.clear();
 }
 
 const VkRenderPass& Pass::GetRenderpass() const
@@ -190,6 +200,15 @@ void Pass::End(VkCommandBuffer commandBuffer)
 	vkCmdEndRenderPass(commandBuffer);
 
 	state = Ended;
+}
+
+void Pass::Recreate()
+{
+	DestroyImages();
+	DestroyFramebuffers();
+
+	CreateImages();
+	CreateFramebuffers();
 }
 
 VkAttachmentDescription Pass::DefaultColorDescription()

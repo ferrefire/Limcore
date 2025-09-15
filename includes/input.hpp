@@ -38,6 +38,7 @@ class Input
 
 		static void MouseCallback(GLFWwindow* window, double xpos, double ypos);
 		static void ScrollCallback(GLFWwindow* window, double deltaX, double deltaY);
+		//static void ResizeCallback(GLFWwindow* window, int width, int height);
 
 		static void RegisterMouseCallback(std::function<void (double, double)> call);
 		static void RegisterScrollCallback(std::function<void (double, double)> call);

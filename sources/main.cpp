@@ -96,6 +96,7 @@ void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 	rotation.Rotate(angle * 0.25, Axis::z);
 
 	hammerData.view = Manager::GetCamera().GetView();
+	hammerData.projection = Manager::GetCamera().GetProjection();
 	hammerData.model = mat4::Identity();
 	//hammerData.model *= rotation;
 	hammerData.model.Rotate(angle + 45, Axis::y);
@@ -103,18 +104,21 @@ void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 	hammerBuffer.Update(&hammerData, sizeof(UniformData));
 
 	quadData.view = Manager::GetCamera().GetView();
+	quadData.projection = Manager::GetCamera().GetProjection();
 	quadData.model = mat4::Identity();
 	//quadData.model.Rotate(angle + 45, Axis::y);
 	quadData.model.Translate(point3D(0.0, 0, 2.0));
 	quadBuffer.Update(&quadData, sizeof(UniformData));
 
 	//duckData.view = Manager::GetCamera().GetView();
+	//duckData.projection = Manager::GetCamera().GetProjection();
 	//duckData.model = mat4::Identity();
 	//duckData.model.Rotate(angle, Axis::y);
 	//duckData.model.Translate(point3D(2.0, 0, 2.0));
 	//duckBuffer.Update(&duckData, sizeof(UniformData));
 
 	//croissantData.view = Manager::GetCamera().GetView();
+	//croissantData.projection = Manager::GetCamera().GetProjection();
 	//croissantData.model = mat4::Identity();
 	////croissantData.model.Rotate(angle, Axis::y);
 	//croissantData.model.Rotate(angle + 135, Axis::y);
@@ -270,8 +274,8 @@ void Start()
 	pipelineConfig.vertexInfo = hammer.GetVertexInfo();
 	pipelineConfig.renderpass = pass.GetRenderpass();
 	pipelineConfig.descriptorLayouts = { descriptor.GetLayout() };
-	//pipelineConfig.rasterization.frontFace = VK_FRONT_FACE_CLOCKWISE;
-	//pipelineConfig.rasterization.cullMode = VK_CULL_MODE_NONE;
+	pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+	pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
 	pipeline.Create(pipelineConfig, device);
 
 	PipelineConfig quadPipelineConfig = Pipeline::DefaultConfig();
@@ -280,9 +284,15 @@ void Start()
 	quadPipelineConfig.renderpass = pass.GetRenderpass();
 	quadPipelineConfig.descriptorLayouts = { descriptor.GetLayout() };
 	quadPipelineConfig.rasterization.cullMode = VK_CULL_MODE_NONE;
+	quadPipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+	quadPipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
 	quadPipeline.Create(quadPipelineConfig, device);
 
-	Renderer::AddPass(&pass);
+	PassInfo passInfo{};
+	passInfo.pass = &pass;
+	passInfo.useWindowExtent = true;
+
+	Renderer::AddPass(passInfo);
 	Renderer::RegisterCall(0, Frame);
 }
 
@@ -378,6 +388,7 @@ int main(int argc, char** argv)
 
 	Manager::RegisterStartCall(Start);
 	Manager::RegisterEndCall(End);
+	Manager::RegisterResizeCall([&]() { pass.Recreate(); });
 
 	Manager::Run();
 

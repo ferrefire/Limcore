@@ -60,4 +60,6 @@ class Camera
 		void Rotate(const point3D& rotation);
 
 		void Frame();
+
+		void Resize(size_t width, size_t height);
 };

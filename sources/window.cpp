@@ -63,10 +63,12 @@ void Window::CreateSurface(Device& device)
 	SelectFormat(device);
 	SelectPresentMode(device);
 
-	int width, height;
-	glfwGetFramebufferSize(data, &width, &height);
-	config.extent.width = width;
-	config.extent.height = height;
+	int tempWidth, tempHeight;
+	glfwGetFramebufferSize(data, &tempWidth, &tempHeight);
+	config.extent.width = tempWidth;
+	config.extent.height = tempHeight;
+	width = CUI(tempWidth);
+	height = CUI(tempHeight);
 }
 
 void Window::DestroyFrame()
@@ -165,6 +167,27 @@ void Window::SelectPresentMode(Device& device)
 	if (!correctPresentModeFound && !defaultPresentModeFound) throw (std::runtime_error("Failed to find correct surface present mode"));
 
 	if (!correctPresentModeFound) config.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+}
+
+void Window::Resize(Device& device)
+{
+	int tempWidth, tempHeight;
+	glfwGetFramebufferSize(data, &tempWidth, &tempHeight);
+
+	while (tempWidth == 0 || tempHeight == 0)
+	{
+		glfwWaitEvents();
+		glfwGetFramebufferSize(data, &tempWidth, &tempHeight);
+	}
+
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.GetPhysicalDevice(), surface, &config.capabilities);
+	SelectFormat(device);
+	SelectPresentMode(device);
+	config.extent = config.capabilities.currentExtent;
+	width = config.extent.width;
+	height = config.extent.height;
+	//config.extent.width = tempWidth;
+	//config.extent.height = tempHeight;
 }
 
 std::ostream& operator<<(std::ostream& out, Window& window)

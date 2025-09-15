@@ -47,6 +47,9 @@ class Pass
 		void CreateImages();
 		void CreateFramebuffers();
 
+		void DestroyImages();
+		void DestroyFramebuffers();
+
 	public:
 		Pass();
 		~Pass();
@@ -59,6 +62,8 @@ class Pass
 
 		void Begin(VkCommandBuffer commandBuffer, uint32_t renderIndex);
 		void End(VkCommandBuffer commandBuffer);
+
+		void Recreate();
 
 		static VkAttachmentDescription DefaultColorDescription();
 		static VkAttachmentDescription DefaultDepthDescription();
