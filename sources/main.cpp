@@ -315,6 +315,22 @@ void End()
 
 int main(int argc, char** argv)
 {
+	//std::cout << Utilities::ToBits<uint16_t>((156 << 8)) << std::endl;
+	//std::cout << ((156 << 8) & (1 << (15 - 0))) << std::endl;
+	//std::cout << ((156 << 8) & (1 << (15 - 1))) << std::endl;
+	//std::cout << ((156 << 8) & (1 << (15 - 2))) << std::endl;
+	//std::cout << ((156 << 8) & (1 << (15 - 3))) << std::endl;
+	//std::cout << ((156 << 8) & (1 << (15 - 4))) << std::endl;
+	////std::cout << Utilities::ToBits<uint16_t>((156 << 4) | 3) << std::endl;
+	////std::cout << (156 & (1 << 4)) << std::endl;
+	////std::cout << (156 & (1 << 5)) << std::endl;
+	////std::cout << (156 & (1 << 6)) << std::endl;
+	////std::cout << (156 & (1 << 7)) << std::endl;
+	//std::cout << Utilities::ToBits<uint8_t>(255) << std::endl;
+	//std::cout << Utilities::ToBits<uint8_t>(255 >> 4) << std::endl;
+	//std::cout << (255 >> 4) << std::endl;
+	//exit(EXIT_SUCCESS);
+
 	//std::cout << sizeof(char) << std::endl;
 	//std::cout << sizeof(uint8_t) << std::endl;
 

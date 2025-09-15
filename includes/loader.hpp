@@ -204,13 +204,17 @@ class EntropyReader
 		ByteReader& br;
 		std::string currentCode = "";
 		std::string bits = "";
-		size_t index = 0;
+		bool bitValue = false;
+		uint16_t bitBuffer = 0;
+		size_t index = 16;
 		uint8_t previous = 0;
 
 		int Extend(int v, int n);
 		void FillBits();
 		void AddBits();
+		void AddBitsBuffer();
 		void ReadBit();
+		void ReadBitBuffer();
 
 	public:
 		EntropyReader(ByteReader& br);
@@ -221,6 +225,7 @@ class EntropyReader
 		std::pair<bool, uint8_t> NextSymbolFast(const std::array<int16_t, 1 << FAST_BITS>& table, const std::vector<HuffmanCode>& codes);
 		//uint8_t NextSymbolFast(HuffmanTreeInfo& treeInfo);
 		int ReadBits(size_t amount);
+		int ReadBitsBuffer(size_t amount);
 		int ReadBitsFast(size_t amount);
 };
 

@@ -669,6 +669,7 @@ uint8_t ImageLoader::NextEntropySymbol(EntropyReader& er, size_t tableIndex)
 	}
 }
 
+static double subTime = 0;
 static double addTime = 0;
 static double restTime = 0;
 
@@ -708,7 +709,7 @@ void ImageLoader::LoadEntropyData()
 		HI++;
 	}
 
-	std::cout << "Trees build in: " << (Time::GetCurrentTime() - treeStart) << std::endl;
+	std::cout << "Trees build in: " << (Time::GetCurrentTime() - treeStart) * 1000 << std::endl;
 
 	double fileStart = Time::GetCurrentTime();
 
@@ -716,7 +717,7 @@ void ImageLoader::LoadEntropyData()
 	std::string file = Utilities::FileToString(path);
 	const uint8_t* rawData = reinterpret_cast<const uint8_t*>(file.c_str());
 
-	std::cout << "File loaded in: " << (Time::GetCurrentTime() - fileStart) << std::endl;
+	std::cout << "File loaded in: " << (Time::GetCurrentTime() - fileStart) * 1000 << std::endl;
 
 	ByteReader br(rawData, file.size());
 	br.Skip(info.startOfScanInfo.start + info.startOfScanInfo.length);
@@ -775,7 +776,8 @@ void ImageLoader::LoadEntropyData()
 
 				double readTimeStart = Time::GetCurrentTime();
 
-				if (symbol > 0)	{ value = er.ReadBits(symbol); }
+				//if (symbol > 0)	{ value = er.ReadBits(symbol); }
+				if (symbol > 0)	{ value = er.ReadBitsBuffer(symbol); }
 				else { value = 0; }
 
 				readTime += (Time::GetCurrentTime() - readTimeStart);
@@ -821,7 +823,8 @@ void ImageLoader::LoadEntropyData()
 
 					readTimeStart = Time::GetCurrentTime();
 
-					value = er.ReadBits(size) * info.quantizationTables[currentComponent.w()].values[zigzagTable[i]];
+					//value = er.ReadBits(size) * info.quantizationTables[currentComponent.w()].values[zigzagTable[i]];
+					value = er.ReadBitsBuffer(size) * info.quantizationTables[currentComponent.w()].values[zigzagTable[i]];
 
 					readTime += (Time::GetCurrentTime() - readTimeStart);
 
@@ -847,18 +850,18 @@ void ImageLoader::LoadEntropyData()
 		}
 	}
 
-	std::cout << "Tree search time: " << treeTime << std::endl;
+	std::cout << "Tree search time: " << treeTime * 1000 << std::endl;
 
-	std::cout << "Read time: " << readTime << std::endl;
+	std::cout << "Read time: " << readTime * 1000 << std::endl;
 
-	std::cout << "Transform time: " << transformTime << std::endl;
+	std::cout << "Transform time: " << transformTime * 1000 << std::endl;
 
-	std::cout << "Entropy loaded in: " << (Time::GetCurrentTime() - entropyStart) << std::endl;
+	std::cout << "Entropy loaded in: " << (Time::GetCurrentTime() - entropyStart) * 1000 << std::endl;
 
-	std::cout << "Completed in: " << (Time::GetCurrentTime() - start) << std::endl;
+	std::cout << "Completed in: " << (Time::GetCurrentTime() - start) * 1000 << std::endl;
 
 	//std::cout << "Fast found: " << fastFound << " Slow found: " << slowFound << std::endl;
-	std::cout << "Add time: " << addTime << " Rest time: " << restTime << std::endl;
+	std::cout << "Add time: " << addTime * 1000 << " Sub time: " << subTime * 1000 << " Rest time: " << restTime * 1000 << std::endl;
 }
 
 void ImageLoader::LoadBlock(std::array<unsigned char, (16 * 16) * 4>& buffer, size_t offset)
@@ -997,11 +1000,39 @@ void EntropyReader::AddBits()
 	bits += Utilities::ToBits(byte);
 }
 
+void EntropyReader::AddBitsBuffer()
+{			
+	uint8_t byte = br.Read8();
+
+	if (byte == 0x00 && previous == 0xFF)
+	{
+		previous = byte;
+		AddBitsBuffer();
+		return;
+	}
+
+	previous = byte;
+
+	bitBuffer = ((bitBuffer << 8) | byte);
+
+	index -= 8;
+}
+
 void EntropyReader::ReadBit()
 {
 	if (index >= bits.size()) FillBits();
 
 	currentCode += bits[index];
+	index++;
+}
+
+void EntropyReader::ReadBitBuffer()
+{
+	//if (index >= 8) AddBitsBuffer();
+	while (index >= 8) AddBitsBuffer();
+
+	//currentCode += bits[index];
+	bitValue = (bitBuffer & (1 << (15 - index))) != 0;
 	index++;
 }
 
@@ -1041,49 +1072,88 @@ uint8_t EntropyReader::NextSymbol(HuffmanTree& tree)
 uint8_t EntropyReader::NextSymbolFast(const HuffmanTree& tree)
 {
 	const HuffmanTree* node = &tree;
-	int bit = -1;
+	//int bit = -1;
 
 	while (true)
 	{
-		bit++;
+		//bit++;
 
-		ReadBit();
+		//ReadBit();
+		ReadBitBuffer();
 
-		node = node->GetSide(currentCode[bit] == '0' ? Left : Right);
+		//node = node->GetSide(currentCode[bit] == '0' ? Left : Right);
+		node = node->GetSide(bitValue ? Right : Left);
 		HuffmanResult result = node->GetValue();
-		if (result.first && (CST(bit + 1) == currentCode.size()))
+		//if (result.first && (CST(bit + 1) == currentCode.size()))
+		if (result.first)
 		{
-			currentCode = "";
+			//currentCode = "";
 			return (result.second.symbol);
 		}
 	}
 }
 
-std::pair<bool, uint8_t> EntropyReader::NextSymbolFast(const std::array<int16_t, 1 << FAST_BITS>& table, const std::vector<HuffmanCode>& codes)
+/*std::pair<bool, uint8_t> EntropyReader::NextSymbolFast(const std::array<int16_t, 1 << FAST_BITS>& table, const std::vector<HuffmanCode>& codes)
 {
-	double start = Time::GetCurrentTime();
+	//double start = Time::GetCurrentTime();
 
 	if (index > 0) bits = bits.substr(index);
 	index = 0;
 
+	//subTime += (Time::GetCurrentTime() - start);
+
+	//start = Time::GetCurrentTime();
+
 	while (index + FAST_BITS > bits.size()) { AddBits(); }
 
-	addTime += (Time::GetCurrentTime() - start);
+	//addTime += (Time::GetCurrentTime() - start);
 
-	start = Time::GetCurrentTime();
+	//start = Time::GetCurrentTime();
 
 	int bitVal = std::stoi(bits, nullptr, 2);
 
 	int key = (bitVal >> (bits.size() - FAST_BITS)) & ((1 << FAST_BITS) - 1);
 	int fastResult = table[key];
 
-	restTime += (Time::GetCurrentTime() - start);
+	//restTime += (Time::GetCurrentTime() - start);
 
 	if (fastResult >= 0)
 	{
 		int length = codes[fastResult].length;
 		//bits = bits.substr(length); // maybe just set index
 		index = length;
+		return (std::pair<bool, uint8_t>{true, codes[fastResult].symbol});
+	}
+
+	return (std::pair<bool, uint8_t>{false, 0});
+}*/
+
+std::pair<bool, uint8_t> EntropyReader::NextSymbolFast(const std::array<int16_t, 1 << FAST_BITS>& table, const std::vector<HuffmanCode>& codes)
+{
+	while (index >= 8) AddBitsBuffer();
+
+	uint16_t val = bitBuffer;
+
+	val = val << index;
+	//index = 0;
+
+	//val = val >> FAST_BITS;
+
+	//while (index + FAST_BITS > bits.size()) { AddBits(); }
+
+	//int bitVal = std::stoi(bits, nullptr, 2);
+
+	//int key = (bitVal >> (bits.size() - FAST_BITS)) & ((1 << FAST_BITS) - 1);
+	int key = (val >> (16 - FAST_BITS)) & ((1 << FAST_BITS) - 1);
+	//int key = val;
+	int fastResult = table[key];
+
+	if (fastResult >= 0)
+	{
+		//std::cout << "found";
+		int length = codes[fastResult].length;
+		//bits = bits.substr(length); // maybe just set index
+		index += length;
 		return (std::pair<bool, uint8_t>{true, codes[fastResult].symbol});
 	}
 
@@ -1133,6 +1203,25 @@ int EntropyReader::ReadBits(size_t amount)
 
 	result = std::stoi(currentCode, nullptr, 2);
 	currentCode = "";
+
+	return (Extend(result, amount));
+}
+
+int EntropyReader::ReadBitsBuffer(size_t amount)
+{
+	int result = 0;
+	//std::string stringResult = "";
+
+	for (size_t i = 0; i < amount; i++)
+	{
+		ReadBitBuffer();
+		if (bitValue) result += pow(2, (amount - (i + 1)));
+		//stringResult.append(bitValue ? "1" : "0");
+	}
+
+	//result = std::stoi(stringResult, nullptr, 2);
+
+	//std::cout << stringResult << " | " << result << std::endl;
 
 	return (Extend(result, amount));
 }
