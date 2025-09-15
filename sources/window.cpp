@@ -33,8 +33,11 @@ void Window::CreateFrame()
 	width = (config.fullscreen ? mode->width : mode->width / 2);
 	height = (config.fullscreen ? mode->height : mode->height / 2);
 
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-	glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+	if (config.fullscreen)
+	{
+		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+		glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+	}
 
 	//data = glfwCreateWindow(width, height, "limcore", config.fullscreen ? monitor : nullptr, nullptr);
 	data = glfwCreateWindow(width, height, "limcore", nullptr, nullptr);

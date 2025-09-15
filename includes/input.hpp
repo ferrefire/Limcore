@@ -20,6 +20,7 @@ struct KeyInfo
 class Input
 {
 	private:
+		static bool mouseEnabled;
 		static std::map<int, KeyInfo> keys;
 		static std::vector<std::function<void (double, double)>> mouseCalls;
 		static std::vector<std::function<void (double, double)>> scrollCalls;
@@ -40,4 +41,6 @@ class Input
 
 		static void RegisterMouseCallback(std::function<void (double, double)> call);
 		static void RegisterScrollCallback(std::function<void (double, double)> call);
+
+		static void TriggerMouse(int mode = -1);
 };

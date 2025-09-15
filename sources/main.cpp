@@ -235,6 +235,11 @@ void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 		}
 	}*/
 
+	if (Input::GetKey(GLFW_KEY_M).pressed)
+	{
+		Input::TriggerMouse();
+	}
+
 	if (Input::GetKey(GLFW_KEY_L).pressed)
 	{		
 		if (!loaded)
