@@ -311,10 +311,6 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 
 	ByteReader br(rawData, file.size());
 
-	//std::cout << "Total size: " << br.BytesLeft() << std::endl;
-	//std::cout << std::endl;
-
-	//if (br.AtMarker(ImageMarker::SOI)) std::cout << "SOI: " << br.BytesLeft() << std::endl << std::endl;
 	if (!br.AtMarker(ImageMarker::SOI)) throw (std::runtime_error("Invalid JPG file."));
 
 	while (br.BytesLeft() > 1)
@@ -400,19 +396,13 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 			{
 				counts[i] = br.Read8();
 				total += CST(counts[i]);
-				//std::cout << CST(counts[i]) << ", ";
 			}
-			//std::cout << std::endl;
-			//std::cout << std::endl;
 
 			std::vector<uint8_t> symbols(total);
 			for (size_t i = 0; i < total; i++)
 			{
 				symbols[i] = br.Read8();
-				//std::cout << CST(symbols[i]) << ", ";
 			}
-			//std::cout << std::endl;
-			//std::cout << std::endl;
 
 			uint16_t code = 0;
 			uint16_t firstCodes[16]{};
@@ -420,15 +410,10 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 			{
 				firstCodes[i] = code;
 				code = (code + counts[i]) << 1;
-				//std::cout << CST(firstCodes[i]) << ", ";
 			}
-			//std::cout << std::endl;
-			//std::cout << std::endl;
 
 			size_t symbolIndex = 0;
 			size_t symbolCode = 0;
-			//std::vector<HuffmanCode> huffmanCodes;
-			//std::cout << std::endl;
 			for (size_t i = 0; i < 16; i++)
 			{
 				symbolCode = firstCodes[i];
@@ -441,23 +426,8 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 					symbolIndex++;
 					symbolCode++;
 					huffmanInfo.huffmanCodes.push_back(huffmanCode);
-					//std::cout << "S: " << CST(huffmanCode.symbol) << " L: " << CST(huffmanCode.length) << " C: " << Utilities::ToBits(huffmanCode.code).substr(16 - CST(huffmanCode.length)) << std::endl;
 				}
 			}
-			//std::cout << std::endl;
-
-			//if (info.huffmanInfos.size() == 1)
-			//{
-			//	BinaryTree<std::pair<bool, HuffmanCode>> root({false, {}});
-			//	BuildHuffmanTree("", root, huffmanCodes);
-			//	std::pair<bool, HuffmanCode> result = FindCode("1111111111111110", root);
-			//	std::cout << std::endl;
-			//	std::cout << "Result: ";
-			//	if (result.first) std::cout << CST(result.second.symbol) << std::endl;
-			//	exit(EXIT_SUCCESS);
-			//}
-
-			//BuildHuffmanTree("", huffmanInfo.huffmanTree, huffmanCodes);
 
 			info.huffmanInfos.push_back(huffmanInfo);
 
@@ -468,10 +438,7 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 		}
 		else if (next == ImageMarker::DRI)
 		{
-			//std::cout << "DRI: " << br.BytesLeft() << std::endl;
-
 			size_t length = CST(br.Read16()) - 2;
-			//std::cout << "Skipping: " << length << std::endl << std::endl;
 			br.Skip(length);
 		}
 		else if (next == ImageMarker::SOS)
@@ -553,7 +520,7 @@ std::array<int16_t, 1 << FAST_BITS> ImageLoader::BuildFastHuffmanTable(std::vect
 	return (table);
 }
 
-DataBlock ImageLoader::IDCTBlock(const DataBlock& input)
+/*DataBlock ImageLoader::IDCTBlock(const DataBlock& input)
 {
 	DataBlock result{};
 
@@ -585,7 +552,7 @@ DataBlock ImageLoader::IDCTBlock(const DataBlock& input)
 	}
 
 	return (result);
-}
+}*/
 
 DataBlock ImageLoader::FIDCTBlock(const DataBlock& input)
 {
@@ -650,23 +617,22 @@ const ImageInfo& ImageLoader::GetInfo() const
 	return (info);
 }
 
-//static size_t fastFound = 0;
-//static size_t slowFound = 0;
-
 uint8_t ImageLoader::NextEntropySymbol(EntropyReader& er, size_t tableIndex)
 {
-	const std::pair<bool, uint8_t> fastResult = er.NextSymbolFast(data.fastHuffmanTables[tableIndex], info.huffmanInfos[tableIndex].huffmanCodes);
-	
-	if (fastResult.first)
-	{
-		//fastFound++;
-		return (fastResult.second);
-	}
-	else
-	{
-		//slowFound++;
-		return (er.NextSymbolFast(data.huffmanTables[tableIndex]));
-	}
+	//const std::pair<bool, uint8_t> fastResult = er.NextSymbolFast(data.fastHuffmanTables[tableIndex], info.huffmanInfos[tableIndex].huffmanCodes);
+	//
+	//if (fastResult.first)
+	//{
+	//	//fastFound++;
+	//	return (fastResult.second);
+	//}
+	//else
+	//{
+	//	//slowFound++;
+	//	return (er.NextSymbolFast(data.huffmanTables[tableIndex]));
+	//}
+
+	return (er.NextSymbolFast(data.huffmanTables[tableIndex]));
 }
 
 static double subTime = 0;
@@ -721,8 +687,6 @@ void ImageLoader::LoadEntropyData()
 
 	ByteReader br(rawData, file.size());
 	br.Skip(info.startOfScanInfo.start + info.startOfScanInfo.length);
-
-	//uint8_t symbol = GetSymbol(br, data.huffmanTables[0]);
 
 	size_t blockIndex = 0;
 	uint8_t symbol;
@@ -965,41 +929,6 @@ int EntropyReader::Extend(int v, int n)
 	return (v < vt) ? (v - ((1 << n) - 1)) : v;
 }
 
-void EntropyReader::FillBits()
-{
-	index = 0;
-	bits = "";
-			
-	uint8_t byte = br.Read8();
-
-	if (byte == 0x00 && previous == 0xFF)
-	{
-		previous = byte;
-		FillBits();
-		return;
-	}
-
-	previous = byte;
-
-	bits += Utilities::ToBits(byte);
-}
-
-void EntropyReader::AddBits()
-{			
-	uint8_t byte = br.Read8();
-
-	if (byte == 0x00 && previous == 0xFF)
-	{
-		previous = byte;
-		AddBits();
-		return;
-	}
-
-	previous = byte;
-
-	bits += Utilities::ToBits(byte);
-}
-
 void EntropyReader::AddBitsBuffer()
 {			
 	uint8_t byte = br.Read8();
@@ -1018,20 +947,10 @@ void EntropyReader::AddBitsBuffer()
 	index -= 8;
 }
 
-void EntropyReader::ReadBit()
-{
-	if (index >= bits.size()) FillBits();
-
-	currentCode += bits[index];
-	index++;
-}
-
 void EntropyReader::ReadBitBuffer()
 {
-	//if (index >= 8) AddBitsBuffer();
 	while (index >= 8) AddBitsBuffer();
 
-	//currentCode += bits[index];
 	bitValue = (bitBuffer & (1 << (15 - index))) != 0;
 	index++;
 }
@@ -1054,79 +973,22 @@ HuffmanResult EntropyReader::FindCode(const std::string& code, HuffmanTree& root
 	return (result);
 }
 
-uint8_t EntropyReader::NextSymbol(HuffmanTree& tree)
-{
-	while (true)
-	{
-		ReadBit();
-
-		HuffmanResult result = FindCode(currentCode, tree);
-		if (result.first)
-		{
-			currentCode = "";
-			return (result.second.symbol);
-		}
-	}
-}
-
 uint8_t EntropyReader::NextSymbolFast(const HuffmanTree& tree)
 {
 	const HuffmanTree* node = &tree;
-	//int bit = -1;
 
 	while (true)
 	{
-		//bit++;
-
-		//ReadBit();
 		ReadBitBuffer();
 
-		//node = node->GetSide(currentCode[bit] == '0' ? Left : Right);
 		node = node->GetSide(bitValue ? Right : Left);
 		HuffmanResult result = node->GetValue();
-		//if (result.first && (CST(bit + 1) == currentCode.size()))
 		if (result.first)
 		{
-			//currentCode = "";
 			return (result.second.symbol);
 		}
 	}
 }
-
-/*std::pair<bool, uint8_t> EntropyReader::NextSymbolFast(const std::array<int16_t, 1 << FAST_BITS>& table, const std::vector<HuffmanCode>& codes)
-{
-	//double start = Time::GetCurrentTime();
-
-	if (index > 0) bits = bits.substr(index);
-	index = 0;
-
-	//subTime += (Time::GetCurrentTime() - start);
-
-	//start = Time::GetCurrentTime();
-
-	while (index + FAST_BITS > bits.size()) { AddBits(); }
-
-	//addTime += (Time::GetCurrentTime() - start);
-
-	//start = Time::GetCurrentTime();
-
-	int bitVal = std::stoi(bits, nullptr, 2);
-
-	int key = (bitVal >> (bits.size() - FAST_BITS)) & ((1 << FAST_BITS) - 1);
-	int fastResult = table[key];
-
-	//restTime += (Time::GetCurrentTime() - start);
-
-	if (fastResult >= 0)
-	{
-		int length = codes[fastResult].length;
-		//bits = bits.substr(length); // maybe just set index
-		index = length;
-		return (std::pair<bool, uint8_t>{true, codes[fastResult].symbol});
-	}
-
-	return (std::pair<bool, uint8_t>{false, 0});
-}*/
 
 std::pair<bool, uint8_t> EntropyReader::NextSymbolFast(const std::array<int16_t, 1 << FAST_BITS>& table, const std::vector<HuffmanCode>& codes)
 {
@@ -1135,24 +997,12 @@ std::pair<bool, uint8_t> EntropyReader::NextSymbolFast(const std::array<int16_t,
 	uint16_t val = bitBuffer;
 
 	val = val << index;
-	//index = 0;
-
-	//val = val >> FAST_BITS;
-
-	//while (index + FAST_BITS > bits.size()) { AddBits(); }
-
-	//int bitVal = std::stoi(bits, nullptr, 2);
-
-	//int key = (bitVal >> (bits.size() - FAST_BITS)) & ((1 << FAST_BITS) - 1);
 	int key = (val >> (16 - FAST_BITS)) & ((1 << FAST_BITS) - 1);
-	//int key = val;
 	int fastResult = table[key];
 
 	if (fastResult >= 0)
 	{
-		//std::cout << "found";
 		int length = codes[fastResult].length;
-		//bits = bits.substr(length); // maybe just set index
 		index += length;
 		return (std::pair<bool, uint8_t>{true, codes[fastResult].symbol});
 	}
@@ -1160,83 +1010,15 @@ std::pair<bool, uint8_t> EntropyReader::NextSymbolFast(const std::array<int16_t,
 	return (std::pair<bool, uint8_t>{false, 0});
 }
 
-/*uint8_t EntropyReader::NextSymbolFast(HuffmanTreeInfo& treeInfo)
-{
-	HuffmanTree* node = &treeInfo.root;
-	int bit = -1;
-
-	while (true)
-	{
-		bit++;
-
-		ReadBit();
-
-		if (treeInfo.mappedCodes.contains(currentCode))
-		{
-			uint8_t result = treeInfo.mappedCodes[currentCode];
-			currentCode = "";
-			return (result);
-		}
-
-		BinaryTreeSide side = (currentCode[bit] == '0' ? Left : Right);
-		
-		if (!node->HasSide(side)) continue;
-
-		node = node->GetSide(side);
-		if (node->GetValue().first && (bit + 1 == currentCode.size()))
-		{
-			treeInfo.mappedCodes[currentCode] = node->GetValue().second.symbol;
-			currentCode = "";
-			return (node->GetValue().second.symbol);
-		}
-	}
-}*/
-
-int EntropyReader::ReadBits(size_t amount)
-{
-	int result = 0;
-
-	for (size_t i = 0; i < amount; i++)
-	{
-		ReadBit();
-	}
-
-	result = std::stoi(currentCode, nullptr, 2);
-	currentCode = "";
-
-	return (Extend(result, amount));
-}
-
 int EntropyReader::ReadBitsBuffer(size_t amount)
 {
 	int result = 0;
-	//std::string stringResult = "";
 
 	for (size_t i = 0; i < amount; i++)
 	{
 		ReadBitBuffer();
 		if (bitValue) result += pow(2, (amount - (i + 1)));
-		//stringResult.append(bitValue ? "1" : "0");
 	}
-
-	//result = std::stoi(stringResult, nullptr, 2);
-
-	//std::cout << stringResult << " | " << result << std::endl;
-
-	return (Extend(result, amount));
-}
-
-int EntropyReader::ReadBitsFast(size_t amount)
-{
-	int result = 0;
-
-	while (index + amount >= bits.size()) AddBits();
-	
-	currentCode += bits.substr(index, amount);
-	index += amount;
-
-	result = std::stoi(currentCode, nullptr, 2);
-	currentCode = "";
 
 	return (Extend(result, amount));
 }

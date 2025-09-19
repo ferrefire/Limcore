@@ -202,31 +202,22 @@ class EntropyReader
 {
 	private:
 		ByteReader& br;
-		std::string currentCode = "";
-		std::string bits = "";
 		bool bitValue = false;
 		uint16_t bitBuffer = 0;
 		size_t index = 16;
 		uint8_t previous = 0;
 
 		int Extend(int v, int n);
-		void FillBits();
-		void AddBits();
 		void AddBitsBuffer();
-		void ReadBit();
 		void ReadBitBuffer();
 
 	public:
 		EntropyReader(ByteReader& br);
 
 		HuffmanResult FindCode(const std::string& code, HuffmanTree& root) const;
-		uint8_t NextSymbol(HuffmanTree& tree);
 		uint8_t NextSymbolFast(const HuffmanTree& tree);
 		std::pair<bool, uint8_t> NextSymbolFast(const std::array<int16_t, 1 << FAST_BITS>& table, const std::vector<HuffmanCode>& codes);
-		//uint8_t NextSymbolFast(HuffmanTreeInfo& treeInfo);
-		int ReadBits(size_t amount);
 		int ReadBitsBuffer(size_t amount);
-		int ReadBitsFast(size_t amount);
 };
 
 class ModelLoader
