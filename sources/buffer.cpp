@@ -18,7 +18,7 @@ Buffer::~Buffer()
 	Destroy();
 }
 
-void Buffer::Create(const BufferConfig& bufferConfig, Device* bufferDevice = nullptr, void* data = nullptr)
+void Buffer::Create(const BufferConfig& bufferConfig, void* data, Device* bufferDevice)
 {
 	config = bufferConfig;
 	device = bufferDevice;
@@ -39,7 +39,7 @@ void Buffer::Create(const BufferConfig& bufferConfig, Device* bufferDevice = nul
 			Buffer stagingBuffer;
 			BufferConfig stagingConfig = Buffer::StagingConfig();
 			stagingConfig.size = config.size;
-			stagingBuffer.Create(stagingConfig, device, data);
+			stagingBuffer.Create(stagingConfig, data, device);
 			stagingBuffer.CopyTo(buffer);
 			stagingBuffer.Destroy();
 		}

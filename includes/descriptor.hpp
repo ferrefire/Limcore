@@ -1,6 +1,8 @@
 #pragma once
 
 #include "device.hpp"
+#include "buffer.hpp"
+#include "image.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -43,6 +45,8 @@ class Descriptor
 		size_t GetNewSet();
 		void Bind(size_t setID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
 		void Update(size_t setID, uint32_t binding, VkDescriptorBufferInfo* bufferInfo, VkDescriptorImageInfo* imageInfo);
+		void Update(size_t setID, uint32_t binding, const Buffer& buffer);
+		void Update(size_t setID, uint32_t binding, const Image& image);
 };
 
 std::ostream& operator<<(std::ostream& out, const DescriptorConfig& config);

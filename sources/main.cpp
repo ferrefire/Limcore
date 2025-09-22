@@ -28,11 +28,10 @@ struct UniformData
 	mat4 projection;
 };
 
-//Mesh<Position | Normal, VK_INDEX_TYPE_UINT16> mesh;
-Mesh<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT16> hammer;
-Mesh<Position | Coordinate, VK_INDEX_TYPE_UINT16> quad;
-Mesh<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT16> duck;
-Mesh<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT16> croissant;
+Mesh<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT16> hammerMesh;
+Mesh<Position | Coordinate, VK_INDEX_TYPE_UINT16> quadMesh;
+Mesh<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT16> duckMesh;
+Mesh<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT16> croissantMesh;
 Pass pass;
 
 Pipeline pipeline;
@@ -79,7 +78,6 @@ void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 	hammerData.view = Manager::GetCamera().GetView();
 	hammerData.projection = Manager::GetCamera().GetProjection();
 	hammerData.model = mat4::Identity();
-	//hammerData.model *= rotation;
 	hammerData.model.Rotate(angle + 45, Axis::y);
 	hammerData.model.Translate(point3D(-2.0, 0, 2.0));
 	hammerBuffer.Update(&hammerData, sizeof(UniformData));
@@ -87,7 +85,7 @@ void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 	quadData.view = Manager::GetCamera().GetView();
 	quadData.projection = Manager::GetCamera().GetProjection();
 	quadData.model = mat4::Identity();
-	//quadData.model.Rotate(angle + 45, Axis::y);
+	quadData.model.Scale(point3D(3, 3, 1));
 	quadData.model.Translate(point3D(0.0, 0, -2.0));
 	quadBuffer.Update(&quadData, sizeof(UniformData));
 
@@ -101,101 +99,58 @@ void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 	croissantData.view = Manager::GetCamera().GetView();
 	croissantData.projection = Manager::GetCamera().GetProjection();
 	croissantData.model = mat4::Identity();
-	//croissantData.model.Rotate(angle, Axis::y);
 	croissantData.model.Rotate(angle + 135, Axis::y);
 	croissantData.model.Translate(point3D(0.0, 0, 2.0));
 	croissantBuffer.Update(&croissantData, sizeof(UniformData));
 
 	pipeline.Bind(commandBuffer);
 	descriptor.Bind(hammerSet, commandBuffer, pipeline.GetLayout());
-	hammer.Bind(commandBuffer);
-	vkCmdDrawIndexed(commandBuffer, CUI(hammer.GetIndices().size()), 1, 0, 0, 0);
+	hammerMesh.Bind(commandBuffer);
+	vkCmdDrawIndexed(commandBuffer, CUI(hammerMesh.GetIndices().size()), 1, 0, 0, 0);
 
 	descriptor.Bind(duckSet, commandBuffer, pipeline.GetLayout());
-	duck.Bind(commandBuffer);
-	vkCmdDrawIndexed(commandBuffer, CUI(duck.GetIndices().size()), 1, 0, 0, 0);
+	duckMesh.Bind(commandBuffer);
+	vkCmdDrawIndexed(commandBuffer, CUI(duckMesh.GetIndices().size()), 1, 0, 0, 0);
 
 	descriptor.Bind(croissantSet, commandBuffer, pipeline.GetLayout());
-	croissant.Bind(commandBuffer);
-	vkCmdDrawIndexed(commandBuffer, CUI(croissant.GetIndices().size()), 1, 0, 0, 0);
+	croissantMesh.Bind(commandBuffer);
+	vkCmdDrawIndexed(commandBuffer, CUI(croissantMesh.GetIndices().size()), 1, 0, 0, 0);
 
 	quadPipeline.Bind(commandBuffer);
 	descriptor.Bind(quadSet, commandBuffer, quadPipeline.GetLayout());
-	quad.Bind(commandBuffer);
-	vkCmdDrawIndexed(commandBuffer, CUI(quad.GetIndices().size()), 1, 0, 0, 0);
+	quadMesh.Bind(commandBuffer);
+	vkCmdDrawIndexed(commandBuffer, CUI(quadMesh.GetIndices().size()), 1, 0, 0, 0);
 }
 
 void Start()
 {
 	Device* device = &Manager::GetDevice();
 
-	//mesh.SetShape(Shape<Position | Normal, VK_INDEX_TYPE_UINT32>(ShapeType::Cube));
-	Shape<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT16> shape;
-	shape.Create(ModelLoader("wooden_hammer", ModelType::Gltf));
-	//shape.Create(ShapeType::Cube);
-	shape.Scalarize();
-	hammer.SetShape(shape);
-	hammer.Create(device);
-
-	Shape<Position | Coordinate, VK_INDEX_TYPE_UINT16> quadShape;
-	quadShape.Create(ShapeType::Quad);
-	quadShape.Scalarize();
-	quad.SetShape(quadShape);
-	quad.Create(device);
-
-	shape.Create(ModelLoader("rubber_duck_toy", ModelType::Gltf));
-	//shape.Create(ShapeType::Cube);
-	shape.Scalarize();
-	duck.SetShape(shape);
-	duck.Create(device);
-
-	shape.Create(ModelLoader("croissant", ModelType::Gltf));
-	shape.Scalarize();
-	croissant.SetShape(shape);
-	croissant.Create(device);
-
-	//Shape<Position | Normal, VK_INDEX_TYPE_UINT32> shape32;
-	//shape32.Create(ModelLoader("camera", ModelType::Gltf));
-	//shape32.Scalarize();
-	//croissant.SetShape(shape32);
-	//croissant.Create(device);
+	hammerMesh.Create(shapePNC16(ModelLoader("wooden_hammer", ModelType::Gltf)));
+	duckMesh.Create(shapePNC16(ModelLoader("rubber_duck_toy", ModelType::Gltf)));
+	croissantMesh.Create(shapePNC16(ModelLoader("croissant", ModelType::Gltf)));
+	quadMesh.Create(shapePC16(ShapeType::Quad));
 
 	PassConfig passConfig = Pass::DefaultConfig(true);
 	pass.Create(passConfig, device);
-
-	hammerData.model = mat4::Identity();
-	hammerData.view = Manager::GetCamera().GetView();
-	hammerData.projection = Manager::GetCamera().GetProjection();
-
-	quadData.model = mat4::Identity();
-	quadData.view = Manager::GetCamera().GetView();
-	quadData.projection = Manager::GetCamera().GetProjection();
-
-	duckData.model = mat4::Identity();
-	duckData.view = Manager::GetCamera().GetView();
-	duckData.projection = Manager::GetCamera().GetProjection();
-
-	croissantData.model = mat4::Identity();
-	croissantData.view = Manager::GetCamera().GetView();
-	croissantData.projection = Manager::GetCamera().GetProjection();
 
 	BufferConfig bufferConfig{};
 	bufferConfig.mapped = true;
 	bufferConfig.size = sizeof(UniformData);
 
-	hammerBuffer.Create(bufferConfig, device, &hammerData);
-	duckBuffer.Create(bufferConfig, device, &duckData);
-	croissantBuffer.Create(bufferConfig, device, &croissantData);
-	quadBuffer.Create(bufferConfig, device, &quadData);
+	hammerBuffer.Create(bufferConfig, &hammerData);
+	duckBuffer.Create(bufferConfig, &duckData);
+	croissantBuffer.Create(bufferConfig, &croissantData);
+	quadBuffer.Create(bufferConfig, &quadData);
 
 	ImageConfig imageConfig{};
 	imageConfig.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	imageConfig.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	imageConfig.viewConfig = Image::DefaultViewConfig();
 
-	hammerImage.Create("wooden_hammer_diff", imageConfig, device);
-	duckImage.Create("rubber_duck_toy_diff", imageConfig, device);
-	croissantImage.Create("croissant_diff", imageConfig, device);
+	hammerImage.Create(ImageLoader("wooden_hammer_diff", ImageType::Jpg), imageConfig, device);
+	duckImage.Create(ImageLoader("rubber_duck_toy_diff", ImageType::Jpg), imageConfig, device);
+	croissantImage.Create(ImageLoader("croissant_diff", ImageType::Jpg), imageConfig, device);
 
 	std::vector<DescriptorConfig> descriptorConfigs(2);
 	descriptorConfigs[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -209,48 +164,19 @@ void Start()
 	croissantSet = descriptor.GetNewSet();
 	quadSet = descriptor.GetNewSet();
 
-	VkDescriptorBufferInfo hammerBufferInfo{};
-	hammerBufferInfo.buffer = hammerBuffer.GetBuffer();
-	hammerBufferInfo.range = sizeof(hammerData);
-	descriptor.Update(hammerSet, 0, &hammerBufferInfo, nullptr);
+	descriptor.Update(hammerSet, 0, hammerBuffer);
+	descriptor.Update(duckSet, 0, duckBuffer);
+	descriptor.Update(croissantSet, 0, croissantBuffer);
+	descriptor.Update(quadSet, 0, quadBuffer);
 
-	VkDescriptorBufferInfo duckBufferInfo{};
-	duckBufferInfo.buffer = duckBuffer.GetBuffer();
-	duckBufferInfo.range = sizeof(duckData);
-	descriptor.Update(duckSet, 0, &duckBufferInfo, nullptr);
-
-	VkDescriptorBufferInfo croissantBufferInfo{};
-	croissantBufferInfo.buffer = croissantBuffer.GetBuffer();
-	croissantBufferInfo.range = sizeof(croissantData);
-	descriptor.Update(croissantSet, 0, &croissantBufferInfo, nullptr);
-
-	VkDescriptorBufferInfo quadBufferInfo{};
-	quadBufferInfo.buffer = quadBuffer.GetBuffer();
-	quadBufferInfo.range = sizeof(quadData);
-	descriptor.Update(quadSet, 0, &quadBufferInfo, nullptr);
-
-	VkDescriptorImageInfo hammerImageInfo{};
-	hammerImageInfo.sampler = hammerImage.GetSampler();
-	hammerImageInfo.imageView = hammerImage.GetView();
-	hammerImageInfo.imageLayout = hammerImage.GetConfig().currentLayout;
-	descriptor.Update(hammerSet, 1, nullptr, &hammerImageInfo);
-
-	VkDescriptorImageInfo duckImageInfo{};
-	duckImageInfo.sampler = duckImage.GetSampler();
-	duckImageInfo.imageView = duckImage.GetView();
-	duckImageInfo.imageLayout = duckImage.GetConfig().currentLayout;
-	descriptor.Update(duckSet, 1, nullptr, &duckImageInfo);
-	descriptor.Update(quadSet, 1, nullptr, &duckImageInfo);
-
-	VkDescriptorImageInfo croissantImageInfo{};
-	croissantImageInfo.sampler = croissantImage.GetSampler();
-	croissantImageInfo.imageView = croissantImage.GetView();
-	croissantImageInfo.imageLayout = croissantImage.GetConfig().currentLayout;
-	descriptor.Update(croissantSet, 1, nullptr, &croissantImageInfo);
+	descriptor.Update(hammerSet, 1, hammerImage);
+	descriptor.Update(duckSet, 1, duckImage);
+	descriptor.Update(croissantSet, 1, croissantImage);
+	descriptor.Update(quadSet, 1, croissantImage);
 
 	PipelineConfig pipelineConfig = Pipeline::DefaultConfig();
 	pipelineConfig.shader = "default";
-	pipelineConfig.vertexInfo = hammer.GetVertexInfo();
+	pipelineConfig.vertexInfo = hammerMesh.GetVertexInfo();
 	pipelineConfig.renderpass = pass.GetRenderpass();
 	pipelineConfig.descriptorLayouts = { descriptor.GetLayout() };
 	pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
@@ -259,7 +185,7 @@ void Start()
 
 	PipelineConfig quadPipelineConfig = Pipeline::DefaultConfig();
 	quadPipelineConfig.shader = "textureQuad";
-	quadPipelineConfig.vertexInfo = quad.GetVertexInfo();
+	quadPipelineConfig.vertexInfo = quadMesh.GetVertexInfo();
 	quadPipelineConfig.renderpass = pass.GetRenderpass();
 	quadPipelineConfig.descriptorLayouts = { descriptor.GetLayout() };
 	quadPipelineConfig.rasterization.cullMode = VK_CULL_MODE_NONE;
@@ -277,10 +203,10 @@ void Start()
 
 void End()
 {
-	hammer.Destroy();
-	quad.Destroy();
-	duck.Destroy();
-	croissant.Destroy();
+	hammerMesh.Destroy();
+	quadMesh.Destroy();
+	duckMesh.Destroy();
+	croissantMesh.Destroy();
 	pass.Destroy();
 	hammerBuffer.Destroy();
 	quadBuffer.Destroy();

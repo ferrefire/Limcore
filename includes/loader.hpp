@@ -260,8 +260,8 @@ class ImageLoader
 		const ImageInfo& GetInfo() const;
 
 		void LoadEntropyData();
-		void LoadBlock(std::array<unsigned char, (16 * 16) * 4>& buffer, size_t offset);
-		void LoadPixels(std::vector<unsigned char>& buffer);
+		void LoadBlock(std::array<unsigned char, (16 * 16) * 4>& buffer, size_t offset) const;
+		void LoadPixels(std::vector<unsigned char>& buffer) const;
 };
 
 std::ostream& operator<<(std::ostream& out, const ImageInfo& info);

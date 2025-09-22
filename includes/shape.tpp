@@ -13,9 +13,9 @@ Shape<V, I>::Shape(ShapeType type)
 }
 
 SHAPE_TEMPLATE
-Shape<V, I>::Shape(ModelLoader loader)
+Shape<V, I>::Shape(ModelLoader loader, bool scalarized)
 {
-	Create(loader);
+	Create(loader, scalarized);
 }
 
 SHAPE_TEMPLATE
@@ -34,10 +34,12 @@ void Shape<V, I>::Create(ShapeType type)
 		case ShapeType::Quad: CreateQuad(); break;
 		case ShapeType::Cube: CreateCube(); break;
 	}
+
+	Scalarize();
 }
 
 SHAPE_TEMPLATE
-void Shape<V, I>::Create(ModelLoader loader)
+void Shape<V, I>::Create(ModelLoader loader, bool scalarized)
 {
 	Destroy();
 
@@ -100,6 +102,8 @@ void Shape<V, I>::Create(ModelLoader loader)
 		Shape<V, I> other(ModelLoader(info.name, info.type, info.ID + 1));
 		Join(other);
 	}
+
+	if (scalarized) Scalarize();
 }
 
 SHAPE_TEMPLATE

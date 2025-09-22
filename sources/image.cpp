@@ -4,7 +4,6 @@
 #include "bitmask.hpp"
 #include "command.hpp"
 #include "buffer.hpp"
-#include "loader.hpp"
 
 #include <stdexcept>
 
@@ -32,14 +31,13 @@ void Image::Create(const ImageConfig& imageConfig, Device* imageDevice = nullptr
 	TransitionLayout();
 }
 
-void Image::Create(const std::string& name, const ImageConfig& imageConfig, Device* imageDevice = nullptr)
+void Image::Create(const ImageLoader& imageLoader, const ImageConfig& imageConfig, Device* imageDevice = nullptr)
 {
 	config = imageConfig;
 	device = imageDevice;
 
 	if (!device) device = &Manager::GetDevice();
 
-	ImageLoader imageLoader(name, ImageType::Jpg);
 	config.width = imageLoader.GetInfo().startOfFrameInfo.width;
 	config.height = imageLoader.GetInfo().startOfFrameInfo.height;
 
@@ -49,7 +47,7 @@ void Image::Create(const std::string& name, const ImageConfig& imageConfig, Devi
 	CreateSampler();
 	TransitionLayout();
 
-	Load(name);
+	Load(imageLoader);
 }
 
 void Image::CreateImage()
@@ -166,14 +164,14 @@ VkImage& Image::GetImage()
 	return (image);
 }
 
-VkImageView& Image::GetView()
+const VkImageView& Image::GetView() const
 {
 	if (!view) throw (std::runtime_error("Image view requested but not yet created"));
 
 	return (view);
 }
 
-VkSampler& Image::GetSampler()
+const VkSampler& Image::GetSampler() const
 {
 	if (!sampler) throw (std::runtime_error("Image sampler requested but not yet created"));
 
@@ -220,13 +218,12 @@ void Image::TransitionLayout()
 	config.currentLayout = config.targetLayout;
 }
 
-void Image::Load(const std::string& name)
+void Image::Load(const ImageLoader& imageLoader)
 {
 	if (!image) throw (std::runtime_error("Image does not exist"));
 	if (!device) throw (std::runtime_error("Image has no device"));
 
-	ImageLoader imageLoader(name, ImageType::Jpg);
-	imageLoader.LoadEntropyData();
+	//imageLoader.LoadEntropyData();
 	std::vector<unsigned char> pixels{};
 	imageLoader.LoadPixels(pixels);
 	Update(&pixels[0], pixels.size(), {config.width, config.height, config.depth});
@@ -245,7 +242,7 @@ void Image::Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent, 
 	Buffer stagingBuffer;
 	BufferConfig stagingConfig = Buffer::StagingConfig();
 	stagingConfig.size = size;
-	stagingBuffer.Create(stagingConfig, device, data);
+	stagingBuffer.Create(stagingConfig, data, device);
 	stagingBuffer.CopyTo(*this, extent, offset);
 	stagingBuffer.Destroy();
 

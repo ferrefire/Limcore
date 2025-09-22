@@ -159,6 +159,25 @@ void Descriptor::Update(size_t setID, uint32_t binding, VkDescriptorBufferInfo* 
 	vkUpdateDescriptorSets(device->GetLogicalDevice(), 1, &writeInfo, 0, nullptr);
 }
 
+void Descriptor::Update(size_t setID, uint32_t binding, const Buffer& buffer)
+{
+	VkDescriptorBufferInfo bufferInfo{};
+	bufferInfo.buffer = buffer.GetBuffer();
+	bufferInfo.range = buffer.GetConfig().size;
+
+	Update(setID, binding, &bufferInfo, nullptr);
+}
+
+void Descriptor::Update(size_t setID, uint32_t binding, const Image& image)
+{
+	VkDescriptorImageInfo imageInfo{};
+	imageInfo.sampler = image.GetSampler();
+	imageInfo.imageView = image.GetView();
+	imageInfo.imageLayout = image.GetConfig().currentLayout;
+
+	Update(setID, binding, nullptr, &imageInfo);
+}
+
 std::ostream& operator<<(std::ostream& out, const DescriptorConfig& config)
 {
 	out << std::endl;

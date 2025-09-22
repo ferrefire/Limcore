@@ -30,6 +30,13 @@ void Mesh<V, I>::Create(Device* meshDevice)
 }
 
 MESH_TEMPLATE
+void Mesh<V, I>::Create(const Shape<V, I>& shape, Device* meshDevice)
+{
+	SetShape(shape);
+	Create(meshDevice);
+}
+
+MESH_TEMPLATE
 void Mesh<V, I>::CreateData()
 {
 	if (data.size() != 0) throw (std::runtime_error("Mesh data already exists"));
@@ -56,7 +63,7 @@ void Mesh<V, I>::CreateVertexBuffer()
 	BufferConfig bufferConfig = Buffer::VertexConfig();
 	bufferConfig.size = static_cast<VkDeviceSize>(sizeof(data[0]) * data.size());
 
-	vertexBuffer.Create(bufferConfig, device, data.data());
+	vertexBuffer.Create(bufferConfig, data.data(), device);
 }
 
 MESH_TEMPLATE
@@ -70,7 +77,7 @@ void Mesh<V, I>::CreateIndexBuffer()
 	BufferConfig bufferConfig = Buffer::IndexConfig();
 	bufferConfig.size = static_cast<VkDeviceSize>(sizeof(indices[0]) * indices.size());
 
-	indexBuffer.Create(bufferConfig, device, indices.data());
+	indexBuffer.Create(bufferConfig, indices.data(), device);
 }
 
 MESH_TEMPLATE

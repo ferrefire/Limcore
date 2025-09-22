@@ -289,7 +289,7 @@ ImageLoader::ImageLoader(const std::string& name, const ImageType& type)
 {
 	switch (type)
 	{
-		case ImageType::Jpg: GetJpgInfo(name); break;
+		case ImageType::Jpg: GetJpgInfo(name); LoadEntropyData(); break;
 		case ImageType::Png: return; break;
 		default: throw (std::runtime_error("Not a valid image type"));
 	}
@@ -828,7 +828,7 @@ void ImageLoader::LoadEntropyData()
 	std::cout << "Add time: " << addTime * 1000 << " Sub time: " << subTime * 1000 << " Rest time: " << restTime * 1000 << std::endl;
 }
 
-void ImageLoader::LoadBlock(std::array<unsigned char, (16 * 16) * 4>& buffer, size_t offset)
+void ImageLoader::LoadBlock(std::array<unsigned char, (16 * 16) * 4>& buffer, size_t offset) const
 {
 	size_t pixelIndex = 0;
 	size_t blockIndex = 0;
@@ -889,7 +889,7 @@ void ImageLoader::LoadBlock(std::array<unsigned char, (16 * 16) * 4>& buffer, si
 	}
 }
 
-void ImageLoader::LoadPixels(std::vector<unsigned char>& buffer)
+void ImageLoader::LoadPixels(std::vector<unsigned char>& buffer) const
 {
 	buffer.resize((info.startOfFrameInfo.width * info.startOfFrameInfo.height) * 4);
 

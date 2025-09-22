@@ -36,11 +36,11 @@ class Shape
 	public:
 		Shape();
 		Shape(ShapeType type);
-		Shape(ModelLoader loader);
+		Shape(ModelLoader loader, bool scalarized = true);
 		~Shape();
 
 		void Create(ShapeType type);
-		void Create(ModelLoader loader);
+		void Create(ModelLoader loader, bool scalarized = true);
 
 		void Destroy();
 
@@ -53,5 +53,14 @@ class Shape
 		void Scalarize();
 		void Join(const Shape<V, I>& other, bool offset = true);
 };
+
+typedef Shape<Position, VK_INDEX_TYPE_UINT16> shapeP16;
+typedef Shape<Position | Coordinate, VK_INDEX_TYPE_UINT16> shapePC16;
+typedef Shape<Position | Normal, VK_INDEX_TYPE_UINT16> shapePN16;
+typedef Shape<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT16> shapePNC16;
+typedef Shape<Position, VK_INDEX_TYPE_UINT32> shapeP32;
+typedef Shape<Position | Coordinate, VK_INDEX_TYPE_UINT32> shapePC32;
+typedef Shape<Position | Normal, VK_INDEX_TYPE_UINT32> shapePN32;
+typedef Shape<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT32> shapePNC32;
 
 #include "shape.tpp"

@@ -46,7 +46,8 @@ class Mesh
 		Mesh();
 		~Mesh();
 
-		void Create(Device* meshDevice);
+		void Create(Device* meshDevice = nullptr);
+		void Create(const Shape<V, I>& shape, Device* meshDevice = nullptr);
 
 		void Destroy();
 
