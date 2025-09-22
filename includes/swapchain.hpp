@@ -28,7 +28,7 @@ class Swapchain
 		Swapchain();
 		~Swapchain();
 
-		void Create(Window* swapchainWindow, Device* swapchainDevice);
+		void Create(Window* swapchainWindow = nullptr, Device* swapchainDevice = nullptr);
 
 		void Destroy();
 

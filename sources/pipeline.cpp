@@ -16,7 +16,7 @@ Pipeline::~Pipeline()
 	Destroy();
 }
 
-void Pipeline::Create(const PipelineConfig& pipelineConfig, Device* pipelineDevice = nullptr)
+void Pipeline::Create(const PipelineConfig& pipelineConfig, Device* pipelineDevice)
 {
 	config = pipelineConfig;
 	device = pipelineDevice;

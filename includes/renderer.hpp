@@ -47,7 +47,7 @@ class Renderer
 		Renderer();
 		~Renderer();
 
-		static void Create(uint32_t rendererFrameCount, Device* rendererDevice, Swapchain* rendererSwapchain);
+		static void Create(uint32_t rendererFrameCount, Device* rendererDevice = nullptr, Swapchain* rendererSwapchain = nullptr);
 
 		static void Destroy();
 

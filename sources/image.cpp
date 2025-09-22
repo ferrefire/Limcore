@@ -17,7 +17,7 @@ Image::~Image()
 	Destroy();
 }
 
-void Image::Create(const ImageConfig& imageConfig, Device* imageDevice = nullptr)
+void Image::Create(const ImageConfig& imageConfig, Device* imageDevice)
 {
 	config = imageConfig;
 	device = imageDevice;
@@ -31,7 +31,7 @@ void Image::Create(const ImageConfig& imageConfig, Device* imageDevice = nullptr
 	TransitionLayout();
 }
 
-void Image::Create(const ImageLoader& imageLoader, const ImageConfig& imageConfig, Device* imageDevice = nullptr)
+void Image::Create(const ImageLoader& imageLoader, const ImageConfig& imageConfig, Device* imageDevice)
 {
 	config = imageConfig;
 	device = imageDevice;
@@ -282,7 +282,7 @@ ImageConfig Image::DefaultDepthConfig()
 	return (config);
 }
 
-void Image::CreateView(VkImageView& view, const VkImage& image, const ImageViewConfig& config, Device* device = nullptr)
+void Image::CreateView(VkImageView& view, const VkImage& image, const ImageViewConfig& config, Device* device)
 {
 	if (!device) device = &Manager::GetDevice();
 

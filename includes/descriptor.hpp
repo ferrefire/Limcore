@@ -35,7 +35,7 @@ class Descriptor
         Descriptor();
         ~Descriptor();
 
-		void Create(const std::vector<DescriptorConfig>& descriptorConfig, Device* descriptorDevice);
+		void Create(const std::vector<DescriptorConfig>& descriptorConfig, Device* descriptorDevice = nullptr);
 
 		void Destroy();
 
@@ -44,7 +44,7 @@ class Descriptor
 
 		size_t GetNewSet();
 		void Bind(size_t setID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
-		void Update(size_t setID, uint32_t binding, VkDescriptorBufferInfo* bufferInfo, VkDescriptorImageInfo* imageInfo);
+		void Update(size_t setID, uint32_t binding, VkDescriptorBufferInfo* bufferInfo = nullptr, VkDescriptorImageInfo* imageInfo = nullptr);
 		void Update(size_t setID, uint32_t binding, const Buffer& buffer);
 		void Update(size_t setID, uint32_t binding, const Image& image);
 };

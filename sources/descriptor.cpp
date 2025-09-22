@@ -16,7 +16,7 @@ Descriptor::~Descriptor()
 	Destroy();
 }
 
-void Descriptor::Create(const std::vector<DescriptorConfig>& descriptorConfig, Device* descriptorDevice = nullptr)
+void Descriptor::Create(const std::vector<DescriptorConfig>& descriptorConfig, Device* descriptorDevice)
 {
 	config = descriptorConfig;
 	device = descriptorDevice;
@@ -141,7 +141,7 @@ void Descriptor::Bind(size_t setID, VkCommandBuffer commandBuffer, VkPipelineLay
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &sets[setID], 0, nullptr);
 }
 
-void Descriptor::Update(size_t setID, uint32_t binding, VkDescriptorBufferInfo* bufferInfo = nullptr, VkDescriptorImageInfo* imageInfo = nullptr)
+void Descriptor::Update(size_t setID, uint32_t binding, VkDescriptorBufferInfo* bufferInfo, VkDescriptorImageInfo* imageInfo)
 {
 	if (!sets[setID]) throw (std::runtime_error("Descriptor has no set"));
 	if (!device) throw (std::runtime_error("Descriptor has no device"));

@@ -50,7 +50,7 @@ class Pipeline
 		Pipeline();
 		~Pipeline();
 
-		void Create(const PipelineConfig& pipelineConfig, Device* pipelineDevice);
+		void Create(const PipelineConfig& pipelineConfig, Device* pipelineDevice = nullptr);
 
 		void Destroy();
 

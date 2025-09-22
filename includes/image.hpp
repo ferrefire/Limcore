@@ -75,8 +75,8 @@ class Image
 		Image();
 		~Image();
 
-		void Create(const ImageConfig& imageConfig, Device* imageDevice);
-		void Create(const ImageLoader& imageLoader, const ImageConfig& imageConfig, Device* imageDevice);
+		void Create(const ImageConfig& imageConfig, Device* imageDevice = nullptr);
+		void Create(const ImageLoader& imageLoader, const ImageConfig& imageConfig, Device* imageDevice = nullptr);
 
 		void Destroy();
 
@@ -92,5 +92,5 @@ class Image
 		static ImageViewConfig DefaultViewConfig();
 		static ImageConfig DefaultDepthConfig();
 
-		static void CreateView(VkImageView& view, const VkImage& image, const ImageViewConfig& config, Device* device);
+		static void CreateView(VkImageView& view, const VkImage& image, const ImageViewConfig& config, Device* device = nullptr);
 };

@@ -54,7 +54,7 @@ class Pass
 		Pass();
 		~Pass();
 
-		void Create(const PassConfig& passConfig, Device* passDevice);
+		void Create(const PassConfig& passConfig, Device* passDevice = nullptr);
 
 		void Destroy();
 

@@ -57,7 +57,7 @@ Pass::~Pass()
 	Destroy();
 }
 
-void Pass::Create(const PassConfig& passConfig, Device* passDevice = nullptr)
+void Pass::Create(const PassConfig& passConfig, Device* passDevice)
 {
 	config = passConfig;
 	device = passDevice;

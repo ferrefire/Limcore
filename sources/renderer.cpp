@@ -14,7 +14,7 @@ Renderer::~Renderer()
 	Destroy();
 }
 
-void Renderer::Create(uint32_t rendererFrameCount, Device* rendererDevice = nullptr, Swapchain* rendererSwapchain = nullptr)
+void Renderer::Create(uint32_t rendererFrameCount, Device* rendererDevice, Swapchain* rendererSwapchain)
 {
 	frameCount = rendererFrameCount;
 	device = rendererDevice;

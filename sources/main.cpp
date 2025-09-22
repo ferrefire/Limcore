@@ -124,15 +124,13 @@ void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 
 void Start()
 {
-	Device* device = &Manager::GetDevice();
-
 	hammerMesh.Create(shapePNC16(ModelLoader("wooden_hammer", ModelType::Gltf)));
 	duckMesh.Create(shapePNC16(ModelLoader("rubber_duck_toy", ModelType::Gltf)));
 	croissantMesh.Create(shapePNC16(ModelLoader("croissant", ModelType::Gltf)));
 	quadMesh.Create(shapePC16(ShapeType::Quad));
 
 	PassConfig passConfig = Pass::DefaultConfig(true);
-	pass.Create(passConfig, device);
+	pass.Create(passConfig);
 
 	BufferConfig bufferConfig{};
 	bufferConfig.mapped = true;
@@ -148,16 +146,16 @@ void Start()
 	imageConfig.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	imageConfig.viewConfig = Image::DefaultViewConfig();
 
-	hammerImage.Create(ImageLoader("wooden_hammer_diff", ImageType::Jpg), imageConfig, device);
-	duckImage.Create(ImageLoader("rubber_duck_toy_diff", ImageType::Jpg), imageConfig, device);
-	croissantImage.Create(ImageLoader("croissant_diff", ImageType::Jpg), imageConfig, device);
+	hammerImage.Create(ImageLoader("wooden_hammer_diff", ImageType::Jpg), imageConfig);
+	duckImage.Create(ImageLoader("rubber_duck_toy_diff", ImageType::Jpg), imageConfig);
+	croissantImage.Create(ImageLoader("croissant_diff", ImageType::Jpg), imageConfig);
 
 	std::vector<DescriptorConfig> descriptorConfigs(2);
 	descriptorConfigs[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	descriptorConfigs[0].stages = VK_SHADER_STAGE_VERTEX_BIT;
 	descriptorConfigs[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	descriptorConfigs[1].stages = VK_SHADER_STAGE_FRAGMENT_BIT;
-	descriptor.Create(descriptorConfigs, device);
+	descriptor.Create(descriptorConfigs);
 
 	hammerSet = descriptor.GetNewSet();
 	duckSet = descriptor.GetNewSet();
@@ -181,7 +179,7 @@ void Start()
 	pipelineConfig.descriptorLayouts = { descriptor.GetLayout() };
 	pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
 	pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
-	pipeline.Create(pipelineConfig, device);
+	pipeline.Create(pipelineConfig);
 
 	PipelineConfig quadPipelineConfig = Pipeline::DefaultConfig();
 	quadPipelineConfig.shader = "textureQuad";
@@ -191,7 +189,7 @@ void Start()
 	quadPipelineConfig.rasterization.cullMode = VK_CULL_MODE_NONE;
 	quadPipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
 	quadPipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
-	quadPipeline.Create(quadPipelineConfig, device);
+	quadPipeline.Create(quadPipelineConfig);
 
 	PassInfo passInfo{};
 	passInfo.pass = &pass;
