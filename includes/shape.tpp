@@ -99,7 +99,7 @@ void Shape<V, I>::Create(ModelLoader loader, bool scalarized)
 
 	if (info.count > 0)
 	{
-		Shape<V, I> other(ModelLoader(info.name, info.type, info.ID + 1));
+		Shape<V, I> other(ModelLoader(info.name, info.type, info.ID + 1), false);
 		Join(other);
 	}
 
