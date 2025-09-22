@@ -218,7 +218,7 @@ void ModelLoader::GetGltfInfo(const std::string& name, size_t meshID)
 		std::string accessContent = accessors[std::stoi(positionsIndex)];
 		std::string viewContent = views[std::stoi(GetValue(accessContent, "bufferView"))];
 		info.attributes[AttributeType::Position] = GetAttribute(accessContent, viewContent);
-		info.size = std::max(info.size, std::stoul(info.attributes[AttributeType::Position].count));
+		info.size = std::max(info.size, (size_t)std::stoul(info.attributes[AttributeType::Position].count));
 
 		std::string nodeInfo = GetPart(file.substr(file.rfind("nodes")), "nodes", {'[', ']'});
 		if (nodeInfo != "")
@@ -238,7 +238,7 @@ void ModelLoader::GetGltfInfo(const std::string& name, size_t meshID)
 		std::string accessContent = accessors[std::stoi(normalsIndex)];
 		std::string viewContent = views[std::stoi(GetValue(accessContent, "bufferView"))];
 		info.attributes[AttributeType::Normal] = GetAttribute(accessContent, viewContent);
-		info.size = std::max(info.size, std::stoul(info.attributes[AttributeType::Normal].count));
+		info.size = std::max(info.size, (size_t)std::stoul(info.attributes[AttributeType::Normal].count));
 	}
 
 	if (coordinatesIndex != "")
@@ -247,7 +247,7 @@ void ModelLoader::GetGltfInfo(const std::string& name, size_t meshID)
 		std::string accessContent = accessors[std::stoi(coordinatesIndex)];
 		std::string viewContent = views[std::stoi(GetValue(accessContent, "bufferView"))];
 		info.attributes[AttributeType::Coordinate] = GetAttribute(accessContent, viewContent);
-		info.size = std::max(info.size, std::stoul(info.attributes[AttributeType::Coordinate].count));
+		info.size = std::max(info.size, (size_t)std::stoul(info.attributes[AttributeType::Coordinate].count));
 	}
 
 	if (indicesIndex != "")
@@ -256,7 +256,7 @@ void ModelLoader::GetGltfInfo(const std::string& name, size_t meshID)
 		std::string accessContent = accessors[std::stoi(indicesIndex)];
 		std::string viewContent = views[std::stoi(GetValue(accessContent, "bufferView"))];
 		info.attributes[AttributeType::Index] = GetAttribute(accessContent, viewContent);
-		info.size = std::max(info.size, std::stoul(info.attributes[AttributeType::Index].count));
+		info.size = std::max(info.size, (size_t)std::stoul(info.attributes[AttributeType::Index].count));
 	}
 }
 
@@ -306,8 +306,8 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 	info.type = ImageType::Jpg;
 
 	std::string path = Utilities::GetPath() + "/resources/textures/" + name + ".jpg";
-	std::string file = Utilities::FileToString(path);
-	const uint8_t* rawData = reinterpret_cast<const uint8_t*>(file.c_str());
+	std::vector<char> file = Utilities::FileToBinary(path);
+	const uint8_t* rawData = reinterpret_cast<const uint8_t*>(file.data());
 
 	ByteReader br(rawData, file.size());
 
@@ -680,8 +680,8 @@ void ImageLoader::LoadEntropyData()
 	double fileStart = Time::GetCurrentTime();
 
 	std::string path = Utilities::GetPath() + "/resources/textures/" + info.name + ".jpg";
-	std::string file = Utilities::FileToString(path);
-	const uint8_t* rawData = reinterpret_cast<const uint8_t*>(file.c_str());
+	std::vector<char> file = Utilities::FileToBinary(path);
+	const uint8_t* rawData = reinterpret_cast<const uint8_t*>(file.data());
 
 	std::cout << "File loaded in: " << (Time::GetCurrentTime() - fileStart) * 1000 << std::endl;
 

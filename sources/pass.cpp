@@ -85,6 +85,9 @@ void Pass::CreateRenderPass()
 	if (renderpass) throw (std::runtime_error("Render pass already exists"));
 	if (!device) throw (std::runtime_error("Pass has no device"));
 
+	config.subpasses[0].pColorAttachments = &config.colorAttachments[0].reference;
+	if (config.depth) config.subpasses[0].pDepthStencilAttachment = &config.depthAttachment.reference;
+
 	std::vector<VkAttachmentDescription> attachments = config.GetAttachments();
 
 	VkRenderPassCreateInfo createInfo{};
