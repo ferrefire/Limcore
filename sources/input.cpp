@@ -40,11 +40,13 @@ void Input::Frame()
 void Input::MouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
 	double deltaX = mx - xpos, deltaY = ypos - my;
-	
-	for (std::function<void (double, double)> call : mouseCalls) { call(deltaX, deltaY); }
 
 	mx = xpos;
 	my = ypos;
+
+	if (mouseEnabled) return;
+
+	for (std::function<void (double, double)> call : mouseCalls) { call(deltaX, deltaY); }
 }
 
 void Input::ScrollCallback(GLFWwindow* window, double deltaX, double deltaY)
@@ -62,6 +64,26 @@ void Input::RegisterScrollCallback(std::function<void (double, double)> call)
 	scrollCalls.push_back(call);
 }
 
+void Input::TriggerMouse(int mode)
+{
+	if (mode == -1)
+	{
+		TriggerMouse(!mouseEnabled);
+		return;
+	}
+	else if (mode == true)
+	{
+		mouseEnabled = true;
+		glfwSetInputMode(Manager::GetWindow().GetData(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	}
+	else if (mode == false)
+	{
+		mouseEnabled = false;
+		glfwSetInputMode(Manager::GetWindow().GetData(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	}
+}
+
+bool Input::mouseEnabled = false;
 std::map<int, KeyInfo> Input::keys;
 std::vector<std::function<void (double, double)>> Input::mouseCalls;
 std::vector<std::function<void (double, double)>> Input::scrollCalls;

@@ -1,6 +1,9 @@
 #include "image.hpp"
 
 #include "manager.hpp"
+#include "bitmask.hpp"
+#include "command.hpp"
+#include "buffer.hpp"
 
 #include <stdexcept>
 
@@ -14,7 +17,7 @@ Image::~Image()
 	Destroy();
 }
 
-void Image::Create(const ImageConfig& imageConfig, Device* imageDevice = nullptr)
+void Image::Create(const ImageConfig& imageConfig, Device* imageDevice)
 {
 	config = imageConfig;
 	device = imageDevice;
@@ -24,6 +27,27 @@ void Image::Create(const ImageConfig& imageConfig, Device* imageDevice = nullptr
 	CreateImage();
 	AllocateMemory();
 	CreateView();
+	CreateSampler();
+	TransitionLayout();
+}
+
+void Image::Create(const ImageLoader& imageLoader, const ImageConfig& imageConfig, Device* imageDevice)
+{
+	config = imageConfig;
+	device = imageDevice;
+
+	if (!device) device = &Manager::GetDevice();
+
+	config.width = imageLoader.GetInfo().startOfFrameInfo.width;
+	config.height = imageLoader.GetInfo().startOfFrameInfo.height;
+
+	CreateImage();
+	AllocateMemory();
+	CreateView();
+	CreateSampler();
+	TransitionLayout();
+
+	Load(imageLoader);
 }
 
 void Image::CreateImage()
@@ -44,7 +68,7 @@ void Image::CreateImage()
 	createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 	createInfo.usage = config.usage;
 	createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	createInfo.initialLayout = config.initialLayout;
+	createInfo.initialLayout = config.currentLayout;
 
 	if (vkCreateImage(device->GetLogicalDevice(), &createInfo, nullptr, &image) != VK_SUCCESS)
 		throw (std::runtime_error("Failed to create image"));
@@ -53,6 +77,34 @@ void Image::CreateImage()
 void Image::CreateView()
 {
 	Image::CreateView(view, image, config.viewConfig, device);
+}
+
+void Image::CreateSampler()
+{
+	if (!Bitmask::HasFlag(config.usage, VK_IMAGE_USAGE_SAMPLED_BIT)) return;
+	if (sampler) throw (std::runtime_error("Image sampler already exists"));
+	if (!device) throw (std::runtime_error("Device does not exist"));
+
+	VkSamplerCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	createInfo.magFilter = config.samplerConfig.magFilter;
+	createInfo.minFilter = config.samplerConfig.minFilter;
+	createInfo.mipmapMode = config.samplerConfig.mipmapMode;
+	createInfo.addressModeU = config.samplerConfig.repeatMode;
+	createInfo.addressModeV = config.samplerConfig.repeatMode;
+	createInfo.addressModeW = config.samplerConfig.repeatMode;
+	createInfo.mipLodBias = config.samplerConfig.lodBias;
+	createInfo.anisotropyEnable = config.samplerConfig.anisotropyEnabled;
+	createInfo.maxAnisotropy = config.samplerConfig.maxAnisotropy;
+	createInfo.compareEnable = config.samplerConfig.compareEnabled;
+	createInfo.compareOp = config.samplerConfig.compareOperation;
+	createInfo.minLod = config.samplerConfig.lodRange.x();
+	createInfo.maxLod = config.samplerConfig.lodRange.y();
+	createInfo.borderColor = config.samplerConfig.borderColor;
+	createInfo.unnormalizedCoordinates = config.samplerConfig.unnormalizedCoordinates;
+
+	if (vkCreateSampler(device->GetLogicalDevice(), &createInfo, nullptr, &sampler) != VK_SUCCESS)
+		throw (std::runtime_error("Failed to create image sampler"));
 }
 
 void Image::AllocateMemory()
@@ -97,13 +149,106 @@ void Image::Destroy()
 		vkDestroyImageView(device->GetLogicalDevice(), view, nullptr);
 		view = nullptr;
 	}
+
+	if (sampler)
+	{
+		vkDestroySampler(device->GetLogicalDevice(), sampler, nullptr);
+		sampler = nullptr;
+	}
 }
 
-VkImageView& Image::GetView()
+VkImage& Image::GetImage()
+{
+	if (!image) throw (std::runtime_error("Image requested but not yet created"));
+
+	return (image);
+}
+
+const VkImageView& Image::GetView() const
 {
 	if (!view) throw (std::runtime_error("Image view requested but not yet created"));
 
 	return (view);
+}
+
+const VkSampler& Image::GetSampler() const
+{
+	if (!sampler) throw (std::runtime_error("Image sampler requested but not yet created"));
+
+	return (sampler);
+}
+
+const ImageConfig& Image::GetConfig() const
+{
+	return (config);
+}
+
+void Image::TransitionLayout()
+{
+	if (config.currentLayout == config.targetLayout) return;
+	if (!image) throw (std::runtime_error("Image does not exist"));
+	if (!device) throw (std::runtime_error("Image has no device"));
+	//Check if src and dst are supported
+
+	VkImageMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.image = image;
+	barrier.oldLayout = config.currentLayout;
+	barrier.newLayout = config.targetLayout;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.subresourceRange = config.viewConfig.subresourceRange;
+	barrier.srcAccessMask = transitionAccesses[config.currentLayout];
+	barrier.dstAccessMask = transitionAccesses[config.targetLayout];
+
+	VkPipelineStageFlags srcStage = transitionStages[config.currentLayout];
+	VkPipelineStageFlags dstStage = transitionStages[config.targetLayout];
+
+	Command command;
+	CommandConfig commandConfig{};
+	commandConfig.queueIndex = device->GetQueueIndex(QueueType::Graphics);
+	command.Create(commandConfig, device);
+	command.Begin();
+
+	vkCmdPipelineBarrier(command.GetBuffer(), srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+	command.End();
+	command.Submit();
+
+	config.currentLayout = config.targetLayout;
+}
+
+void Image::Load(const ImageLoader& imageLoader)
+{
+	if (!image) throw (std::runtime_error("Image does not exist"));
+	if (!device) throw (std::runtime_error("Image has no device"));
+
+	//imageLoader.LoadEntropyData();
+	std::vector<unsigned char> pixels{};
+	imageLoader.LoadPixels(pixels);
+	Update(&pixels[0], pixels.size(), {config.width, config.height, config.depth});
+}
+
+void Image::Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent, Point<int32_t, 3> offset)
+{
+	if (!image) throw (std::runtime_error("Image does not exist"));
+	if (!device) throw (std::runtime_error("Image has no device"));
+
+	VkImageLayout originalLayout = config.currentLayout;
+	config.targetLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
+	TransitionLayout();
+
+	Buffer stagingBuffer;
+	BufferConfig stagingConfig = Buffer::StagingConfig();
+	stagingConfig.size = size;
+	stagingBuffer.Create(stagingConfig, data, device);
+	stagingBuffer.CopyTo(*this, extent, offset);
+	stagingBuffer.Destroy();
+
+	config.targetLayout = originalLayout;
+
+	TransitionLayout();
 }
 
 ImageViewConfig Image::DefaultViewConfig()
@@ -129,7 +274,7 @@ ImageConfig Image::DefaultDepthConfig()
 	config.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 	config.width = Manager::GetWindow().GetConfig().extent.width;
 	config.height = Manager::GetWindow().GetConfig().extent.height;
-	config.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	config.targetLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	config.viewConfig = Image::DefaultViewConfig();
 	config.viewConfig.format = config.format;
 	config.viewConfig.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -137,7 +282,7 @@ ImageConfig Image::DefaultDepthConfig()
 	return (config);
 }
 
-void Image::CreateView(VkImageView& view, const VkImage& image, const ImageViewConfig& config, Device* device = nullptr)
+void Image::CreateView(VkImageView& view, const VkImage& image, const ImageViewConfig& config, Device* device)
 {
 	if (!device) device = &Manager::GetDevice();
 
@@ -156,3 +301,17 @@ void Image::CreateView(VkImageView& view, const VkImage& image, const ImageViewC
 	if (vkCreateImageView(device->GetLogicalDevice(), &createInfo, nullptr, &view) != VK_SUCCESS)
 		throw (std::runtime_error("Failed to create image view"));
 }
+
+std::map<VkImageLayout, VkAccessFlags> Image::transitionAccesses =
+	{
+		std::pair<VkImageLayout, VkAccessFlags>{VK_IMAGE_LAYOUT_UNDEFINED, 0},
+		std::pair<VkImageLayout, VkAccessFlags>{VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+		std::pair<VkImageLayout, VkAccessFlags>{VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
+	};
+
+std::map<VkImageLayout, VkPipelineStageFlags> Image::transitionStages = 
+	{
+		std::pair<VkImageLayout, VkPipelineStageFlags>{VK_IMAGE_LAYOUT_UNDEFINED, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT},
+		std::pair<VkImageLayout, VkPipelineStageFlags>{VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT},
+		std::pair<VkImageLayout, VkPipelineStageFlags>{VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT},
+	};

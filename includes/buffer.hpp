@@ -1,6 +1,8 @@
 #pragma once
 
 #include "device.hpp"
+#include "image.hpp"
+#include "point.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -33,7 +35,7 @@ class Buffer
 		Buffer();
 		~Buffer();
 
-		void Create(const BufferConfig& bufferConfig, Device* bufferDevice, void* data);
+		void Create(const BufferConfig& bufferConfig, void* data = nullptr, Device* bufferDevice = nullptr);
 
 		void Destroy();
 
@@ -43,7 +45,8 @@ class Buffer
 		const VkBuffer& GetBuffer() const;
 		const void* GetAddress() const;
 
-		void CopyTo(VkBuffer target);
+		void CopyTo(VkBuffer target, size_t offset = 0);
+		void CopyTo(Image& target, Point<uint32_t, 3> extent = {}, Point<int32_t, 3> offset = {});
 		void Update(void* data, size_t size);
 
 		static BufferConfig StagingConfig();

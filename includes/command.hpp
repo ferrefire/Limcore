@@ -41,7 +41,7 @@ class Command
 		Command();
 		~Command();
 
-		void Create(const CommandConfig& commandConfig, Device* commandDevice);
+		void Create(const CommandConfig& commandConfig, Device* commandDevice = nullptr);
 
 		void Destroy();
 

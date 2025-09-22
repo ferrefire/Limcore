@@ -45,6 +45,8 @@ class Window
 		const WindowConfig& GetConfig() const;
 
 		bool CanPresent(Device& device, int presentQueueIndex);
+
+		void Resize(Device& device);
 };
 
 std::ostream& operator<<(std::ostream& out, Window& window);

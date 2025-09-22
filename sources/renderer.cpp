@@ -14,7 +14,7 @@ Renderer::~Renderer()
 	Destroy();
 }
 
-void Renderer::Create(uint32_t rendererFrameCount, Device* rendererDevice = nullptr, Swapchain* rendererSwapchain = nullptr)
+void Renderer::Create(uint32_t rendererFrameCount, Device* rendererDevice, Swapchain* rendererSwapchain)
 {
 	frameCount = rendererFrameCount;
 	device = rendererDevice;
@@ -121,19 +121,35 @@ void Renderer::Destroy()
 	commands.clear();
 }
 
+PassInfo& Renderer::GetPassInfo(size_t index)
+{
+	if (passes.size() <= index) throw (std::runtime_error("Pass info requested but it does not exist"));
+
+	return (passes[index]);
+}
+
 void Renderer::Frame()
 {
-	if (passes.size() == 0 || calls.size() == 0) return;
+	if (passes.size() == 0) return;
+
+	for (const PassInfo& passInfo : passes)
+	{
+		if (passInfo.pass == nullptr) return;
+		if (passInfo.calls.size() == 0) return;
+	}
 
 	if (vkWaitForFences(device->GetLogicalDevice(), 1, &fences[currentFrame], VK_TRUE, UINT64_MAX) != VK_SUCCESS)
 		throw (std::runtime_error("Failed to wait for fence"));
 
+	VkResult acquireResult = vkAcquireNextImageKHR(device->GetLogicalDevice(), swapchain->GetSwapchain(), UINT64_MAX, 
+		renderSemaphores[currentFrame], VK_NULL_HANDLE, &renderIndex);
+
+	if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR) { Manager::Resize(); return; }
+	else if (acquireResult == VK_SUBOPTIMAL_KHR) Manager::Resize(false);
+	else if (acquireResult != VK_SUCCESS) throw (std::runtime_error("Failed to aquire next render image index"));
+
 	if (vkResetFences(device->GetLogicalDevice(), 1, &fences[currentFrame]) != VK_SUCCESS)
 		throw (std::runtime_error("Failed to reset fence"));
-
-	if (vkAcquireNextImageKHR(device->GetLogicalDevice(), swapchain->GetSwapchain(), UINT64_MAX, 
-		renderSemaphores[currentFrame], VK_NULL_HANDLE, &renderIndex) != VK_SUCCESS)
-			throw (std::runtime_error("Failed to aquire next render image index"));
 
 	RecordCommands();
 	PresentFrame();
@@ -145,16 +161,19 @@ void Renderer::RecordCommands()
 {
 	commands[currentFrame].Begin();
 
-	for (Pass* pass : passes)
+	for (PassInfo& passInfo : passes)
 	{
-		pass->Begin(commands[currentFrame].GetBuffer(), renderIndex);
+		passInfo.pass->Begin(commands[currentFrame].GetBuffer(), renderIndex);
 
-		for (std::function<void(VkCommandBuffer, uint32_t)> call : calls)
+		vkCmdSetViewport(commands[currentFrame].GetBuffer(), 0, 1, &passInfo.viewport);
+		vkCmdSetScissor(commands[currentFrame].GetBuffer(), 0, 1, &passInfo.scissor);
+
+		for (std::function<void(VkCommandBuffer, uint32_t)> call : passInfo.calls)
 		{
 			call(commands[currentFrame].GetBuffer(), currentFrame);
 		}
 
-		pass->End(commands[currentFrame].GetBuffer());
+		passInfo.pass->End(commands[currentFrame].GetBuffer());
 	}
 
 	commands[currentFrame].End();
@@ -172,20 +191,54 @@ void Renderer::PresentFrame()
 	presentInfo.pSwapchains = &swapchain->GetSwapchain();
 	presentInfo.pImageIndices = &renderIndex;
 
-	if (vkQueuePresentKHR(device->GetQueue(device->GetQueueIndex(QueueType::Graphics)), &presentInfo) != VK_SUCCESS)
-		throw (std::runtime_error("Failed to present frame"));
+	VkResult presentResult = vkQueuePresentKHR(device->GetQueue(device->GetQueueIndex(QueueType::Graphics)), &presentInfo);
+
+	if (presentResult == VK_ERROR_OUT_OF_DATE_KHR) Manager::Resize();
+	else if (presentResult == VK_SUBOPTIMAL_KHR) Manager::Resize(false);
+	else if (presentResult != VK_SUCCESS) throw (std::runtime_error("Failed to present frame"));
 }
 
-void Renderer::AddPass(Pass* pass)
+void Renderer::AddPass(PassInfo passInfo)
 {
-	if (!pass) throw (std::runtime_error("Cannot add pass because it does not exist"));
+	if (!passInfo.pass) throw (std::runtime_error("Cannot add pass because it does not exist"));
 
-	passes.push_back(pass);
+	if (passInfo.useWindowExtent)
+	{
+		passInfo.viewport.x = 0.0f;
+		passInfo.viewport.y = 0.0f;
+		passInfo.viewport.width = Manager::GetWindow().GetConfig().extent.width;
+		passInfo.viewport.height = Manager::GetWindow().GetConfig().extent.height;
+		passInfo.viewport.minDepth = 0.0f;
+		passInfo.viewport.maxDepth = 1.0f;
+
+		passInfo.scissor.offset = {0, 0};
+		passInfo.scissor.extent = Manager::GetWindow().GetConfig().extent;
+	}
+
+	passes.push_back(passInfo);
 }
 
-void Renderer::RegisterCall(std::function<void(VkCommandBuffer, uint32_t)> call)
+void Renderer::RegisterCall(size_t index, std::function<void(VkCommandBuffer, uint32_t)> call)
 {
-	calls.push_back(call);
+	if (passes.size() <= index) return;
+
+	passes[index].calls.push_back(call);
+}
+
+void Renderer::Resize()
+{
+	swapchain = &Manager::GetSwapchain();
+
+	for (PassInfo& passInfo : passes)
+	{
+		if (passInfo.useWindowExtent)
+		{
+			passInfo.viewport.width = Manager::GetWindow().GetConfig().extent.width;
+			passInfo.viewport.height = Manager::GetWindow().GetConfig().extent.height;
+
+			passInfo.scissor.extent = Manager::GetWindow().GetConfig().extent;
+		}
+	}
 }
 
 Device* Renderer::device = nullptr;
@@ -199,5 +252,4 @@ std::vector<VkFence> Renderer::fences;
 std::vector<VkSemaphore> Renderer::renderSemaphores;
 std::vector<VkSemaphore> Renderer::presentSemaphores;
 std::vector<Command> Renderer::commands;
-std::vector<Pass*> Renderer::passes;
-std::vector<std::function<void(VkCommandBuffer, uint32_t)>> Renderer::calls;
+std::vector<PassInfo> Renderer::passes;

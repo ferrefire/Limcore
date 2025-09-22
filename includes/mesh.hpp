@@ -6,6 +6,7 @@
 #include "bitmask.hpp"
 #include "vertex.hpp"
 #include "shape.hpp"
+#include "loader.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -46,7 +47,9 @@ class Mesh
 		Mesh();
 		~Mesh();
 
-		void Create(Device* meshDevice);
+		void Create(Device* meshDevice = nullptr);
+		void Create(const Shape<V, I>& shape, Device* meshDevice = nullptr);
+		void Create(ModelLoader modelLoader, Device* meshDevice = nullptr);
 
 		void Destroy();
 
@@ -71,5 +74,14 @@ class Mesh
 
 MESH_TEMPLATE
 std::ostream& operator<<(std::ostream& out, const Mesh<V, I>& mesh);
+
+typedef Mesh<Position, VK_INDEX_TYPE_UINT16> meshP16;
+typedef Mesh<Position | Coordinate, VK_INDEX_TYPE_UINT16> meshPC16;
+typedef Mesh<Position | Normal, VK_INDEX_TYPE_UINT16> meshPN16;
+typedef Mesh<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT16> meshPNC16;
+typedef Mesh<Position, VK_INDEX_TYPE_UINT32> meshP32;
+typedef Mesh<Position | Coordinate, VK_INDEX_TYPE_UINT32> meshPC32;
+typedef Mesh<Position | Normal, VK_INDEX_TYPE_UINT32> meshPN32;
+typedef Mesh<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT32> meshPNC32;
 
 #include "mesh.tpp"

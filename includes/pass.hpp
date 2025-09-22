@@ -47,11 +47,14 @@ class Pass
 		void CreateImages();
 		void CreateFramebuffers();
 
+		void DestroyImages();
+		void DestroyFramebuffers();
+
 	public:
 		Pass();
 		~Pass();
 
-		void Create(const PassConfig& passConfig, Device* passDevice);
+		void Create(const PassConfig& passConfig, Device* passDevice = nullptr);
 
 		void Destroy();
 
@@ -59,6 +62,8 @@ class Pass
 
 		void Begin(VkCommandBuffer commandBuffer, uint32_t renderIndex);
 		void End(VkCommandBuffer commandBuffer);
+
+		void Recreate();
 
 		static VkAttachmentDescription DefaultColorDescription();
 		static VkAttachmentDescription DefaultDepthDescription();

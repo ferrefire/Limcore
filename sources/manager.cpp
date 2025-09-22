@@ -109,6 +109,11 @@ void Manager::DestroyVulkan()
 	Graphics::DestroyInstance();
 }
 
+void Manager::ResizeCallback(GLFWwindow* data, int width, int height)
+{
+	resizing = true;
+}
+
 Window& Manager::GetWindow()
 {
 	return (window);
@@ -145,6 +150,8 @@ void Manager::Frame()
 {
 	glfwPollEvents();
 
+	if (resizing) Resize();
+
 	Time::Frame();
 	Input::Frame();
 
@@ -153,6 +160,28 @@ void Manager::Frame()
 	Renderer::Frame();
 
 	if (Input::GetKey(GLFW_KEY_ESCAPE).pressed) stopping = true;
+}
+
+void Manager::Resize(bool force)
+{
+	if (!force)
+	{
+		resizing = true;
+		return;
+	}
+
+	resizing = false;
+
+	window.Resize(device);
+	camera.Resize(window.GetConfig().extent.width, window.GetConfig().extent.height);
+	
+	vkDeviceWaitIdle(device.GetLogicalDevice());
+	swapchain.Destroy();
+	swapchain.Create(&window, &device);
+
+	Renderer::Resize();
+
+	for (std::function<void()> call : resizeCalls) { call(); }
 }
 
 void Manager::ParseArguments(char** arguments, const int& count)
@@ -184,6 +213,11 @@ void Manager::RegisterEndCall(std::function<void()> call)
 	endCalls.push_back(call);
 }
 
+void Manager::RegisterResizeCall(std::function<void()> call)
+{
+	resizeCalls.push_back(call);
+}
+
 ManagerConfig Manager::config{};
 
 Window Manager::window;
@@ -192,7 +226,9 @@ Swapchain Manager::swapchain;
 Camera Manager::camera;
 
 bool Manager::stopping = false;
+bool Manager::resizing = false;
 
 std::vector<std::function<void()>> Manager::startCalls;
 std::vector<std::function<void()>> Manager::frameCalls;
 std::vector<std::function<void()>> Manager::endCalls;
+std::vector<std::function<void()>> Manager::resizeCalls;

@@ -15,7 +15,7 @@ Command::~Command()
 	Destroy();
 }
 
-void Command::Create(const CommandConfig& commandConfig, Device* commandDevice = nullptr)
+void Command::Create(const CommandConfig& commandConfig, Device* commandDevice)
 {
 	config = commandConfig;
 	device = commandDevice;

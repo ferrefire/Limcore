@@ -25,4 +25,6 @@ class Time
 		static const bool& newTick;
 
 		static void Frame();
+		
+		static double GetCurrentTime();
 };

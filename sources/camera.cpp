@@ -132,3 +132,11 @@ void Camera::Frame()
 	if (Input::GetKey(GLFW_KEY_SPACE).down) Move(up * Time::deltaTime * config.speed);
 	if (Input::GetKey(GLFW_KEY_LEFT_CONTROL).down) Move(up * Time::deltaTime * -config.speed);
 }
+
+void Camera::Resize(size_t width, size_t height)
+{
+	config.width = width;
+	config.height = height;
+
+	UpdateProjection();
+}

@@ -57,7 +57,7 @@ Pass::~Pass()
 	Destroy();
 }
 
-void Pass::Create(const PassConfig& passConfig, Device* passDevice = nullptr)
+void Pass::Create(const PassConfig& passConfig, Device* passDevice)
 {
 	config = passConfig;
 	device = passDevice;
@@ -84,6 +84,9 @@ void Pass::CreateRenderPass()
 {
 	if (renderpass) throw (std::runtime_error("Render pass already exists"));
 	if (!device) throw (std::runtime_error("Pass has no device"));
+
+	config.subpasses[0].pColorAttachments = &config.colorAttachments[0].reference;
+	if (config.depth) config.subpasses[0].pDepthStencilAttachment = &config.depthAttachment.reference;
 
 	std::vector<VkAttachmentDescription> attachments = config.GetAttachments();
 
@@ -130,18 +133,9 @@ void Pass::Destroy()
 {
 	if (!device) return;
 
-	for (Image* image : images)
-	{
-		image->Destroy();
-		delete(image);
-	}
-	images.clear();
+	DestroyImages();
 
-	for (int i = 0; i < framebuffers.size(); i++) 
-	{
-		vkDestroyFramebuffer(device->GetLogicalDevice(), framebuffers[i], nullptr);
-	}
-	framebuffers.clear();
+	DestroyFramebuffers();
 
 	if (renderpass)
 	{
@@ -150,6 +144,25 @@ void Pass::Destroy()
 	}
 
 	//std::cout << "Pass destroyed" << std::endl;
+}
+
+void Pass::DestroyImages()
+{
+	for (Image* image : images)
+	{
+		image->Destroy();
+		delete(image);
+	}
+	images.clear();
+}
+
+void Pass::DestroyFramebuffers()
+{
+	for (size_t i = 0; i < framebuffers.size(); i++) 
+	{
+		vkDestroyFramebuffer(device->GetLogicalDevice(), framebuffers[i], nullptr);
+	}
+	framebuffers.clear();
 }
 
 const VkRenderPass& Pass::GetRenderpass() const
@@ -190,6 +203,15 @@ void Pass::End(VkCommandBuffer commandBuffer)
 	vkCmdEndRenderPass(commandBuffer);
 
 	state = Ended;
+}
+
+void Pass::Recreate()
+{
+	DestroyImages();
+	DestroyFramebuffers();
+
+	CreateImages();
+	CreateFramebuffers();
 }
 
 VkAttachmentDescription Pass::DefaultColorDescription()

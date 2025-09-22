@@ -30,6 +30,11 @@ void Time::SetFrameIntervals()
 	}
 }
 
+double Time::GetCurrentTime()
+{
+	return (glfwGetTime());
+}
+
 float Time::deltaFrameTime = 0.0f;
 float Time::lastFrameTime = 0.0f;
 float Time::currentFrameTime = 0.0f;

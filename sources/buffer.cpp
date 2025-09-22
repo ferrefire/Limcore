@@ -18,7 +18,7 @@ Buffer::~Buffer()
 	Destroy();
 }
 
-void Buffer::Create(const BufferConfig& bufferConfig, Device* bufferDevice = nullptr, void* data = nullptr)
+void Buffer::Create(const BufferConfig& bufferConfig, void* data, Device* bufferDevice)
 {
 	config = bufferConfig;
 	device = bufferDevice;
@@ -39,7 +39,7 @@ void Buffer::Create(const BufferConfig& bufferConfig, Device* bufferDevice = nul
 			Buffer stagingBuffer;
 			BufferConfig stagingConfig = Buffer::StagingConfig();
 			stagingConfig.size = config.size;
-			stagingBuffer.Create(stagingConfig, device, data);
+			stagingBuffer.Create(stagingConfig, data, device);
 			stagingBuffer.CopyTo(buffer);
 			stagingBuffer.Destroy();
 		}
@@ -137,7 +137,7 @@ const void* Buffer::GetAddress() const
 	return (address);
 }
 
-void Buffer::CopyTo(VkBuffer target)
+void Buffer::CopyTo(VkBuffer target, size_t offset)
 {
 	if (!buffer) throw (std::runtime_error("Buffer does not exist"));
 	if (!target) throw (std::runtime_error("Buffer copy target does not exist"));
@@ -150,9 +150,41 @@ void Buffer::CopyTo(VkBuffer target)
 	command.Begin();
 
 	VkBufferCopy copyInfo{};
-	copyInfo.size = config.size;
+	copyInfo.size = static_cast<VkDeviceSize>(config.size);
+	copyInfo.dstOffset = static_cast<VkDeviceSize>(offset);
 
 	vkCmdCopyBuffer(command.GetBuffer(), buffer, target, 1, &copyInfo);
+
+	command.End();
+	command.Submit();
+}
+
+void Buffer::CopyTo(Image& target, Point<uint32_t, 3> extent, Point<int32_t, 3> offset)
+{
+	if (!buffer) throw (std::runtime_error("Buffer does not exist"));
+	//if (!target) throw (std::runtime_error("Buffer copy target does not exist"));
+	if (!device) throw (std::runtime_error("Buffer has no device"));
+
+	const ImageConfig& imageConfig = target.GetConfig();
+
+	Command command;
+	CommandConfig commandConfig{};
+	commandConfig.queueIndex = device->GetQueueIndex(QueueType::Graphics);
+	command.Create(commandConfig, device);
+	command.Begin();
+
+	VkBufferImageCopy copyInfo{};
+	copyInfo.imageOffset = {offset.x(), offset.y(), offset.z()};
+	copyInfo.imageExtent = {extent.x(), extent.y(), extent.z()};
+	copyInfo.bufferOffset = 0;
+	copyInfo.bufferRowLength = 0;
+	copyInfo.bufferImageHeight = 0;
+	copyInfo.imageSubresource.aspectMask = imageConfig.viewConfig.subresourceRange.aspectMask;
+	copyInfo.imageSubresource.mipLevel = 0;
+	copyInfo.imageSubresource.baseArrayLayer = 0;
+	copyInfo.imageSubresource.layerCount = imageConfig.arrayLayers;
+
+	vkCmdCopyBufferToImage(command.GetBuffer(), buffer, target.GetImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyInfo);
 
 	command.End();
 	command.Submit();

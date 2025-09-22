@@ -18,7 +18,7 @@ Swapchain::~Swapchain()
 	Destroy();
 }
 
-void Swapchain::Create(Window* swapchainWindow = nullptr, Device* swapchainDevice = nullptr)
+void Swapchain::Create(Window* swapchainWindow, Device* swapchainDevice)
 {
 	window = swapchainWindow;
 	device = swapchainDevice;
