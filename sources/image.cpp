@@ -4,6 +4,7 @@
 #include "bitmask.hpp"
 #include "command.hpp"
 #include "buffer.hpp"
+#include "loader.hpp"
 
 #include <stdexcept>
 
@@ -29,6 +30,26 @@ void Image::Create(const ImageConfig& imageConfig, Device* imageDevice = nullptr
 	CreateView();
 	CreateSampler();
 	TransitionLayout();
+}
+
+void Image::Create(const std::string& name, const ImageConfig& imageConfig, Device* imageDevice = nullptr)
+{
+	config = imageConfig;
+	device = imageDevice;
+
+	if (!device) device = &Manager::GetDevice();
+
+	ImageLoader imageLoader(name, ImageType::Jpg);
+	config.width = imageLoader.GetInfo().startOfFrameInfo.width;
+	config.height = imageLoader.GetInfo().startOfFrameInfo.height;
+
+	CreateImage();
+	AllocateMemory();
+	CreateView();
+	CreateSampler();
+	TransitionLayout();
+
+	Load(name);
 }
 
 void Image::CreateImage()
@@ -197,6 +218,18 @@ void Image::TransitionLayout()
 	command.Submit();
 
 	config.currentLayout = config.targetLayout;
+}
+
+void Image::Load(const std::string& name)
+{
+	if (!image) throw (std::runtime_error("Image does not exist"));
+	if (!device) throw (std::runtime_error("Image has no device"));
+
+	ImageLoader imageLoader(name, ImageType::Jpg);
+	imageLoader.LoadEntropyData();
+	std::vector<unsigned char> pixels{};
+	imageLoader.LoadPixels(pixels);
+	Update(&pixels[0], pixels.size(), {config.width, config.height, config.depth});
 }
 
 void Image::Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent, Point<int32_t, 3> offset)

@@ -567,7 +567,7 @@ DataBlock ImageLoader::FIDCTBlock(const DataBlock& input)
 			for (int u = 0; u < 8; u++)
 			{
 				float AU = (u == 0) ? sqrt12 : 1;
-				transform[v * 8 + u] = 0.5f * AU * cos(((2 * v + 1) * u * M_PI) / 16.0);
+				transform[v * 8 + u] = 0.5f * AU * cos(((2 * v + 1) * u * 3.14159265359) / 16.0);
 			}
 		}
 	}

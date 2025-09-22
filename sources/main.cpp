@@ -36,9 +36,8 @@ Mesh<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT16> croissant;
 Pass pass;
 
 Pipeline pipeline;
-Descriptor descriptor;
-
 Pipeline quadPipeline;
+Descriptor descriptor;
 
 UniformData hammerData;
 Buffer hammerBuffer;
@@ -57,13 +56,8 @@ Buffer croissantBuffer;
 size_t croissantSet;
 
 Image hammerImage;
-ImageLoader hammerImageLoader("wooden_hammer_diff", ImageType::Jpg);
-
 Image duckImage;
-ImageLoader duckImageLoader("rubber_duck_toy_diff", ImageType::Jpg);
-
 Image croissantImage;
-ImageLoader croissantImageLoader("croissant_diff", ImageType::Jpg);
 
 float angle = 0;
 
@@ -73,22 +67,6 @@ void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 	{
 		Input::TriggerMouse();
 	}
-
-	//if (Input::GetKey(GLFW_KEY_L).pressed)
-	//{		
-	//	if (!loaded)
-	//	{
-	//		loaded = true;
-	//		imageLoader.LoadEntropyData();
-	//	}
-	//	else if (!updating)
-	//	{
-	//		updating = true;
-	//		std::vector<unsigned char> pixels{};
-	//		imageLoader.LoadPixels(pixels);
-	//		image.Update(&pixels[0], pixels.size(), {1024, 1024, 1});
-	//	}
-	//}
 
 	angle += Time::deltaTime * 60;
 
@@ -213,38 +191,11 @@ void Start()
 	ImageConfig imageConfig{};
 	imageConfig.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	imageConfig.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-	imageConfig.width = 1024;
-	imageConfig.height = 1024;
 	imageConfig.viewConfig = Image::DefaultViewConfig();
 
-	hammerImage.Create(imageConfig, device);
-	duckImage.Create(imageConfig, device);
-	croissantImage.Create(imageConfig, device);
-
-	hammerImageLoader.LoadEntropyData();
-	std::vector<unsigned char> pixels{};
-	hammerImageLoader.LoadPixels(pixels);
-	hammerImage.Update(&pixels[0], pixels.size(), {1024, 1024, 1});
-
-	duckImageLoader.LoadEntropyData();
-	pixels.clear();
-	duckImageLoader.LoadPixels(pixels);
-	duckImage.Update(&pixels[0], pixels.size(), {1024, 1024, 1});
-
-	croissantImageLoader.LoadEntropyData();
-	pixels.clear();
-	croissantImageLoader.LoadPixels(pixels);
-	croissantImage.Update(&pixels[0], pixels.size(), {1024, 1024, 1});
-
-	//std::array<unsigned char, (1024 * 1024) * 4> pixels{};
-	//for (size_t i = 0; i < (1024 * 1024) * 4; i++)
-	//{ 
-	//	pixels[i] = (i < 2097152 ? 255 : 0);
-	//	pixels[++i] = 0;
-	//	pixels[++i] = (i >= 2097152 ? 255 : 0);
-	//	pixels[++i] = 255;
-	//}
-	//image.Update(&pixels[0], (1024 * 1024) * 4, {1024, 1024, 1});
+	hammerImage.Create("wooden_hammer_diff", imageConfig, device);
+	duckImage.Create("rubber_duck_toy_diff", imageConfig, device);
+	croissantImage.Create("croissant_diff", imageConfig, device);
 
 	std::vector<DescriptorConfig> descriptorConfigs(2);
 	descriptorConfigs[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -345,90 +296,6 @@ void End()
 
 int main(int argc, char** argv)
 {
-	//std::cout << Utilities::ToBits<uint16_t>((156 << 8)) << std::endl;
-	//std::cout << ((156 << 8) & (1 << (15 - 0))) << std::endl;
-	//std::cout << ((156 << 8) & (1 << (15 - 1))) << std::endl;
-	//std::cout << ((156 << 8) & (1 << (15 - 2))) << std::endl;
-	//std::cout << ((156 << 8) & (1 << (15 - 3))) << std::endl;
-	//std::cout << ((156 << 8) & (1 << (15 - 4))) << std::endl;
-	////std::cout << Utilities::ToBits<uint16_t>((156 << 4) | 3) << std::endl;
-	////std::cout << (156 & (1 << 4)) << std::endl;
-	////std::cout << (156 & (1 << 5)) << std::endl;
-	////std::cout << (156 & (1 << 6)) << std::endl;
-	////std::cout << (156 & (1 << 7)) << std::endl;
-	//std::cout << Utilities::ToBits<uint8_t>(255) << std::endl;
-	//std::cout << Utilities::ToBits<uint8_t>(255 >> 4) << std::endl;
-	//std::cout << (255 >> 4) << std::endl;
-	//exit(EXIT_SUCCESS);
-
-	//std::cout << sizeof(char) << std::endl;
-	//std::cout << sizeof(uint8_t) << std::endl;
-
-	//ImageLoader imageLoader("rubber_duck_toy_diff", ImageType::Jpg);
-
-	//std::vector<int> vals = { 90, 40, 0, 5, 0, 0, 4, 0, 0, 0 };
-
-	//std::cout << std::stoi("010", nullptr, 2) << std::endl;
-	//exit(EXIT_SUCCESS);
-
-	/*std::array<int, 64> test{};
-
-	test[0] = 1;
-	bool check = true;
-
-	for (size_t i = 1; i < 64; i++)
-	{
-		if (check)
-		{
-			check = false;
-			for (size_t j = 0; j < 16; j++)
-			{
-				test[i] = 2;
-				if (j + 1 < 16) i++;
-			}
-			continue;
-		}
-
-		test[i] = i + 1;
-	}
-
-	for (size_t i = 0; i < 64; i++)
-	{
-		std::cout << test[i] << ", ";
-		if ((i + 1) % 8 == 0) std::cout << std::endl;
-	}
-
-	exit(EXIT_SUCCESS);*/
-
-	//ImageLoader imageLoader("rubber_duck_toy_diff", ImageType::Jpg);
-	////ImageLoader imageLoader("croissant_diff", ImageType::Jpg);
-	//std::cout << imageLoader.GetInfo() << std::endl;
-	//imageLoader.LoadEntropyData();
-	//exit(EXIT_SUCCESS);
-
-	//uint8_t data[] = {1, 2, 3, 4, 5};
-	//uint32_t data = 6;
-	//ByteReader br((uint8_t*)&data, sizeof(data));
-	//std::cout << (int)br.Read8() << std::endl;
-	//std::cout << (int)br.Read8() << std::endl;
-	//std::cout << (int)br.Read8() << std::endl;
-	//std::cout << (int)br.Read8() << std::endl;
-	//std::cout << (int)br.Read8() << std::endl;
-	//std::cout << br.BytesLeft() << std::endl;
-
-	//std::string str = "a[cd[aaaa]b]bb";
-	//std::pair<size_t, size_t> range = Utilities::FindPair(str, 0, {'[', ']'});
-	//std::cout << range.first << " " << range.second << std::endl;
-	//exit(EXIT_SUCCESS);
-
-	//std::string str = Utilities::FileToString(Utilities::GetPath() + "/resources/models/cannon.gltf");
-	//std::pair<size_t, size_t> range = Utilities::FindPair(str, str.find("meshes"), {'[', ']'});
-	//std::cout << range.first << " " << range.second << std::endl;
-	//std::cout << str.substr(range.first + 1, range.second - range.first - 1) << std::endl;
-	//exit(EXIT_SUCCESS);
-
-	//std::cout << imageLoader.GetInfo() << std::endl;
-
 	Manager::ParseArguments(argv, argc);
 	Manager::Create();
 

@@ -7,6 +7,7 @@
 #include <GLFW/glfw3.h>
 
 #include <map>
+#include <string>
 
 struct ImageSamplerConfig
 {
@@ -74,6 +75,7 @@ class Image
 		~Image();
 
 		void Create(const ImageConfig& imageConfig, Device* imageDevice);
+		void Create(const std::string& name, const ImageConfig& imageConfig, Device* imageDevice);
 
 		void Destroy();
 
@@ -83,6 +85,7 @@ class Image
 		const ImageConfig& GetConfig() const;
 
 		void TransitionLayout();
+		void Load(const std::string& name);
 		void Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent = {}, Point<int32_t, 3> offset = {});
 
 		static ImageViewConfig DefaultViewConfig();
