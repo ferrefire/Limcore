@@ -28,10 +28,11 @@ struct UniformData
 	mat4 projection;
 };
 
-Mesh<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT16> hammerMesh;
-Mesh<Position | Coordinate, VK_INDEX_TYPE_UINT16> quadMesh;
-Mesh<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT16> duckMesh;
-Mesh<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT16> croissantMesh;
+meshPNC16 hammerMesh;
+meshPNC16 duckMesh;
+meshPNC16 croissantMesh;
+meshPC16 quadMesh;
+
 Pass pass;
 
 Pipeline pipeline;
@@ -124,10 +125,10 @@ void Frame(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 
 void Start()
 {
-	hammerMesh.Create(shapePNC16(ModelLoader("wooden_hammer", ModelType::Gltf)));
-	duckMesh.Create(shapePNC16(ModelLoader("rubber_duck_toy", ModelType::Gltf)));
-	croissantMesh.Create(shapePNC16(ModelLoader("croissant", ModelType::Gltf)));
-	quadMesh.Create(shapePC16(ShapeType::Quad));
+	hammerMesh.Create(ModelLoader("wooden_hammer", ModelType::Gltf));
+	duckMesh.Create(ModelLoader("rubber_duck_toy", ModelType::Gltf));
+	croissantMesh.Create(ModelLoader("croissant", ModelType::Gltf));
+	quadMesh.Create(ShapeType::Quad);
 
 	PassConfig passConfig = Pass::DefaultConfig(true);
 	pass.Create(passConfig);

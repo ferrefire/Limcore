@@ -37,6 +37,13 @@ void Mesh<V, I>::Create(const Shape<V, I>& shape, Device* meshDevice)
 }
 
 MESH_TEMPLATE
+void Mesh<V, I>::Create(ModelLoader modelLoader, Device* meshDevice)
+{
+	SetShape(Shape<V, I>(modelLoader));
+	Create(meshDevice);
+}
+
+MESH_TEMPLATE
 void Mesh<V, I>::CreateData()
 {
 	if (data.size() != 0) throw (std::runtime_error("Mesh data already exists"));
