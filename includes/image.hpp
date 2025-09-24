@@ -10,6 +10,20 @@
 #include <map>
 #include <string>
 
+/**
+ * @file image.hpp
+ * @brief Image configuration and wrapper for Vulkan textures.
+ *
+ * @details
+ * Provides configuration structures for sampler, view, and image creation,
+ * as well as the @ref Image class for managing Vulkan images, views, and samplers.
+ * Supports resource creation, layout transitions, updates from loaders, and defaults
+ * for common use cases (e.g. depth images).
+ */
+
+/**
+ * @brief Describes an Image sampler configuration.
+ */
 struct ImageSamplerConfig
 {
 	VkFilter magFilter = VK_FILTER_LINEAR;
@@ -26,6 +40,9 @@ struct ImageSamplerConfig
 	VkBool32 unnormalizedCoordinates = VK_FALSE;
 };
 
+/**
+ * @brief Describes an Image view configuration.
+ */
 struct ImageViewConfig
 {
 	VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D;
@@ -34,6 +51,9 @@ struct ImageViewConfig
 	VkImageSubresourceRange subresourceRange{};
 };
 
+/**
+ * @brief Describes an Image configuration.
+ */
 struct ImageConfig
 {
 	VkImageType type = VK_IMAGE_TYPE_2D;
@@ -52,6 +72,19 @@ struct ImageConfig
 	ImageSamplerConfig samplerConfig{};
 };
 
+/**
+ * @brief Vulkan image wrapper.
+ *
+ * @details
+ * Encapsulates a Vulkan image, view, and sampler, handling creation,
+ * memory allocation, layout transitions, and updates from image data loaders.
+ * 
+ * Typical usage:
+ * - Create an image with @ref Create().
+ * - Optionally modify it with @ref Update().
+ * - Use @ref GetImage(), @ref GetView(), @ref GetSampler() for rendering.
+ * - Destroy resources with @ref Destroy() when no longer needed.
+ */
 class Image
 {
 	private:
@@ -75,9 +108,22 @@ class Image
 		Image();
 		~Image();
 
+		/**
+		 * @brief Creates an image from a configuration.
+		 * @param imageConfig Image configuration (format, dimensions, usage, etc.).
+		 * @param imageDevice Device to use for creation; if @c nullptr, uses the stored device.
+		 */
 		void Create(const ImageConfig& imageConfig, Device* imageDevice = nullptr);
+
+		/**
+		 * @brief Creates an image and uploads data from an image loader.
+		 * @param imageLoader Loader providing pixel data.
+		 * @param imageConfig Image configuration.
+		 * @param imageDevice Device to use for creation; if @c nullptr, uses the stored device.
+		 */
 		void Create(const ImageLoader& imageLoader, const ImageConfig& imageConfig, Device* imageDevice = nullptr);
 
+		/** @brief Destroys and frees the Image. */
 		void Destroy();
 
 		VkImage& GetImage();
@@ -86,11 +132,39 @@ class Image
 		const ImageConfig& GetConfig() const;
 
 		void TransitionLayout();
+
+		/**
+		 * @brief Loads pixel data into the image using an image loader.
+		 * @param imageLoader Loader containing pixel data.
+		 */
 		void Load(const ImageLoader& imageLoader);
+
+		/**
+		 * @brief Updates the image contents with raw data.
+		 * @param data Pointer to pixel data.
+		 * @param size Size of the data in bytes.
+		 * @param extent Dimensions of the region to update (defaults to full image).
+		 * @param offset Offset into the image (defaults to zero).
+		 */
 		void Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent = {}, Point<int32_t, 3> offset = {});
 
+		/**
+		 * @brief Provides a default image view configuration.
+		 * @return ImageViewConfig with common defaults.
+		 */
 		static ImageViewConfig DefaultViewConfig();
+		/**
+		 * @brief Provides a default configuration for depth images.
+		 * @return ImageConfig suitable for depth attachments.
+		 */
 		static ImageConfig DefaultDepthConfig();
 
+		/**
+		 * @brief Creates an image view for an existing Vulkan image.
+		 * @param view Output view handle.
+		 * @param image Vulkan image to create a view for.
+		 * @param config Configuration for the image view.
+		 * @param device Device used to create the view; if @c nullptr, uses the stored device.
+		 */
 		static void CreateView(VkImageView& view, const VkImage& image, const ImageViewConfig& config, Device* device = nullptr);
 };

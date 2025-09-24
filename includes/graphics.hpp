@@ -5,6 +5,9 @@
 
 #include <vector>
 
+/**
+ * @brief A class for managing the Vulkan instance and handling validation layers.
+ */
 class Graphics
 {
 	private:

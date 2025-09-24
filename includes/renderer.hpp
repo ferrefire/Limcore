@@ -11,15 +11,39 @@
 #include <vector>
 #include <functional>
 
+/**
+ * @file renderer.hpp
+ * @brief Renderer and frame management for Vulkan.
+ *
+ * @details
+ * Provides a static Renderer class that manages per-frame resources
+ * such as fences, semaphores, command buffers, and render passes.
+ * Supports adding passes, registering draw calls, and driving the
+ * rendering loop with synchronization and presentation.
+ */
+
+/** @brief Information about a render pass and its associated commands. */
 struct PassInfo
 {
-	Pass* pass = nullptr;
-	std::vector<std::function<void(VkCommandBuffer, uint32_t)>> calls;
-	VkViewport viewport{};
-	VkRect2D scissor{};
-	bool useWindowExtent = false;
+	Pass* pass = nullptr; /**< @brief Pointer to a Pass object. */
+	std::vector<std::function<void(VkCommandBuffer, uint32_t)>> calls; /**< @brief Registered draw functions to be called for this pass. */
+	VkViewport viewport{}; /**< @brief Viewport configuration for this pass. */
+	VkRect2D scissor{}; /**< @brief Scissor rectangle configuration. */
+	bool useWindowExtent = false; /**< @brief Whether to use swapchain window extent for viewport/scissor. */
 };
 
+/**
+ * @brief Static renderer for managing frames, synchronization, and passes.
+ *
+ * @details
+ * Handles synchronization objects (fences, semaphores), per-frame command
+ * buffers, and a sequence of render passes. Supports recording calls into
+ * passes and presenting frames.
+ *
+ * Typical usage:
+ * - Add passes with @ref AddPass() and register draw calls with @ref RegisterCall().
+ * - Call @ref Destroy() before shutdown.
+ */
 class Renderer
 {
 	private:
@@ -51,11 +75,26 @@ class Renderer
 
 		static void Destroy();
 
+		/**
+		 * @brief Accesses information for a render pass.
+		 * @param index Index of the pass in the passes list.
+		 * @return Reference to the PassInfo.
+		 */
 		static PassInfo& GetPassInfo(size_t index);
 
 		static void Frame();
 
+		/**
+		 * @brief Adds a render pass to the renderer.
+		 * @param passInfo Information about the new pass.
+		 */
 		static void AddPass(PassInfo passInfo);
+
+		/**
+		 * @brief Registers a call into a pass.
+		 * @param index Pass index.
+		 * @param call Function recording Vulkan commands (VkCommandBuffer, render index).
+		 */
 		static void RegisterCall(size_t index, std::function<void(VkCommandBuffer, uint32_t)> call);
 		
 		static void Resize();
