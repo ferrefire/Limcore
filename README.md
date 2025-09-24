@@ -6,6 +6,7 @@ Limcore is a lightweight, platform-independent graphics library that uses Vulkan
 - [Installation](#installation)
 - [Setup](#setup)
 - [Usage](#usage)
+- [Documentation](#documentation)
 
 ## Installation
 ### Dependencies
@@ -166,3 +167,9 @@ Mesh<Position, VK_INDEX_TYPE_UINT16> mesh;
 ```
 
 Work in progress...
+
+## Documentation
+Limcore is fully documented through doxygen.
+
+### PDF
+A PDF containing Limcore's documentation can be downloaded ![here](https://github.com/ferrefire/Limcore/releases/download/Documentation/refman.pdf)
