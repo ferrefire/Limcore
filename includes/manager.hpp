@@ -143,5 +143,5 @@ class Manager
 		static void RegisterResizeCall(std::function<void()> call);
 
 		template <class T>
-		static void RegisterResizeCall(const T* object, void (T::*call)());
+		static void RegisterResizeCall(T* object, void (T::*call)()) { RegisterResizeCall(std::bind_front(call, object)); }
 };

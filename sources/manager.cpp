@@ -218,12 +218,6 @@ void Manager::RegisterResizeCall(std::function<void()> call)
 	resizeCalls.push_back(call);
 }
 
-template <class T>
-void Manager::RegisterResizeCall(const T* object, void (T::*call)())
-{
-	RegisterResizeCall(std::bind_front(call, object));
-}
-
 ManagerConfig Manager::config{};
 
 Window Manager::window;
