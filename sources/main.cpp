@@ -226,7 +226,6 @@ int main(int argc, char** argv)
 
 	Manager::RegisterStartCall(Start);
 	Manager::RegisterEndCall(End);
-	Manager::RegisterResizeCall([&]() { pass.Recreate(); });
 
 	Manager::Run();
 

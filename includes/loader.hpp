@@ -87,6 +87,7 @@ struct AttributeInfo
 	point3D Translation() const;
 };
 
+/** @brief Contains information about a model. */
 struct ModelInfo
 {
 	std::string name = "";
@@ -156,6 +157,7 @@ struct HuffmanTreeInfo
 	std::map<std::string, uint8_t> mappedCodes;
 };
 
+/** @brief Contains information about a texture. */
 struct ImageInfo
 {
 	std::string name = "";
@@ -220,6 +222,9 @@ class EntropyReader
 		int ReadBitsBuffer(size_t amount);
 };
 
+/**
+ * @brief A class for parsing and loading models.
+ */
 class ModelLoader
 {
 	private:
@@ -240,6 +245,9 @@ class ModelLoader
 		void GetBytes(char* address, const AttributeType& type);
 };
 
+/**
+ * @brief A class for parsing, decoding and loading textures.
+ */
 class ImageLoader
 {
 	private:
