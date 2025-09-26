@@ -1,17 +1,29 @@
 #include "utilities.hpp"
 
+#include "manager.hpp"
+
 #include <fstream>
 #include <sstream>
-#include <filesystem>
 #include <cmath>
 #include <algorithm>
 #include <iostream>
 
+bool Utilities::HasDirectory(const std::filesystem::path& path, const std::string& directory)
+{
+	for (auto element = path.begin(); element != path.end(); ++element)
+	{
+		if ((*element) == directory) return (true);
+	}
+
+	return (false);
+}
+
 std::string Utilities::GetPath()
 {
-	std::filesystem::path currentPath = std::filesystem::current_path();
+	//std::filesystem::path currentPath = std::filesystem::current_path();
+	std::filesystem::path currentPath = Manager::GetExecuteablePath();
 
-	while (currentPath.string().contains("build"))
+	while (HasDirectory(currentPath, "build") || HasDirectory(currentPath, "out"))
 	{
 		currentPath = currentPath.parent_path();
 	}

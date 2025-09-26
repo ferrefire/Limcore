@@ -186,6 +186,9 @@ void Manager::Resize(bool force)
 
 void Manager::ParseArguments(char** arguments, const int& count)
 {
+	std::filesystem::path executeablePath = arguments[0];
+	config.executeablePath = std::filesystem::absolute(executeablePath);
+
 	for (int i = 1; i < count; i++)
 	{
 		if (std::string(arguments[i]) == "fs") config.fullscreen = true;
@@ -216,6 +219,11 @@ void Manager::RegisterEndCall(std::function<void()> call)
 void Manager::RegisterResizeCall(std::function<void()> call)
 {
 	resizeCalls.push_back(call);
+}
+
+const std::filesystem::path& Manager::GetExecuteablePath()
+{
+	return (config.executeablePath);
 }
 
 ManagerConfig Manager::config{};

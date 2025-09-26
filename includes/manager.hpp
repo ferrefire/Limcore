@@ -6,6 +6,7 @@
 #include "camera.hpp"
 
 #include <functional>
+#include <filesystem>
 
 /**
  * @file manager.hpp
@@ -20,6 +21,8 @@
 /** @brief Configuration options for the application manager. */
 struct ManagerConfig
 {
+	std::filesystem::path executeablePath;
+
 	bool fullscreen = false; /**< @brief Whether to create the window in fullscreen mode. */
 	bool integrated = false; /**< @brief Prefer integrated GPU over discrete GPU when selecting a device. */
 };
@@ -144,4 +147,6 @@ class Manager
 
 		template <class T>
 		static void RegisterResizeCall(T* object, void (T::*call)()) { RegisterResizeCall(std::bind_front(call, object)); }
+
+		static const std::filesystem::path& GetExecuteablePath();
 };
