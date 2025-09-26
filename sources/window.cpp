@@ -39,7 +39,6 @@ void Window::CreateFrame()
 		glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 	}
 
-	//data = glfwCreateWindow(width, height, "limcore", config.fullscreen ? monitor : nullptr, nullptr);
 	data = glfwCreateWindow(width, height, "limcore", nullptr, nullptr);
 
 	if (!data) throw (std::runtime_error("Failed to create window"));
@@ -186,8 +185,6 @@ void Window::Resize(Device& device)
 	config.extent = config.capabilities.currentExtent;
 	width = config.extent.width;
 	height = config.extent.height;
-	//config.extent.width = tempWidth;
-	//config.extent.height = tempHeight;
 }
 
 std::ostream& operator<<(std::ostream& out, Window& window)

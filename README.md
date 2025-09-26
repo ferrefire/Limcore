@@ -172,4 +172,4 @@ Work in progress...
 Limcore is fully documented through doxygen.
 
 ### PDF
-A PDF containing Limcore's documentation can be downloaded ![here](https://github.com/ferrefire/Limcore/releases/download/Documentation/refman.pdf)
+A PDF containing Limcore's documentation can be found ![here](https://github.com/ferrefire/Limcore/releases/download/Documentation/refman.pdf)

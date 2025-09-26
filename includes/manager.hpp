@@ -141,4 +141,7 @@ class Manager
 		 * @param call Function to register.
 		 */
 		static void RegisterResizeCall(std::function<void()> call);
+
+		template <class T>
+		static void RegisterResizeCall(const T* object, void (T::*call)());
 };
