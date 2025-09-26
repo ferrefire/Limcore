@@ -68,7 +68,7 @@ void Pass::Create(const PassConfig& passConfig, Device* passDevice)
 	CreateRenderPass();
 	CreateFramebuffers();
 
-	Manager::RegisterResizeCall(this, Recreate);
+	Manager::RegisterResizeCall(this, &Pass::Recreate);
 }
 
 void Pass::CreateImages()
