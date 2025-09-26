@@ -20,6 +20,5 @@ void main()
 {
 	worldNormal = (variables.model * vec4(localNormal, 0.0)).xyz;
 	worldCoordinate = localCoordinate;
-	//worldCoordinate.y = 1.0 - worldCoordinate.y;
 	gl_Position = variables.projection * variables.view * variables.model * vec4(localPosition, 1.0);
 }

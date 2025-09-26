@@ -1,6 +1,8 @@
 #ifndef LIGHTING_INCLUDED
 #define LIGHTING_INCLUDED
 
+#include "random.glsl"
+
 vec3 DiffuseLighting(vec3 normal, vec3 lightDirection, vec3 color)
 {
 	float product = dot(normal, lightDirection);
@@ -25,6 +27,17 @@ vec3 Normalize(vec3 vec)
 	vec3 result = vec / total;
 
 	return (vec);
+}
+
+vec3 FaceColor()
+{
+	int primitiveID = gl_PrimitiveID;
+	float r = rand(vec2(primitiveID));
+	float g = rand(vec2(r));
+	float b = rand(vec2(g));
+	vec3 color = vec3(r, g, b);
+
+	return (color);
 }
 
 #endif
