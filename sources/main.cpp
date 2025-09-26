@@ -221,15 +221,21 @@ void End()
 
 int main(int argc, char** argv)
 {
-	Manager::ParseArguments(argv, argc);
-	Manager::Create();
+	try
+	{
+		Manager::ParseArguments(argv, argc);
+		Manager::Create();
 
-	Manager::RegisterStartCall(Start);
-	Manager::RegisterEndCall(End);
+		Manager::RegisterStartCall(Start);
+		Manager::RegisterEndCall(End);
 
-	Manager::Run();
+		Manager::Run();
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+	}
 
 	Manager::Destroy();
-
 	exit(EXIT_SUCCESS);
 }
