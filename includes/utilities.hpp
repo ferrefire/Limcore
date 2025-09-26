@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <type_traits>
+#include <filesystem>
 
 #define CI(a) static_cast<int>(a)
 #define CUI(a) static_cast<uint32_t>(a)
@@ -100,6 +101,8 @@ class Utilities
 		 * @return Angle in radians.
 		 */
 		static float Radians(float degrees);
+
+		static bool HasDirectory(const std::filesystem::path& path, const std::string& directory);
 };
 
 #include "utilities.tpp"
