@@ -77,6 +77,8 @@ class Manager
 		/** @brief Shuts down the application and releases resources. */
 		static void Destroy();
 
+		static ManagerConfig& GetConfig();
+
 		/**
 		 * @brief Gets the main window object.
 		 * @return Reference to the Window.
