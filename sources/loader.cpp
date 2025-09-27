@@ -662,7 +662,7 @@ void ImageLoader::LoadEntropyData()
 		data.blocks[i] = DataBlock{};
 	}
 
-	double treeStart = Time::GetCurrentTime();
+	//double treeStart = Time::GetCurrentTime();
 
 	data.huffmanTables.resize(info.huffmanInfos.size(), HuffmanTree({false, {}}));
 	data.fastHuffmanTables.resize(info.huffmanInfos.size());
@@ -675,15 +675,15 @@ void ImageLoader::LoadEntropyData()
 		HI++;
 	}
 
-	std::cout << "Trees build in: " << (Time::GetCurrentTime() - treeStart) * 1000 << std::endl;
+	//std::cout << "Trees build in: " << (Time::GetCurrentTime() - treeStart) * 1000 << std::endl;
 
-	double fileStart = Time::GetCurrentTime();
+	//double fileStart = Time::GetCurrentTime();
 
 	std::string path = Utilities::GetPath() + "/resources/textures/" + info.name + ".jpg";
 	std::vector<char> file = Utilities::FileToBinary(path);
 	const uint8_t* rawData = reinterpret_cast<const uint8_t*>(file.data());
 
-	std::cout << "File loaded in: " << (Time::GetCurrentTime() - fileStart) * 1000 << std::endl;
+	//std::cout << "File loaded in: " << (Time::GetCurrentTime() - fileStart) * 1000 << std::endl;
 
 	ByteReader br(rawData, file.size());
 	br.Skip(info.startOfScanInfo.start + info.startOfScanInfo.length);
@@ -696,11 +696,10 @@ void ImageLoader::LoadEntropyData()
 
 	EntropyReader er(br);
 
-	double entropyStart = Time::GetCurrentTime();
-
-	double treeTime = 0;
-	double transformTime = 0;
-	double readTime = 0;
+	//double entropyStart = Time::GetCurrentTime();
+	//double treeTime = 0;
+	//double transformTime = 0;
+	//double readTime = 0;
 
 	for (size_t MCU = 0; MCU < data.MCUCount.z(); MCU++)
 	{
@@ -731,20 +730,20 @@ void ImageLoader::LoadEntropyData()
 			size_t blockCount = currentComponent.y() * currentComponent.z();
 			for (size_t BI = 0; BI < blockCount; BI++)
 			{
-				double treeTimeStart = Time::GetCurrentTime();
+				//double treeTimeStart = Time::GetCurrentTime();
 
 				//symbol = er.NextSymbolFast(data.huffmanTables[DCIndex]);
 				symbol = NextEntropySymbol(er, DCIndex);
 
-				treeTime += (Time::GetCurrentTime() - treeTimeStart);
+				//treeTime += (Time::GetCurrentTime() - treeTimeStart);
 
-				double readTimeStart = Time::GetCurrentTime();
+				//double readTimeStart = Time::GetCurrentTime();
 
 				//if (symbol > 0)	{ value = er.ReadBits(symbol); }
 				if (symbol > 0)	{ value = er.ReadBitsBuffer(symbol); }
 				else { value = 0; }
 
-				readTime += (Time::GetCurrentTime() - readTimeStart);
+				//readTime += (Time::GetCurrentTime() - readTimeStart);
 
 				DCs[componentIndex] += value;
 
@@ -752,12 +751,12 @@ void ImageLoader::LoadEntropyData()
 
 				for (size_t i = 1; i < 64; i++)
 				{
-					treeTimeStart = Time::GetCurrentTime();
+					//treeTimeStart = Time::GetCurrentTime();
 
 					//symbol = er.NextSymbolFast(data.huffmanTables[ACIndex]);
 					symbol = NextEntropySymbol(er, ACIndex);
 
-					treeTime += (Time::GetCurrentTime() - treeTimeStart);
+					//treeTime += (Time::GetCurrentTime() - treeTimeStart);
 
 					if (symbol == 0x00) break;
 					if (symbol == 0xF0)
@@ -785,12 +784,12 @@ void ImageLoader::LoadEntropyData()
 						i++;
 					}
 
-					readTimeStart = Time::GetCurrentTime();
+					//readTimeStart = Time::GetCurrentTime();
 
 					//value = er.ReadBits(size) * info.quantizationTables[currentComponent.w()].values[zigzagTable[i]];
 					value = er.ReadBitsBuffer(size) * info.quantizationTables[currentComponent.w()].values[zigzagTable[i]];
 
-					readTime += (Time::GetCurrentTime() - readTimeStart);
+					//readTime += (Time::GetCurrentTime() - readTimeStart);
 
 					data.blocks[blockIndex][zigzagTable[i]] = static_cast<int16_t>(value);
 				}
@@ -805,7 +804,7 @@ void ImageLoader::LoadEntropyData()
 				//data.blocks[blockIndex] = IDCTBlock(data.blocks[blockIndex]);
 				data.blocks[blockIndex] = FIDCTBlock(data.blocks[blockIndex]);
 
-				transformTime += (Time::GetCurrentTime() - transformTimeStart);
+				//transformTime += (Time::GetCurrentTime() - transformTimeStart);
 
 				blockIndex++;
 			}
@@ -814,18 +813,18 @@ void ImageLoader::LoadEntropyData()
 		}
 	}
 
-	std::cout << "Tree search time: " << treeTime * 1000 << std::endl;
+	//std::cout << "Tree search time: " << treeTime * 1000 << std::endl;
 
-	std::cout << "Read time: " << readTime * 1000 << std::endl;
+	//std::cout << "Read time: " << readTime * 1000 << std::endl;
 
-	std::cout << "Transform time: " << transformTime * 1000 << std::endl;
+	//std::cout << "Transform time: " << transformTime * 1000 << std::endl;
 
-	std::cout << "Entropy loaded in: " << (Time::GetCurrentTime() - entropyStart) * 1000 << std::endl;
+	//std::cout << "Entropy loaded in: " << (Time::GetCurrentTime() - entropyStart) * 1000 << std::endl;
 
-	std::cout << "Completed in: " << (Time::GetCurrentTime() - start) * 1000 << std::endl;
+	std::cout << info.name << " loaded in: " << (Time::GetCurrentTime() - start) * 1000 << " ms." << std::endl;
 
 	//std::cout << "Fast found: " << fastFound << " Slow found: " << slowFound << std::endl;
-	std::cout << "Add time: " << addTime * 1000 << " Sub time: " << subTime * 1000 << " Rest time: " << restTime * 1000 << std::endl;
+	//std::cout << "Add time: " << addTime * 1000 << " Sub time: " << subTime * 1000 << " Rest time: " << restTime * 1000 << std::endl;
 }
 
 void ImageLoader::LoadBlock(std::array<unsigned char, (16 * 16) * 4>& buffer, size_t offset) const

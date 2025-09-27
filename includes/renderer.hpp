@@ -96,6 +96,9 @@ class Renderer
 		 * @param call Function recording Vulkan commands (VkCommandBuffer, render index).
 		 */
 		static void RegisterCall(size_t index, std::function<void(VkCommandBuffer, uint32_t)> call);
+
+		template <class T>
+		static void RegisterCall(T* object, void (T::*call)(VkCommandBuffer, uint32_t)) { RegisterCall(std::bind_front(call, object)); }
 		
 		static void Resize();
 };

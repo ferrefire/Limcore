@@ -21,8 +21,6 @@
 /** @brief Configuration options for the application manager. */
 struct ManagerConfig
 {
-	std::filesystem::path executeablePath;
-
 	bool fullscreen = false; /**< @brief Whether to create the window in fullscreen mode. */
 	bool integrated = false; /**< @brief Prefer integrated GPU over discrete GPU when selecting a device. */
 };
@@ -44,6 +42,7 @@ class Manager
 {
 	private:
 		static ManagerConfig config;
+		static std::filesystem::path executeablePath;
 
 		static Window window;
 		static Device device;
@@ -126,11 +125,17 @@ class Manager
 		 */
 		static void RegisterStartCall(std::function<void()> call);
 
+		template <class T>
+		static void RegisterStartCall(T* object, void (T::*call)()) { RegisterStartCall(std::bind_front(call, object)); }
+
 		/**
 		 * @brief Registers a callback to run each frame.
 		 * @param call Function to register.
 		 */
 		static void RegisterFrameCall(std::function<void()> call);
+
+		template <class T>
+		static void RegisterFrameCall(T* object, void (T::*call)()) { RegisterFrameCall(std::bind_front(call, object)); }
 
 		/**
 		 * @brief Registers a callback to run at shutdown.
@@ -138,6 +143,8 @@ class Manager
 		 */
 		static void RegisterEndCall(std::function<void()> call);
 
+		template <class T>
+		static void RegisterEndCall(T* object, void (T::*call)()) { RegisterEndCall(std::bind_front(call, object)); }
 
 		/**
 		 * @brief Registers a callback to run when the window is resized.
