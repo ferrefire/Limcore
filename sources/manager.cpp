@@ -117,6 +117,11 @@ void Manager::ResizeCallback(GLFWwindow* data, int width, int height)
 	resizing = true;
 }
 
+ManagerConfig& Manager::GetConfig()
+{
+	return (config);
+}
+
 Window& Manager::GetWindow()
 {
 	return (window);
