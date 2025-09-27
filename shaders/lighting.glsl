@@ -31,10 +31,10 @@ vec3 Normalize(vec3 vec)
 
 vec3 FaceColor()
 {
-	int primitiveID = gl_PrimitiveID;
-	float r = rand(vec2(primitiveID));
-	float g = rand(vec2(r));
-	float b = rand(vec2(g));
+	int primitiveID = gl_PrimitiveID + 1;
+	float r = rand(vec2(primitiveID, primitiveID % 3));
+	float g = rand(vec2(r, r * primitiveID));
+	float b = rand(vec2(r, g));
 	vec3 color = vec3(r, g, b);
 
 	return (color);

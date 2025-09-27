@@ -14,6 +14,7 @@ layout(location = 0) out vec4 pixelColor;
 void main()
 {
 	vec3 color = texture(tex, worldCoordinate).rgb;
+	//vec3 color = FaceColor();
 
 	vec3 diffuse = DiffuseLighting(normalize(worldNormal), normalize(vec3(0.2, 1, 0.4)), color);
 

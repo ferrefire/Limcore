@@ -54,13 +54,8 @@ void Manager::CreateGLFW()
 
 void Manager::CreateVulkan()
 {
-	DeviceConfig deviceConfig{};
-	if (config.integrated)
-	{
-		deviceConfig.type = DeviceType::Integrated;
-		deviceConfig.shaderDouble = false;
-	}
-	device.SetConfig(deviceConfig);
+	if (config.integrated) config.deviceConfig.type = DeviceType::Integrated;
+	device.SetConfig(config.deviceConfig);
 
 	Graphics::CreateInstance();
 	device.CreatePhysical();
@@ -78,8 +73,6 @@ void Manager::CreateVulkan()
 	cameraConfig.width = window.GetConfig().extent.width;
 	cameraConfig.height = window.GetConfig().extent.height;
 	camera.Create(cameraConfig);
-
-	//RegisterFrameCall([&]() { camera.Frame(); });
 }
 
 void Manager::Destroy()

@@ -21,6 +21,8 @@
 /** @brief Configuration options for the application manager. */
 struct ManagerConfig
 {
+	DeviceConfig deviceConfig{};
+
 	bool fullscreen = false; /**< @brief Whether to create the window in fullscreen mode. */
 	bool integrated = false; /**< @brief Prefer integrated GPU over discrete GPU when selecting a device. */
 };
