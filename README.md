@@ -14,7 +14,6 @@ For Linux:
 - CMake version 3.22 or newer.
 
 For Windows:
-- A bash terminal: something like 'git bash'.
 - Visual studio 2022 or newer.
 - CMake version 3.22 or newer.
 
@@ -45,9 +44,9 @@ It will automatically create the source file directories needed for Limcore. It 
 ```bash
 ./new-project.sh # To create and setup everything
 
-./new-project.sh d # To create and setup specific elements
+./new-project.sh command # To create and setup specific elements
 
-./new-project.sh -override # To add specific behaviour by using options
+./new-project.sh -option # To add specific behaviour by using options
 ```
 
 Creation commands:
@@ -83,6 +82,9 @@ And to add application arguments, you can add them after the "run" command by us
 ```bash
 ./setup.sh run -fs # To run the application in fullscreen
 ```
+Some arguments:
+- -fs (to run the application in fullscreen).
+- -ig (to force the application to use an integrated graphics device).
 
 To clean the project and remove any downloaded dependencies, execute the following command:
 ```bash
@@ -96,7 +98,7 @@ The shader-compiler.sh script is a swift way to compile your shaders from GLSL i
 ```
 
 ## Usage
-This is a short example that explains how to render a simple quad to a window.
+This is a short example that explains how to render a simple cube to a window.
 
 ### Manager
 The manager class handles the application's creation, function registering, configuration, cleaning and destruction. The first thing to do is tell the manager to create all the neccessary resources:
@@ -106,7 +108,7 @@ The manager class handles the application's creation, function registering, conf
 
 int main(int argc, char** argv)
 {
-	Manager::ParseArguments(argv, argc); // Optional
+	Manager::ParseArguments(argv, argc); // Always do this even if you don't pass any arguments.
 	Manager::Create();
 }
 ```
@@ -118,11 +120,16 @@ Manager::RegisterStartCall(StartFuctionName);
 Manager::RegisterFrameCall(FrameFuctionName);
 Manager::RegisterEndCall(EndFunctionName);
 ```
+To register a member function, you can use an overload:
+```cxx
+Manager::RegisterFrameCall(&object, &Object::Function); // If registering from outside the object.
+Manager::RegisterFrameCall(this, &Object::Function); // If registering from inside the object.
+```
 
 After that we tell the manager to start the main loop:
 
 ```cxx
-Manager::Run();
+Manager::Run(); // This will also call all registered start functions once.
 ```
 
 Don't forget to tell the manager to clean up all the resources when application has ended. This will also call all registered end functions.
@@ -165,8 +172,58 @@ Mesh<Position, VK_INDEX_TYPE_UINT16> mesh;
 // Or Mesh<Position | Coordinate | Normal, VK_INDEX_TYPE_UINT32> mesh;
 // Or Mesh<Position | Color, VK_INDEX_TYPE_NONE_KHR> mesh;
 ```
+The Mesh class also contains some usefull type definitions:
+- meshP16
+- meshPC16
+- meshPN16
+- meshPNC16
+- meshP32
+- meshPC32
+- meshPN32
+- meshPNC32
 
-Work in progress...
+Next we create the mesh. There are three ways to create a mesh.
+
+1. By using a Shape to provide the geometry data.
+
+A Shape is very usefull for creating procedural shapes. They are similar to the Mesh class in that they are templated.
+For more information about shapes, consult the ![documentation](https://github.com/ferrefire/Limcore/releases/download/Documentation/refman.pdf).
+
+For simple shapes, you can just pass a ShapeType to the Mesh:
+```cxx
+mesh.Create(ShapeType::Cube);
+```
+
+2. By using a ModelLoader to load a 3D model stored in the resources/models directory.
+
+Currently only two formats are supported:
+- .obj
+- .gltf
+
+A model can be loaded and passed to the Mesh like this:
+```cxx
+mesh.Create(ModelLoader("model_name", ModelType::Gltf));
+```
+
+3. By manually setting the vertices and indices which is quite straight foward.
+
+Now we declare a Pass which describes and manages a renderpass and it's associated resources.
+It is fully configurable but for now we can just use a default configuration.
+
+Declare it like this:
+```cxx
+#include "pass.hpp"
+
+Pass pass;
+```
+
+And then create it in the start function:
+```cxx
+PassConfig passConfig = Pass::DefaultConfig(true);
+pass.Create(passConfig);
+```
+
+WORK IN PROGRESS...
 
 ## Documentation
 Limcore is fully documented through doxygen.
