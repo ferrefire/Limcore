@@ -37,6 +37,7 @@ struct DeviceConfig
 	bool tesselation = false;
 	bool anisotropic = false;
 	bool shaderDouble = false;
+	bool geometryShader = false;
 };
 
 /** @brief Contains information about different queue families. */
