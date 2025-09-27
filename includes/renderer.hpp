@@ -98,7 +98,7 @@ class Renderer
 		static void RegisterCall(size_t index, std::function<void(VkCommandBuffer, uint32_t)> call);
 
 		template <class T>
-		static void RegisterCall(T* object, void (T::*call)(VkCommandBuffer, uint32_t)) { RegisterCall(std::bind_front(call, object)); }
+		static void RegisterCall(size_t index, T* object, void (T::*call)(VkCommandBuffer, uint32_t)) { RegisterCall(index, std::bind_front(call, object)); }
 		
 		static void Resize();
 };
