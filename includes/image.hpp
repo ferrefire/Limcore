@@ -153,6 +153,9 @@ class Image
 		 * @return ImageViewConfig with common defaults.
 		 */
 		static ImageViewConfig DefaultViewConfig();
+
+		static ImageConfig DefaultConfig();
+
 		/**
 		 * @brief Provides a default configuration for depth images.
 		 * @return ImageConfig suitable for depth attachments.

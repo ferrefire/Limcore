@@ -267,6 +267,16 @@ ImageViewConfig Image::DefaultViewConfig()
 	return (config);
 }
 
+ImageConfig Image::DefaultConfig()
+{
+	ImageConfig config{};
+	config.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	config.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	config.viewConfig = Image::DefaultViewConfig();
+
+	return (config);
+}
+
 ImageConfig Image::DefaultDepthConfig()
 {
 	ImageConfig config{};
