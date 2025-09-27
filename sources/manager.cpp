@@ -32,7 +32,10 @@ void Manager::Create()
 	}
 	catch(const std::exception& e)
 	{
-		throw (std::runtime_error(e.what()));
+		std::cerr << "Error occured during manager creation: " << e.what() << '\n';
+
+		Manager::Destroy();
+		exit(EXIT_FAILURE);
 	}
 }
 
@@ -76,18 +79,25 @@ void Manager::CreateVulkan()
 	cameraConfig.height = window.GetConfig().extent.height;
 	camera.Create(cameraConfig);
 
-	RegisterFrameCall([&]() { camera.Frame(); });
+	//RegisterFrameCall([&]() { camera.Frame(); });
 }
 
 void Manager::Destroy()
 {
-	if (device.Created() && vkDeviceWaitIdle(device.GetLogicalDevice()) != VK_SUCCESS)
-		throw (std::runtime_error("Failed to wait for device to be idle"));
+	try
+	{
+		if (device.Created() && vkDeviceWaitIdle(device.GetLogicalDevice()) != VK_SUCCESS)
+			throw (std::runtime_error("Failed to wait for device to be idle"));
 
-	for (std::function<void()> call : endCalls) { call(); }
+		for (std::function<void()> call : endCalls) { call(); }
 
-	DestroyVulkan();
-	DestroyGLFW();
+		DestroyVulkan();
+		DestroyGLFW();
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << "Error occured during manager destruction: " << e.what() << '\n';
+	}
 }
 
 void Manager::DestroyGLFW()
@@ -136,9 +146,11 @@ Camera& Manager::GetCamera()
 
 void Manager::Run()
 {
-	Start();
-
-	while (!ShouldClose()) { Frame(); }
+	try { Start(); }
+	catch(const std::exception& e) { std::cerr << "Error occured during application start: " << e.what() << '\n'; }
+	
+	try { while (!ShouldClose()) { Frame(); } }
+	catch(const std::exception& e) { std::cerr << "Error occured during main loop: " << e.what() << '\n'; }
 }
 
 void Manager::Start()
@@ -186,8 +198,10 @@ void Manager::Resize(bool force)
 
 void Manager::ParseArguments(char** arguments, const int& count)
 {
-	std::filesystem::path executeablePath = arguments[0];
-	config.executeablePath = std::filesystem::absolute(executeablePath);
+	if (count <= 0) return;
+
+	std::filesystem::path argumentPath = arguments[0];
+	executeablePath = std::filesystem::absolute(executeablePath);
 
 	for (int i = 1; i < count; i++)
 	{
@@ -223,10 +237,11 @@ void Manager::RegisterResizeCall(std::function<void()> call)
 
 const std::filesystem::path& Manager::GetExecuteablePath()
 {
-	return (config.executeablePath);
+	return (executeablePath);
 }
 
 ManagerConfig Manager::config{};
+std::filesystem::path Manager::executeablePath = std::filesystem::current_path();
 
 Window Manager::window;
 Device Manager::device;

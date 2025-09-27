@@ -1,5 +1,6 @@
 #include "camera.hpp"
 
+#include "manager.hpp"
 #include "input.hpp"
 #include "time.hpp"
 
@@ -13,8 +14,6 @@ Camera::~Camera()
 
 }
 
-
-
 void Camera::Create(const CameraConfig& cameraConfig)
 {
 	config = cameraConfig;
@@ -26,6 +25,8 @@ void Camera::Create(const CameraConfig& cameraConfig)
 
 	Input::RegisterMouseCallback([&](double xpos, double ypos) { Mouse(xpos, ypos); });
 	Input::RegisterScrollCallback([&](double xpos, double ypos) { Scroll(xpos, ypos); });
+
+	Manager::RegisterFrameCall(this, &Camera::Frame);
 }
 
 const CameraConfig& Camera::GetConfig() const
