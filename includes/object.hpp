@@ -16,6 +16,7 @@ struct UniformData
 	mat4 model;
 	mat4 view;
 	mat4 projection;
+	point4D viewPosition;
 };
 
 class Object

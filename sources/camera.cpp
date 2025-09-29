@@ -78,7 +78,6 @@ void Camera::UpdateView()
 {
 	if (updated) return;
 
-	//view = mat4::View(angles, position);
 	view = mat4::Look(position, position + direction, point3D(0, 1, 0));
 
 	updated = true;

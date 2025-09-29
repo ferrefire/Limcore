@@ -293,6 +293,8 @@ ImageLoader::ImageLoader(const std::string& name, const ImageType& type)
 		case ImageType::Png: return; break;
 		default: throw (std::runtime_error("Not a valid image type"));
 	}
+
+	//std::cout << info.name << ":\n" << info << std::endl;
 }
 
 ImageLoader::~ImageLoader()
@@ -656,6 +658,8 @@ void ImageLoader::LoadEntropyData()
 	data.MCUCount.y() = std::ceil(info.startOfFrameInfo.height / (maxV * 8));
 	data.MCUCount.z() = data.MCUCount.x() * data.MCUCount.y();
 
+	//std::cout << "mcucount: " << data.MCUCount << std::endl; 
+
 	data.blocks.resize(totalBlockCount * data.MCUCount.z());
 	for (size_t i = 0; i < data.blocks.size(); i++)
 	{
@@ -822,6 +826,8 @@ void ImageLoader::LoadEntropyData()
 	//std::cout << "Entropy loaded in: " << (Time::GetCurrentTime() - entropyStart) * 1000 << std::endl;
 
 	std::cout << info.name << " loaded in: " << (Time::GetCurrentTime() - start) * 1000 << " ms." << std::endl;
+	//std::cout << data.blocks.size() << std::endl;
+	//std::cout << info << std::endl << std::endl;
 
 	//std::cout << "Fast found: " << fastFound << " Slow found: " << slowFound << std::endl;
 	//std::cout << "Add time: " << addTime * 1000 << " Sub time: " << subTime * 1000 << " Rest time: " << restTime * 1000 << std::endl;
@@ -888,8 +894,78 @@ void ImageLoader::LoadBlock(std::array<unsigned char, (16 * 16) * 4>& buffer, si
 	}
 }
 
+void ImageLoader::LoadBlockGreyscale(std::array<unsigned char, (8 * 8)>& buffer, size_t offset) const
+{
+	size_t pixelIndex = 0;
+	size_t blockIndex = 0;
+
+	for (size_t y = 0; y < 8; y++)
+	{
+		for (size_t x = 0; x < 8; x++)
+		{
+			int yi = y;
+			int xi = x;
+			//int yci = y / 2;
+			//int xci = x / 2;
+			//if (y < 8 && x < 8)
+			//{
+			//	blockIndex = 0;
+			//}
+			//else if (y < 8 && x >= 8)
+			//{
+			//	blockIndex = 1;
+			//	xi -= 8;
+			//}
+			//else if (y >= 8 && x < 8)
+			//{
+			//	blockIndex = 2;
+			//	yi -= 8;
+			//}
+			//else
+			//{
+			//	blockIndex = 3;
+			//	xi -= 8;
+			//	yi -= 8;
+			//}
+
+			double Y = static_cast<double>(data.blocks[(offset)][yi * 8 + xi]);
+			//double Cb = static_cast<double>(data.blocks[4 + (6 * offset)][yci * 8 + xci]);
+			//double Cr = static_cast<double>(data.blocks[5 + (6 * offset)][yci * 8 + xci]);
+
+			//double R = (Y + 1.402 * (Cr - 128));
+			//double G = (Y - 0.34414 * (Cb - 128) - 0.71414 * (Cr - 128));
+			//double B = (Y + 1.772 * (Cb - 128));
+
+			double R = Y;
+
+			if (R < 0) R = 0;
+			if (R > 255) R = 255;
+			//if (G < 0) G = 0;
+			//if (G > 255) G = 255;
+			//if (B < 0) B = 0;
+			//if (B > 255) B = 255;
+
+			unsigned char r = static_cast<unsigned char>(R);
+			//unsigned char g = static_cast<unsigned char>(G);
+			//unsigned char b = static_cast<unsigned char>(B);
+
+			buffer[pixelIndex++] = r;
+			//buffer[pixelIndex++] = g;
+			//buffer[pixelIndex++] = b;
+			//buffer[pixelIndex++] = 255;
+		}
+	}
+}
+
 void ImageLoader::LoadPixels(std::vector<unsigned char>& buffer) const
 {
+	if (info.startOfFrameInfo.componentCount == 1)
+	{
+		//std::cout << "Greyscale" << std::endl;
+		LoadPixelsGreyscale(buffer);
+		return;
+	}
+
 	buffer.resize((info.startOfFrameInfo.width * info.startOfFrameInfo.height) * 4);
 
 	for (size_t y = 0; y < data.MCUCount.y(); y++)
@@ -913,6 +989,39 @@ void ImageLoader::LoadPixels(std::vector<unsigned char>& buffer) const
 					buffer[bufferIndex++] = blockPixels[blockIndex++];
 				}
 			}
+		}
+	}
+}
+
+void ImageLoader::LoadPixelsGreyscale(std::vector<unsigned char>& buffer) const
+{
+	buffer.resize((info.startOfFrameInfo.width * info.startOfFrameInfo.height));
+
+	//size_t bufferIndex = 0;
+
+	for (size_t y = 0; y < data.MCUCount.y(); y++)
+	{
+		for (size_t x = 0; x < data.MCUCount.x(); x++)
+		{
+			std::array<unsigned char, (8 * 8)> blockPixels{};
+			LoadBlockGreyscale(blockPixels, y * data.MCUCount.x() + x);
+
+			for (size_t by = 0; by < 8; by++)
+			{
+				for (size_t bx = 0; bx < 8; bx++)
+				{
+
+					size_t bufferIndex = (y * 8 + by) * info.startOfFrameInfo.width + (x * 8 + bx);
+					size_t blockIndex = by * 8 + bx;
+
+					buffer[bufferIndex++] = blockPixels[blockIndex++];
+					//buffer[bufferIndex++] = blockPixels[blockIndex++];
+					//buffer[bufferIndex++] = blockPixels[blockIndex++];
+					//buffer[bufferIndex++] = blockPixels[blockIndex++];
+				}
+			}
+
+			//std::cout << "y: " << y << " x: " << x << std::endl;
 		}
 	}
 }

@@ -277,6 +277,30 @@ ImageConfig Image::DefaultConfig()
 	return (config);
 }
 
+ImageConfig Image::DefaultNormalConfig()
+{
+	ImageConfig config{};
+	config.format = VK_FORMAT_R8G8B8A8_UNORM;
+	config.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	config.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	config.viewConfig = Image::DefaultViewConfig();
+	config.viewConfig.format = VK_FORMAT_R8G8B8A8_UNORM;
+
+	return (config);
+}
+
+ImageConfig Image::DefaultGreyscaleConfig()
+{
+	ImageConfig config{};
+	config.format = VK_FORMAT_R8_UNORM;
+	config.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	config.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	config.viewConfig = Image::DefaultViewConfig();
+	config.viewConfig.format = VK_FORMAT_R8_UNORM;
+
+	return (config);
+}
+
 ImageConfig Image::DefaultDepthConfig()
 {
 	ImageConfig config{};

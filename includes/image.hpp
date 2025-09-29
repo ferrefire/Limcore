@@ -155,6 +155,8 @@ class Image
 		static ImageViewConfig DefaultViewConfig();
 
 		static ImageConfig DefaultConfig();
+		static ImageConfig DefaultNormalConfig();
+		static ImageConfig DefaultGreyscaleConfig();
 
 		/**
 		 * @brief Provides a default configuration for depth images.

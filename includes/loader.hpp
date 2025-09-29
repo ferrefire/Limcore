@@ -269,7 +269,9 @@ class ImageLoader
 
 		void LoadEntropyData();
 		void LoadBlock(std::array<unsigned char, (16 * 16) * 4>& buffer, size_t offset) const;
+		void LoadBlockGreyscale(std::array<unsigned char, (8 * 8)>& buffer, size_t offset) const;
 		void LoadPixels(std::vector<unsigned char>& buffer) const;
+		void LoadPixelsGreyscale(std::vector<unsigned char>& buffer) const;
 };
 
 std::ostream& operator<<(std::ostream& out, const ImageInfo& info);

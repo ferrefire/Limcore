@@ -36,6 +36,11 @@ void Object::Create(meshPNC32& objectMesh, Image& objectImage, Pipeline& objectP
 void Object::Destroy()
 {
 	buffer.Destroy();
+
+	mesh = nullptr;
+	image = nullptr;
+	pipeline = nullptr;
+	descriptor = nullptr;
 }
 
 UniformData& Object::GetData()
@@ -50,6 +55,8 @@ const size_t& Object::GetSet() const
 
 void Object::Render(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 {
+	if (!mesh || !image || !pipeline || !descriptor) throw (std::runtime_error("Object has invalid resources"));
+
 	buffer.Update(&data, sizeof(UniformData));
 
 	pipeline->Bind(commandBuffer);
