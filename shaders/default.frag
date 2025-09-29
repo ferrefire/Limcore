@@ -37,7 +37,7 @@ void main()
 	PBRInput data;
 	data.N = normal;
 	data.V = normalize(viewPosition - worldPosition);
-	data.L = normalize(vec3(0.2, 1, 0.4));
+	data.L = normalize(vec3(0.2, 1, -0.4));
 	data.albedo = color;
 	data.metallic = metallic;
 	data.roughness = roughness;
