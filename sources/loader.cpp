@@ -8,6 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+#include <thread>
 
 ByteReader::ByteReader(const uint8_t* data, size_t size) : position(data), end(data + size) {}
 
@@ -803,10 +804,11 @@ void ImageLoader::LoadEntropyData()
 				//	data.blocks[blockIndex][i] *= info.quantizationTables[currentComponent.w()].values[i];
 				//}
 
-				double transformTimeStart = Time::GetCurrentTime();
+				//double transformTimeStart = Time::GetCurrentTime();
 
 				//data.blocks[blockIndex] = IDCTBlock(data.blocks[blockIndex]);
-				data.blocks[blockIndex] = FIDCTBlock(data.blocks[blockIndex]);
+
+				//data.blocks[blockIndex] = FIDCTBlock(data.blocks[blockIndex]);
 
 				//transformTime += (Time::GetCurrentTime() - transformTimeStart);
 
@@ -816,6 +818,31 @@ void ImageLoader::LoadEntropyData()
 			componentIndex++;
 		}
 	}
+
+	//std::cout << "blocks: " << data.blocks.size() / 6000 << std::endl;
+	//std::cout << "blocks left: " << data.blocks.size() % 6000 << std::endl;
+
+	size_t blockThreadCount = 6000;
+
+	std::vector<std::thread> threads((data.blocks.size() / blockThreadCount) + 1);
+
+	for (size_t i = 0; i < threads.size(); i++)
+	{
+		size_t start = i * blockThreadCount;
+		size_t end = std::min((i + 1) * blockThreadCount, data.blocks.size());
+
+		threads[i] = std::thread(TransformBlocks, &data, start, end);
+	}
+
+	for (size_t i = 0; i < threads.size(); i++)
+	{
+		threads[i].join();
+	}
+	
+	//for (size_t i = 0; i < data.blocks.size(); i++)
+	//{
+	//	data.blocks[i] = FIDCTBlock(data.blocks[i]);
+	//}
 
 	//std::cout << "Tree search time: " << treeTime * 1000 << std::endl;
 
@@ -831,6 +858,14 @@ void ImageLoader::LoadEntropyData()
 
 	//std::cout << "Fast found: " << fastFound << " Slow found: " << slowFound << std::endl;
 	//std::cout << "Add time: " << addTime * 1000 << " Sub time: " << subTime * 1000 << " Rest time: " << restTime * 1000 << std::endl;
+}
+
+void ImageLoader::TransformBlocks(ImageData* data, size_t start, size_t end)
+{
+	for (size_t i = start; i < end; i++)
+	{
+		data->blocks[i] = FIDCTBlock(data->blocks[i]);
+	}
 }
 
 void ImageLoader::LoadBlock(std::array<unsigned char, (16 * 16) * 4>& buffer, size_t offset) const
@@ -919,6 +954,8 @@ void ImageLoader::LoadBlockGreyscale(std::array<unsigned char, (8 * 8)>& buffer,
 
 void ImageLoader::LoadPixels(std::vector<unsigned char>& buffer) const
 {
+	//std::cout << info.name << ": " << std::endl << info << std::endl;
+
 	if (info.startOfFrameInfo.componentCount == 1)
 	{
 		LoadPixelsGreyscale(buffer);
@@ -1080,6 +1117,26 @@ int EntropyReader::ReadBitsBuffer(size_t amount)
 	}
 
 	return (Extend(result, amount));
+}
+
+std::vector<ImageLoader> ImageLoader::LoadImages(const std::vector<std::pair<std::string, ImageType>>& images)
+{
+	std::vector<ImageLoader> imageLoaders;
+	imageLoaders.reserve(images.size());
+
+	//std::vector<std::future<ImageLoader>> threads;
+	//threads.reserve(images.size());
+
+	double start = Time::GetCurrentTime();
+
+	for (const auto& request : images)
+	{
+		imageLoaders.push_back(ImageLoader(request.first, request.second));
+	}
+
+	std::cout << "Total load time of all images: " << (Time::GetCurrentTime() - start) * 1000 << " ms." << std::endl;
+
+	return (imageLoaders);
 }
 
 std::ostream& operator<<(std::ostream& out, const ImageInfo& info)

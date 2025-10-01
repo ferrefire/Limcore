@@ -19,15 +19,17 @@
 
 Pass pass;
 Pipeline pipeline;
+Pipeline realisticPipeline;
 Descriptor descriptor;
+Descriptor realisticDescriptor;
 
 meshPNC32 quadMesh;
 meshPNC32 cannonMesh;
 meshPNC32 croissantMesh;
 
 Image checkeredImageDiff;
-Image checkeredImageNorm;
-Image checkeredImageARM;
+//Image checkeredImageNorm;
+//Image checkeredImageARM;
 
 Image cannonImageDiff;
 Image cannonImageNorm;
@@ -44,7 +46,7 @@ Object checkeredFloor;
 Object cannon;
 Object croissant;
 
-float angle = 0;
+float angle = -45 + 180;
 
 void Frame()
 {
@@ -55,7 +57,7 @@ void Frame()
 
 	Manager::GetCamera().UpdateView();
 
-	angle += Time::deltaTime * 30.0;
+	angle += Time::deltaTime * 10.0;
 	if (angle > 360) angle -= 360;
 
 	checkeredFloor.GetData().viewPosition = Manager::GetCamera().GetPosition();
@@ -92,19 +94,22 @@ void Start()
 	
 	Renderer::AddPass(passInfo);
 
-	std::vector<DescriptorConfig> descriptorConfigs(4);
+	std::vector<DescriptorConfig> realisticDescriptorConfigs(4);
+	realisticDescriptorConfigs[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	realisticDescriptorConfigs[0].stages = VK_SHADER_STAGE_VERTEX_BIT;
+	realisticDescriptorConfigs[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	realisticDescriptorConfigs[1].stages = VK_SHADER_STAGE_FRAGMENT_BIT;
+	realisticDescriptorConfigs[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	realisticDescriptorConfigs[2].stages = VK_SHADER_STAGE_FRAGMENT_BIT;
+	realisticDescriptorConfigs[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	realisticDescriptorConfigs[3].stages = VK_SHADER_STAGE_FRAGMENT_BIT;
+	realisticDescriptor.Create(realisticDescriptorConfigs);
+
+	std::vector<DescriptorConfig> descriptorConfigs(2);
 	descriptorConfigs[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	descriptorConfigs[0].stages = VK_SHADER_STAGE_VERTEX_BIT;
 	descriptorConfigs[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	descriptorConfigs[1].stages = VK_SHADER_STAGE_FRAGMENT_BIT;
-	descriptorConfigs[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descriptorConfigs[2].stages = VK_SHADER_STAGE_FRAGMENT_BIT;
-	descriptorConfigs[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descriptorConfigs[3].stages = VK_SHADER_STAGE_FRAGMENT_BIT;
-	//descriptorConfigs[4].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	//descriptorConfigs[4].stages = VK_SHADER_STAGE_FRAGMENT_BIT;
-	//descriptorConfigs[5].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	//descriptorConfigs[5].stages = VK_SHADER_STAGE_FRAGMENT_BIT;
 	descriptor.Create(descriptorConfigs);
 
 	quadMesh.Create(ShapeType::Quad);
@@ -115,17 +120,28 @@ void Start()
 	ImageConfig imageNormalConfig = Image::DefaultNormalConfig();
 	ImageConfig imageGreyscaleConfig = Image::DefaultGreyscaleConfig();
 
-	checkeredImageDiff.Create(ImageLoader("checkered_diff", ImageType::Jpg), imageConfig);
-	checkeredImageNorm.Create(ImageLoader("checkered_norm", ImageType::Jpg), imageNormalConfig);
-	checkeredImageARM.Create(ImageLoader("checkered_arm", ImageType::Jpg), imageNormalConfig);
+	//std::vector<ImageLoader> loaders = ImageLoader::LoadImages({{"checkered_diff", ImageType::Jpg}});
+	//std::vector<ImageLoader> loaders;
 
+	//ImageLoader test = ImageLoader("checkered_diff", ImageType::Jpg);
+	//loaders.push_back(test);
+
+	//imageConfig.width = 1024;
+	//imageConfig.height = 1024;
+	//checkeredImageDiff.Create(imageConfig);
+	//checkeredImageDiff.Load(loaders[0]);
+	//checkeredImageDiff.Create(loaders[0], imageConfig);
+	//cannonImageDiff.Create(loaders[1], imageConfig);
+	//cannonImageNorm.Create(loaders[2], imageNormalConfig);
+	//cannonImageARM.Create(loaders[3], imageNormalConfig);
+	//croissantImageDiff.Create(loaders[4], imageConfig);
+	//croissantImageNorm.Create(loaders[5], imageNormalConfig);
+	//croissantImageARM.Create(loaders[6], imageNormalConfig);
+
+	checkeredImageDiff.Create(ImageLoader("checkered_diff", ImageType::Jpg), imageConfig);
 	cannonImageDiff.Create(ImageLoader("cannon_diff", ImageType::Jpg), imageConfig);
 	cannonImageNorm.Create(ImageLoader("cannon_norm", ImageType::Jpg), imageNormalConfig);
 	cannonImageARM.Create(ImageLoader("cannon_arm", ImageType::Jpg), imageNormalConfig);
-	//cannonImageRough.Create(ImageLoader("cannon_rough", ImageType::Jpg), imageGreyscaleConfig);
-	//cannonImageMetal.Create(ImageLoader("cannon_metal", ImageType::Jpg), imageGreyscaleConfig);
-	//cannonImageAO.Create(ImageLoader("cannon_ao", ImageType::Jpg), imageGreyscaleConfig);
-
 	croissantImageDiff.Create(ImageLoader("croissant_diff", ImageType::Jpg), imageConfig);
 	croissantImageNorm.Create(ImageLoader("croissant_norm", ImageType::Jpg), imageNormalConfig);
 	croissantImageARM.Create(ImageLoader("croissant_arm", ImageType::Jpg), imageNormalConfig);
@@ -138,20 +154,29 @@ void Start()
 	pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
 	pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
 	pipeline.Create(pipelineConfig);
+
+	PipelineConfig realisticPipelineConfig = Pipeline::DefaultConfig();
+	realisticPipelineConfig.shader = "realistic";
+	realisticPipelineConfig.vertexInfo = cannonMesh.GetVertexInfo();
+	realisticPipelineConfig.renderpass = pass.GetRenderpass();
+	realisticPipelineConfig.descriptorLayouts = { realisticDescriptor.GetLayout() };
+	realisticPipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+	realisticPipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
+	realisticPipeline.Create(realisticPipelineConfig);
 	
 	checkeredFloor.Create(quadMesh, checkeredImageDiff, pipeline, descriptor);
-	cannon.Create(cannonMesh, cannonImageDiff, pipeline, descriptor);
-	croissant.Create(croissantMesh, croissantImageDiff, pipeline, descriptor);
+	cannon.Create(cannonMesh, cannonImageDiff, realisticPipeline, realisticDescriptor);
+	croissant.Create(croissantMesh, croissantImageDiff, realisticPipeline, realisticDescriptor);
 
-	descriptor.Update(checkeredFloor.GetSet(), 2, checkeredImageNorm);
-	descriptor.Update(checkeredFloor.GetSet(), 3, checkeredImageARM);
-	descriptor.Update(cannon.GetSet(), 2, cannonImageNorm);
-	descriptor.Update(cannon.GetSet(), 3, cannonImageARM);
+	//descriptor.Update(checkeredFloor.GetSet(), 2, checkeredImageNorm);
+	//descriptor.Update(checkeredFloor.GetSet(), 3, checkeredImageARM);
+	realisticDescriptor.Update(cannon.GetSet(), 2, cannonImageNorm);
+	realisticDescriptor.Update(cannon.GetSet(), 3, cannonImageARM);
 	//descriptor.Update(cannon.GetSet(), 3, cannonImageRough);
 	//descriptor.Update(cannon.GetSet(), 4, cannonImageMetal);
 	//descriptor.Update(cannon.GetSet(), 5, cannonImageAO);
-	descriptor.Update(croissant.GetSet(), 2, croissantImageNorm);
-	descriptor.Update(croissant.GetSet(), 3, croissantImageARM);
+	realisticDescriptor.Update(croissant.GetSet(), 2, croissantImageNorm);
+	realisticDescriptor.Update(croissant.GetSet(), 3, croissantImageARM);
 
 	Manager::GetCamera().Move(point3D(0, 1, -2));
 }
@@ -163,8 +188,8 @@ void End()
 	croissantMesh.Destroy();
 	
 	checkeredImageDiff.Destroy();
-	checkeredImageNorm.Destroy();
-	checkeredImageARM.Destroy();
+	//checkeredImageNorm.Destroy();
+	//checkeredImageARM.Destroy();
 
 	cannonImageDiff.Destroy();
 	cannonImageNorm.Destroy();
@@ -183,7 +208,9 @@ void End()
 
 	pass.Destroy();
 	descriptor.Destroy();
+	realisticDescriptor.Destroy();
 	pipeline.Destroy();
+	realisticPipeline.Destroy();
 }
 
 int main(int argc, char** argv)

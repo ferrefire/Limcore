@@ -259,7 +259,6 @@ class ImageLoader
 		std::array<int16_t, 1 << FAST_BITS> BuildFastHuffmanTable(std::vector<HuffmanCode>& codes);
 		uint8_t NextEntropySymbol(EntropyReader& er, size_t tableIndex);
 		DataBlock IDCTBlock(const DataBlock& input);
-		DataBlock FIDCTBlock(const DataBlock& input);
 
 	public:
 		ImageLoader(const std::string& name, const ImageType& type);
@@ -272,6 +271,11 @@ class ImageLoader
 		void LoadBlockGreyscale(std::array<unsigned char, (8 * 8)>& buffer, size_t offset) const;
 		void LoadPixels(std::vector<unsigned char>& buffer) const;
 		void LoadPixelsGreyscale(std::vector<unsigned char>& buffer) const;
+
+		static DataBlock FIDCTBlock(const DataBlock& input);
+		static void TransformBlocks(ImageData* data, size_t start, size_t end);
+
+		static std::vector<ImageLoader> LoadImages(const std::vector<std::pair<std::string, ImageType>>& images);
 };
 
 std::ostream& operator<<(std::ostream& out, const ImageInfo& info);
