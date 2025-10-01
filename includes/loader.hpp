@@ -275,7 +275,7 @@ class ImageLoader
 		static DataBlock FIDCTBlock(const DataBlock& input);
 		static void TransformBlocks(ImageData* data, size_t start, size_t end);
 
-		static std::vector<ImageLoader> LoadImages(const std::vector<std::pair<std::string, ImageType>>& images);
+		static std::vector<ImageLoader*> LoadImages(const std::vector<std::pair<std::string, ImageType>>& images);
 };
 
 std::ostream& operator<<(std::ostream& out, const ImageInfo& info);

@@ -126,8 +126,8 @@ void Start()
 	//ImageLoader test = ImageLoader("checkered_diff", ImageType::Jpg);
 	//loaders.push_back(test);
 
-	//imageConfig.width = 1024;
-	//imageConfig.height = 1024;
+	imageConfig.width = 1024;
+	imageConfig.height = 1024;
 	//checkeredImageDiff.Create(imageConfig);
 	//checkeredImageDiff.Load(loaders[0]);
 	//checkeredImageDiff.Create(loaders[0], imageConfig);
@@ -138,13 +138,40 @@ void Start()
 	//croissantImageNorm.Create(loaders[5], imageNormalConfig);
 	//croissantImageARM.Create(loaders[6], imageNormalConfig);
 
-	checkeredImageDiff.Create(ImageLoader("checkered_diff", ImageType::Jpg), imageConfig);
-	cannonImageDiff.Create(ImageLoader("cannon_diff", ImageType::Jpg), imageConfig);
-	cannonImageNorm.Create(ImageLoader("cannon_norm", ImageType::Jpg), imageNormalConfig);
-	cannonImageARM.Create(ImageLoader("cannon_arm", ImageType::Jpg), imageNormalConfig);
-	croissantImageDiff.Create(ImageLoader("croissant_diff", ImageType::Jpg), imageConfig);
-	croissantImageNorm.Create(ImageLoader("croissant_norm", ImageType::Jpg), imageNormalConfig);
-	croissantImageARM.Create(ImageLoader("croissant_arm", ImageType::Jpg), imageNormalConfig);
+	double startTime = Time::GetCurrentTime();
+
+	std::vector<ImageLoader*> loaders = ImageLoader::LoadImages({
+		{"checkered_diff", ImageType::Jpg},
+		{"cannon_diff", ImageType::Jpg},
+		{"cannon_norm", ImageType::Jpg},
+		{"cannon_arm", ImageType::Jpg},
+		{"croissant_diff", ImageType::Jpg},
+		{"croissant_norm", ImageType::Jpg},
+		{"croissant_arm", ImageType::Jpg}
+	});
+
+	checkeredImageDiff.Create(*loaders[0], imageConfig);
+	cannonImageDiff.Create(*loaders[1], imageConfig);
+	cannonImageNorm.Create(*loaders[2], imageNormalConfig);
+	cannonImageARM.Create(*loaders[3], imageNormalConfig);
+	croissantImageDiff.Create(*loaders[4], imageConfig);
+	croissantImageNorm.Create(*loaders[5], imageNormalConfig);
+	croissantImageARM.Create(*loaders[6], imageNormalConfig);
+	//checkeredImageDiff.Create(ImageLoader("checkered_diff", ImageType::Jpg), imageConfig);
+	//cannonImageDiff.Create(ImageLoader("cannon_diff", ImageType::Jpg), imageConfig);
+	//cannonImageNorm.Create(ImageLoader("cannon_norm", ImageType::Jpg), imageNormalConfig);
+	//cannonImageARM.Create(ImageLoader("cannon_arm", ImageType::Jpg), imageNormalConfig);
+	//croissantImageDiff.Create(ImageLoader("croissant_diff", ImageType::Jpg), imageConfig);
+	//croissantImageNorm.Create(ImageLoader("croissant_norm", ImageType::Jpg), imageNormalConfig);
+	//croissantImageARM.Create(ImageLoader("croissant_arm", ImageType::Jpg), imageNormalConfig);
+
+	std::cout << "Total creation time: " << (Time::GetCurrentTime() - startTime) * 1000 << " ms." << std::endl;
+
+	for (size_t i = 0; i < loaders.size(); i++)
+	{
+		delete (loaders[i]);
+	}
+	loaders.clear();
 
 	PipelineConfig pipelineConfig = Pipeline::DefaultConfig();
 	pipelineConfig.shader = "default";

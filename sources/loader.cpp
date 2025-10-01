@@ -9,6 +9,7 @@
 #include <sstream>
 #include <filesystem>
 #include <thread>
+#include <future>
 
 ByteReader::ByteReader(const uint8_t* data, size_t size) : position(data), end(data + size) {}
 
@@ -1119,22 +1120,33 @@ int EntropyReader::ReadBitsBuffer(size_t amount)
 	return (Extend(result, amount));
 }
 
-std::vector<ImageLoader> ImageLoader::LoadImages(const std::vector<std::pair<std::string, ImageType>>& images)
+ImageLoader* GetNewLoader(std::pair<std::string, ImageType> config)
 {
-	std::vector<ImageLoader> imageLoaders;
+	return (new ImageLoader(config.first, config.second));
+}
+
+std::vector<ImageLoader*> ImageLoader::LoadImages(const std::vector<std::pair<std::string, ImageType>>& images)
+{
+	std::vector<ImageLoader*> imageLoaders;
 	imageLoaders.reserve(images.size());
 
-	//std::vector<std::future<ImageLoader>> threads;
-	//threads.reserve(images.size());
+	std::vector<std::future<ImageLoader*>> threads;
+	threads.reserve(images.size());
 
-	double start = Time::GetCurrentTime();
+	//double start = Time::GetCurrentTime();
 
 	for (const auto& request : images)
 	{
-		imageLoaders.push_back(ImageLoader(request.first, request.second));
+		//imageLoaders.push_back(new ImageLoader(request.first, request.second));
+		threads.push_back(std::async(GetNewLoader, request));
 	}
 
-	std::cout << "Total load time of all images: " << (Time::GetCurrentTime() - start) * 1000 << " ms." << std::endl;
+	//std::cout << "Total load time of all images: " << (Time::GetCurrentTime() - start) * 1000 << " ms." << std::endl;
+
+	for (size_t i = 0; i < threads.size(); i++)
+	{
+		imageLoaders.push_back(threads[i].get());
+	}
 
 	return (imageLoaders);
 }
