@@ -1120,38 +1120,24 @@ int EntropyReader::ReadBitsBuffer(size_t amount)
 	return (Extend(result, amount));
 }
 
-void GetNewLoader(std::vector<ImageLoader*>& imageLoaders, size_t i, std::pair<std::string, ImageType> config)
+ImageLoader* GetNewLoader(std::pair<std::string, ImageType> config)
 {
-	//return (new ImageLoader(config.first, config.second));
-	imageLoaders[i] = (new ImageLoader(config.first, config.second));
+	return (new ImageLoader(config.first, config.second));
 }
 
 std::vector<ImageLoader*> ImageLoader::LoadImages(const std::vector<std::pair<std::string, ImageType>>& images)
 {
 	std::vector<ImageLoader*> imageLoaders(images.size());
-	//imageLoaders.resize(images.size());
-
-	//std::vector<std::future<ImageLoader*>> threads;
-	//threads.reserve(images.size());
-
-	std::vector<std::thread> threads(images.size());
-	//threads.resize(images.size());
-
-	//double start = Time::GetCurrentTime();
+	std::vector<std::future<ImageLoader*>> threads(images.size());
 
 	for (size_t i = 0; i < threads.size(); i++)
 	{
-		//imageLoaders.push_back(new ImageLoader(request.first, request.second));
-		//threads.push_back(std::async(GetNewLoader, request));
-		threads[i] = std::thread(GetNewLoader, std::ref(imageLoaders), i, images[i]);
+		threads[i] = (std::async(GetNewLoader, images[i]));
 	}
 
-	//std::cout << "Total load time of all images: " << (Time::GetCurrentTime() - start) * 1000 << " ms." << std::endl;
-
 	for (size_t i = 0; i < threads.size(); i++)
 	{
-		//imageLoaders.push_back(threads[i].get());
-		threads[i].join();
+		imageLoaders[i] = (threads[i].get());
 	}
 
 	return (imageLoaders);
