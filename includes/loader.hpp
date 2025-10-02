@@ -272,6 +272,8 @@ class ImageLoader
 		void LoadPixels(std::vector<unsigned char>& buffer) const;
 		void LoadPixelsGreyscale(std::vector<unsigned char>& buffer) const;
 
+		void LoadPixelsThreaded(std::vector<unsigned char>& buffer) const;
+
 		static DataBlock FIDCTBlock(const DataBlock& input);
 		static void TransformBlocks(ImageData* data, size_t start, size_t end);
 

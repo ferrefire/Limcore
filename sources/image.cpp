@@ -225,7 +225,8 @@ void Image::Load(const ImageLoader& imageLoader)
 
 	//imageLoader.LoadEntropyData();
 	std::vector<unsigned char> pixels{};
-	imageLoader.LoadPixels(pixels);
+	//imageLoader.LoadPixels(pixels);
+	imageLoader.LoadPixelsThreaded(pixels);
 	Update(&pixels[0], pixels.size(), {config.width, config.height, config.depth});
 }
 

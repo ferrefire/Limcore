@@ -10,6 +10,7 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 #add_library(${PROJECT_NAME} ${SOURCE_FILES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC "includes")
+target_compile_options(${PROJECT_NAME} PRIVATE $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-O3>)
 
 set(GLFW_BUILD_WAYLAND False)#check false replace by off
 set(BUILD_WSI_WAYLAND_SUPPORT False)

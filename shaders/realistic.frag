@@ -33,15 +33,15 @@ void main()
 	data.albedo = color;
 	data.metallic = metallic;
 	data.roughness = roughness;
-	data.lightColor = vec3(1.0, 0.9, 0.7) * 7.5;
+	data.lightColor = vec3(1.0, 0.9, 0.7) * 4;
 
 	//vec3 diffuse = DiffuseLighting(normalize(worldNormal), normalize(vec3(0.2, 1, 0.4)), color);
 	//vec3 diffuse = DiffuseLighting(normal, normalize(vec3(0.2, 1, 0.4)), color);
 	vec3 diffuse = PBRLighting(data);
 
-	//vec3 ambientDiffuse = 0.15 * color;
-	//vec3 ambient = ambientDiffuse * ao;
-	//diffuse += ambient;
+	vec3 ambientDiffuse = 0.075 * color * vec3(1.0, 0.9, 0.7);
+	vec3 ambient = ambientDiffuse * ao;
+	diffuse += ambient;
 
 	pixelColor = vec4(diffuse, 1.0);
 }

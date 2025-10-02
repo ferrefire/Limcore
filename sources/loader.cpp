@@ -824,16 +824,20 @@ void ImageLoader::LoadEntropyData()
 	//std::cout << "blocks left: " << data.blocks.size() % 6000 << std::endl;
 
 	size_t blockThreadCount = 6000;
+	size_t blockCount = data.blocks.size();
+	size_t threadCount = (blockCount / blockThreadCount);
 
-	std::vector<std::thread> threads((data.blocks.size() / blockThreadCount) + 1);
+	std::vector<std::thread> threads(threadCount);
 
 	for (size_t i = 0; i < threads.size(); i++)
 	{
 		size_t start = i * blockThreadCount;
-		size_t end = std::min((i + 1) * blockThreadCount, data.blocks.size());
+		size_t end = std::min((i + 1) * blockThreadCount, blockCount);
 
 		threads[i] = std::thread(TransformBlocks, &data, start, end);
 	}
+
+	TransformBlocks(&data, threadCount * blockThreadCount, blockCount);
 
 	for (size_t i = 0; i < threads.size(); i++)
 	{
@@ -990,6 +994,115 @@ void ImageLoader::LoadPixels(std::vector<unsigned char>& buffer) const
 	}
 }
 
+void LoadBlockThread(std::array<unsigned char, (16 * 16) * 4>& buffer, const ImageData* data, size_t offset)
+{
+	size_t pixelIndex = 0;
+	size_t blockIndex = 0;
+
+	for (size_t y = 0; y < 16; y++)
+	{
+		for (size_t x = 0; x < 16; x++)
+		{
+			int yi = y;
+			int xi = x;
+			int yci = y / 2;
+			int xci = x / 2;
+			if (y < 8 && x < 8)
+			{
+				blockIndex = 0;
+			}
+			else if (y < 8 && x >= 8)
+			{
+				blockIndex = 1;
+				xi -= 8;
+			}
+			else if (y >= 8 && x < 8)
+			{
+				blockIndex = 2;
+				yi -= 8;
+			}
+			else
+			{
+				blockIndex = 3;
+				xi -= 8;
+				yi -= 8;
+			}
+
+			double Y = static_cast<double>(data->blocks[blockIndex + (6 * offset)][yi * 8 + xi]);
+			double Cb = static_cast<double>(data->blocks[4 + (6 * offset)][yci * 8 + xci]);
+			double Cr = static_cast<double>(data->blocks[5 + (6 * offset)][yci * 8 + xci]);
+
+			double R = (Y + 1.402 * (Cr - 128));
+			double G = (Y - 0.34414 * (Cb - 128) - 0.71414 * (Cr - 128));
+			double B = (Y + 1.772 * (Cb - 128));
+
+			if (R < 0) R = 0;
+			if (R > 255) R = 255;
+			if (G < 0) G = 0;
+			if (G > 255) G = 255;
+			if (B < 0) B = 0;
+			if (B > 255) B = 255;
+
+			unsigned char r = static_cast<unsigned char>(R);
+			unsigned char g = static_cast<unsigned char>(G);
+			unsigned char b = static_cast<unsigned char>(B);
+
+			buffer[pixelIndex++] = r;
+			buffer[pixelIndex++] = g;
+			buffer[pixelIndex++] = b;
+			buffer[pixelIndex++] = 255;
+		}
+	}
+}
+
+void LoadPixelThread(std::vector<unsigned char>& buffer, const ImageData* data, size_t y, size_t width)
+{
+	for (size_t x = 0; x < data->MCUCount.x(); x++)
+	{
+		std::array<unsigned char, (16 * 16) * 4> blockPixels{};
+		LoadBlockThread(blockPixels, data, y * data->MCUCount.x() + x);
+
+		for (size_t by = 0; by < 16; by++)
+		{
+			for (size_t bx = 0; bx < 16; bx++)
+			{
+				size_t bufferIndex = (y * 16 + by) * width * 4 + (x * 16 + bx) * 4;
+				size_t blockIndex = by * 16 * 4 + bx * 4;
+
+				buffer[bufferIndex++] = blockPixels[blockIndex++];
+				buffer[bufferIndex++] = blockPixels[blockIndex++];
+				buffer[bufferIndex++] = blockPixels[blockIndex++];
+				buffer[bufferIndex++] = blockPixels[blockIndex++];
+			}
+		}
+	}
+}
+
+void ImageLoader::LoadPixelsThreaded(std::vector<unsigned char>& buffer) const
+{
+	//std::cout << info.name << ": " << std::endl << info << std::endl;
+
+	//if (info.startOfFrameInfo.componentCount == 1)
+	//{
+	//	LoadPixelsGreyscale(buffer);
+	//	return;
+	//}
+
+	buffer.resize((info.startOfFrameInfo.width * info.startOfFrameInfo.height) * 4);
+
+	std::vector<std::future<void>> threads(data.MCUCount.y());
+
+	for (size_t y = 0; y < data.MCUCount.y(); y++)
+	{
+		threads[y] = std::async(LoadPixelThread, std::ref(buffer), &data, y, info.startOfFrameInfo.width);
+	}
+
+	for (size_t i = 0; i < threads.size(); i++)
+	{
+		threads[i].wait();
+	}
+}
+
 void ImageLoader::LoadPixelsGreyscale(std::vector<unsigned char>& buffer) const
 {
 	buffer.resize((info.startOfFrameInfo.width * info.startOfFrameInfo.height));
@@ -1130,6 +1243,8 @@ std::vector<ImageLoader*> ImageLoader::LoadImages(const std::vector<std::pair<st
 	std::vector<ImageLoader*> imageLoaders(images.size());
 	std::vector<std::future<ImageLoader*>> threads(images.size());
 
+	double start = Time::GetCurrentTime();
+
 	for (size_t i = 0; i < threads.size(); i++)
 	{
 		threads[i] = (std::async(GetNewLoader, images[i]));
@@ -1139,6 +1254,8 @@ std::vector<ImageLoader*> ImageLoader::LoadImages(const std::vector<std::pair<st
 	{
 		imageLoaders[i] = (threads[i].get());
 	}
+
+	std::cout << "Image loading took: " << (Time::GetCurrentTime() - start) * 1000 << " ms." << std::endl;
 
 	return (imageLoaders);
 }
