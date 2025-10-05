@@ -231,3 +231,16 @@ PipelineConfig Pipeline::DefaultConfig()
 
 	return (config);
 }
+
+void Pipeline::CreateLayout(VkPipelineLayout* layout, std::vector<VkDescriptorSetLayout> descriptorLayouts, Device* device)
+{
+	if (device == nullptr) device = &Manager::GetDevice();
+
+	VkPipelineLayoutCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	createInfo.setLayoutCount = CUI(descriptorLayouts.size());
+	createInfo.pSetLayouts = descriptorLayouts.data();
+
+	if (vkCreatePipelineLayout(device->GetLogicalDevice(), &createInfo, nullptr, layout) != VK_SUCCESS)
+		throw (std::runtime_error("Failed to create pipeline layout"));
+}

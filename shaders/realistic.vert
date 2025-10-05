@@ -17,7 +17,7 @@ layout(location = 2) in vec2 localCoordinate;
 layout(location = 0) out vec3 worldNormal;
 layout(location = 1) out vec2 worldCoordinate;
 layout(location = 2) out vec3 worldPosition;
-layout(location = 3) out vec3 viewPosition;
+layout(location = 3) flat out vec3 viewPosition;
 
 void main()
 {

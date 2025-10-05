@@ -132,16 +132,18 @@ size_t Descriptor::GetNewSet()
 	return (setID);
 }
 
-void Descriptor::Bind(size_t setID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
+void Descriptor::Bind(size_t setIndex, size_t setID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int offset)
 {
 	if (!commandBuffer) throw (std::runtime_error("Cannot bind descriptor because command buffer does not exist"));
 	if (!pipelineLayout) throw (std::runtime_error("Cannot bind descriptor because pipeline layout does not exist"));
 	if (!sets[setID]) throw (std::runtime_error("Descriptor has no set"));
 
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &sets[setID], 0, nullptr);
+	uint32_t dynamicOffset = (offset >= 0 ? CUI(offset) : 0);
+
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, setIndex, 1, &sets[setID], (offset >= 0 ? 1 : 0), &dynamicOffset);
 }
 
-void Descriptor::Update(size_t setID, uint32_t binding, VkDescriptorBufferInfo* bufferInfo, VkDescriptorImageInfo* imageInfo)
+void Descriptor::Update(size_t setID, uint32_t binding, VkDescriptorBufferInfo* bufferInfos, VkDescriptorImageInfo* imageInfos)
 {
 	if (!sets[setID]) throw (std::runtime_error("Descriptor has no set"));
 	if (!device) throw (std::runtime_error("Descriptor has no device"));
@@ -152,20 +154,20 @@ void Descriptor::Update(size_t setID, uint32_t binding, VkDescriptorBufferInfo* 
 	writeInfo.dstBinding = binding;
 	writeInfo.dstArrayElement = 0;
 	writeInfo.descriptorType = config[binding].type;
-	writeInfo.descriptorCount = 1;
-	writeInfo.pBufferInfo = bufferInfo;
-	writeInfo.pImageInfo = imageInfo;
+	writeInfo.descriptorCount = config[binding].count;
+	writeInfo.pBufferInfo = bufferInfos;
+	writeInfo.pImageInfo = imageInfos;
 
 	vkUpdateDescriptorSets(device->GetLogicalDevice(), 1, &writeInfo, 0, nullptr);
 }
 
-void Descriptor::Update(size_t setID, uint32_t binding, const Buffer& buffer)
+void Descriptor::Update(size_t setID, uint32_t binding, const Buffer& buffer, size_t size)
 {
 	VkDescriptorBufferInfo bufferInfo{};
 	bufferInfo.buffer = buffer.GetBuffer();
-	bufferInfo.range = buffer.GetConfig().size;
+	bufferInfo.range = size == 0 ? buffer.GetConfig().size : size;
 
-	Update(setID, binding, &bufferInfo, nullptr);
+	Update(setID, binding, {&bufferInfo}, {});
 }
 
 void Descriptor::Update(size_t setID, uint32_t binding, const Image& image)
@@ -175,7 +177,30 @@ void Descriptor::Update(size_t setID, uint32_t binding, const Image& image)
 	imageInfo.imageView = image.GetView();
 	imageInfo.imageLayout = image.GetConfig().currentLayout;
 
-	Update(setID, binding, nullptr, &imageInfo);
+	Update(setID, binding, {}, {&imageInfo});
+}
+
+void Descriptor::Update(size_t setID, uint32_t binding, const std::vector<Image*> images)
+{
+	std::vector<VkDescriptorImageInfo> imageInfos(images.size());
+
+	for (size_t i = 0; i < images.size(); i++)
+	{
+		if (images[i] != nullptr)
+		{
+			imageInfos[i].sampler = images[i]->GetSampler();
+			imageInfos[i].imageView = images[i]->GetView();
+			imageInfos[i].imageLayout = images[i]->GetConfig().currentLayout;
+		}
+		else
+		{
+			imageInfos[i].sampler = VK_NULL_HANDLE;
+			imageInfos[i].imageView = VK_NULL_HANDLE;
+			//imageInfos[i].imageLayout = VK_NULL_HANDLE;
+		}
+	}
+
+	Update(setID, binding, {}, imageInfos.data());
 }
 
 std::ostream& operator<<(std::ostream& out, const DescriptorConfig& config)

@@ -167,11 +167,16 @@ struct ImageInfo
 	std::vector<DQTInfo> quantizationTables;
 	std::vector<DHTInfo> huffmanInfos;
 	SOSInfo startOfScanInfo{};
+	bool greyScale = false;
 };
 
 struct ImageData
 {
 	Point<size_t, 3> MCUCount{};
+	Point<size_t, 3> HVC{};
+	Point<size_t, 3> dimensions{};
+	Point<size_t, 3> subSampling{};
+	Point<size_t, 2> maxHV{};
 
 	std::vector<HuffmanTree> huffmanTables;
 	std::vector<std::array<int16_t, 1 << FAST_BITS>> fastHuffmanTables;
@@ -267,8 +272,10 @@ class ImageLoader
 		const ImageInfo& GetInfo() const;
 
 		void LoadEntropyData();
-		void LoadBlock(std::array<unsigned char, (16 * 16) * 4>& buffer, size_t offset) const;
-		void LoadBlockGreyscale(std::array<unsigned char, (8 * 8)>& buffer, size_t offset) const;
+		//void LoadBlock(std::array<unsigned char, (16 * 16) * 4>& buffer, size_t offset) const;
+		void LoadBlock(std::vector<unsigned char>& buffer, size_t offset) const;
+		//void LoadBlockGreyscale(std::array<unsigned char, (8 * 8)>& buffer, size_t offset) const;
+		void LoadBlockGreyscale(std::vector<unsigned char>& buffer, size_t offset) const;
 		void LoadPixels(std::vector<unsigned char>& buffer) const;
 		void LoadPixelsGreyscale(std::vector<unsigned char>& buffer) const;
 

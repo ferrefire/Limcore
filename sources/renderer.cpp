@@ -1,6 +1,7 @@
 #include "renderer.hpp"
 
 #include "manager.hpp"
+#include "pipeline.hpp"
 
 #include <stdexcept>
 
@@ -24,10 +25,79 @@ void Renderer::Create(uint32_t rendererFrameCount, Device* rendererDevice, Swapc
 	if (!device) device = &Manager::GetDevice();
 	if (!swapchain) swapchain = &Manager::GetSwapchain();
 
+	CreateBuffers();
+	CreateSets();
 	CreateFences();
 	CreateSemaphores();
 	CreateCommands();
 }
+
+void Renderer::CreateBuffers()
+{
+	if (!device) throw (std::runtime_error("Renderer has no device"));
+	if (frameDataBuffers.size() != 0 || objectsDataBuffers.size() != 0) throw (std::runtime_error("Renderer buffers already exist"));
+
+	frameDataBuffers.resize(frameCount);
+	objectsDataBuffers.resize(frameCount);
+
+	objectsData.resize(maxObjectCount);
+
+	BufferConfig frameDataBufferConfig{};
+	frameDataBufferConfig.mapped = true;
+	frameDataBufferConfig.size = sizeof(UniformFrameData);
+	for (size_t i = 0; i < frameCount; i++) { frameDataBuffers[i].Create(frameDataBufferConfig); }
+
+	BufferConfig objectsDataBufferConfig{};
+	objectsDataBufferConfig.mapped = true;
+	objectsDataBufferConfig.size = sizeof(UniformObjectData) * maxObjectCount;
+	for (size_t i = 0; i < frameCount; i++) { objectsDataBuffers[i].Create(objectsDataBufferConfig); }
+}
+
+void Renderer::CreateSets()
+{
+	if (!device) throw (std::runtime_error("Renderer has no device"));
+	if (descriptorSets.size() != 0) throw (std::runtime_error("Renderer descriptors already exist"));
+
+	descriptorSets.resize(3);
+
+	std::vector<DescriptorConfig> descriptorSet0Config(1);
+	descriptorSet0Config[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptorSet0Config[0].stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+	descriptorSets[0].Create(descriptorSet0Config);
+
+	for (size_t i = 0; i < frameCount; i++)
+	{
+		descriptorSets[0].GetNewSet();
+		descriptorSets[0].Update(i, 0, frameDataBuffers[i]);
+	}
+
+	std::vector<DescriptorConfig> descriptorSet1Config(1);
+	descriptorSet1Config[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorSet1Config[0].stages = VK_SHADER_STAGE_FRAGMENT_BIT;
+	descriptorSet1Config[0].count = 3;
+	descriptorSets[1].Create(descriptorSet1Config);
+
+	std::vector<DescriptorConfig> descriptorSet2Config(1);
+	descriptorSet2Config[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	descriptorSet2Config[0].stages = VK_SHADER_STAGE_VERTEX_BIT;
+	descriptorSets[2].Create(descriptorSet2Config);
+
+	for (size_t i = 0; i < frameCount; i++)
+	{
+		descriptorSets[2].GetNewSet();
+		descriptorSets[2].Update(i, 0, objectsDataBuffers[i], sizeof(UniformObjectData));
+	}
+
+	Pipeline::CreateLayout(&rootLayout, {descriptorSets[0].GetLayout(), descriptorSets[1].GetLayout(), descriptorSets[2].GetLayout()});
+}
+
+/*void Renderer::CreatePools()
+{
+	if (!device) throw (std::runtime_error("Renderer has no device"));
+	if (commandPools.size() != 0 || descriptorPools.size() != 0) throw (std::runtime_error("Renderer pools already exist"));
+
+	
+}*/
 
 void Renderer::CreateFences()
 {
@@ -96,6 +166,30 @@ void Renderer::Destroy()
 {
 	if (!device) return;
 
+	for (Buffer& buffer : frameDataBuffers)
+	{
+		buffer.Destroy();
+	}
+	frameDataBuffers.clear();
+
+	for (Buffer& buffer : objectsDataBuffers)
+	{
+		buffer.Destroy();
+	}
+	objectsDataBuffers.clear();
+
+	for (Descriptor& descriptor : descriptorSets)
+	{
+		descriptor.Destroy();
+	}
+	descriptorSets.clear();
+
+	if (rootLayout)
+	{
+		vkDestroyPipelineLayout(device->GetLogicalDevice(), rootLayout, nullptr);
+		rootLayout = nullptr;
+	}
+
 	for (VkFence& fence : fences)
 	{
 		vkDestroyFence(device->GetLogicalDevice(), fence, nullptr);
@@ -159,7 +253,13 @@ void Renderer::Frame()
 
 void Renderer::RecordCommands()
 {
+	frameDataBuffers[currentFrame].Update(&frameData, sizeof(frameData));
+	objectsDataBuffers[currentFrame].Update(objectsData.data(), sizeof(UniformObjectData) * objectsData.size());
+
 	commands[currentFrame].Begin();
+
+	descriptorSets[0].Bind(0, currentFrame, commands[currentFrame].GetBuffer(), rootLayout);
+	//descriptorSets[1].Bind(1, 0, commands[currentFrame].GetBuffer(), rootLayout);
 
 	for (PassInfo& passInfo : passes)
 	{
@@ -241,6 +341,50 @@ void Renderer::Resize()
 	}
 }
 
+size_t Renderer::RegisterObject()
+{
+	if (currentObjectCount >= maxObjectCount) throw (std::runtime_error("Cannot register object because the maximum has been reached"));
+
+	size_t dataIndex = currentObjectCount;
+	currentObjectCount++;
+
+	return (dataIndex);
+}
+
+UniformObjectData& Renderer::GetCurrentObjectData(size_t dataIndex)
+{
+	if (currentObjectCount <= dataIndex) throw (std::runtime_error("Data index is invalid"));
+
+	return (objectsData[dataIndex]);
+}
+
+UniformFrameData& Renderer::GetCurrentFrameData()
+{
+	return (frameData);
+}
+
+Descriptor& Renderer::GetDescriptorSet(size_t setIndex)
+{
+	return (descriptorSets[setIndex]);
+}
+
+void Renderer::BindObjectData(size_t dataIndex)
+{
+	descriptorSets[2].Bind(2, currentFrame, commands[currentFrame].GetBuffer(), rootLayout, sizeof(UniformObjectData) * dataIndex);
+}
+
+void Renderer::BindMaterialData(size_t set)
+{
+	descriptorSets[1].Bind(1, set, commands[currentFrame].GetBuffer(), rootLayout);
+}
+
+std::vector<VkDescriptorSetLayout> Renderer::GetDescriptorLayouts()
+{
+	std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {descriptorSets[0].GetLayout(), descriptorSets[1].GetLayout(), descriptorSets[2].GetLayout()};
+
+	return (descriptorSetLayouts);
+}
+
 Device* Renderer::device = nullptr;
 Swapchain* Renderer::swapchain = nullptr;
 
@@ -253,3 +397,15 @@ std::vector<VkSemaphore> Renderer::renderSemaphores;
 std::vector<VkSemaphore> Renderer::presentSemaphores;
 std::vector<Command> Renderer::commands;
 std::vector<PassInfo> Renderer::passes;
+
+size_t Renderer::maxObjectCount = 100;
+size_t Renderer::currentObjectCount = 0;
+
+UniformFrameData Renderer::frameData{};
+std::vector<UniformObjectData> Renderer::objectsData{};
+
+std::vector<Buffer> Renderer::frameDataBuffers{};
+std::vector<Buffer> Renderer::objectsDataBuffers{};
+
+VkPipelineLayout Renderer::rootLayout = nullptr;
+std::vector<Descriptor> Renderer::descriptorSets{};

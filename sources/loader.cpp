@@ -341,6 +341,7 @@ void ImageLoader::GetJpgInfo(const std::string& name)
 
 				component.w() = CST(br.Read8());
 			}
+			if (info.startOfFrameInfo.componentCount == 1) info.greyScale = true;
 
 			if (info.startOfFrameInfo.start + info.startOfFrameInfo.length > br.Offset(rawData))
 			{
@@ -659,6 +660,13 @@ void ImageLoader::LoadEntropyData()
 	data.MCUCount.x() = std::ceil(info.startOfFrameInfo.width / (maxH * 8));
 	data.MCUCount.y() = std::ceil(info.startOfFrameInfo.height / (maxV * 8));
 	data.MCUCount.z() = data.MCUCount.x() * data.MCUCount.y();
+	data.maxHV.x() = maxH;
+	data.maxHV.y() = maxV;
+	data.dimensions = {info.startOfFrameInfo.width, info.startOfFrameInfo.height, 1};
+	size_t H = info.startOfFrameInfo.width / data.MCUCount.x();
+	size_t V = info.startOfFrameInfo.height / data.MCUCount.y();
+	size_t C = (info.greyScale ? 1 : 4);
+	data.HVC = {H, V, C};
 
 	//std::cout << "mcucount: " << data.MCUCount << std::endl; 
 
@@ -843,6 +851,23 @@ void ImageLoader::LoadEntropyData()
 	{
 		threads[i].join();
 	}
+
+	/*std::vector<std::future<void>> threads(threadCount);
+
+	for (size_t i = 0; i < threads.size(); i++)
+	{
+		size_t start = i * blockThreadCount;
+		size_t end = std::min((i + 1) * blockThreadCount, blockCount);
+
+		threads[i] = std::async(TransformBlocks, &data, start, end);
+	}
+
+	TransformBlocks(&data, threadCount * blockThreadCount, blockCount);
+
+	for (size_t i = 0; i < threads.size(); i++)
+	{
+		threads[i].wait();
+	}*/
 	
 	//for (size_t i = 0; i < data.blocks.size(); i++)
 	//{
@@ -857,7 +882,8 @@ void ImageLoader::LoadEntropyData()
 
 	//std::cout << "Entropy loaded in: " << (Time::GetCurrentTime() - entropyStart) * 1000 << std::endl;
 
-	std::cout << info.name << " loaded in: " << (Time::GetCurrentTime() - start) * 1000 << " ms." << std::endl;
+	std::cout << info.name << " loaded in: " << (Time::GetCurrentTime() - start) * 1000 << " ms." << 
+		" With a total size of: " << (128 * data.blocks.size()) * 0.000001 << " mb." << std::endl;
 	//std::cout << data.blocks.size() << std::endl;
 	//std::cout << info << std::endl << std::endl;
 
@@ -873,7 +899,7 @@ void ImageLoader::TransformBlocks(ImageData* data, size_t start, size_t end)
 	}
 }
 
-void ImageLoader::LoadBlock(std::array<unsigned char, (16 * 16) * 4>& buffer, size_t offset) const
+void ImageLoader::LoadBlock(std::vector<unsigned char>& buffer, size_t offset) const
 {
 	size_t pixelIndex = 0;
 	size_t blockIndex = 0;
@@ -934,7 +960,7 @@ void ImageLoader::LoadBlock(std::array<unsigned char, (16 * 16) * 4>& buffer, si
 	}
 }
 
-void ImageLoader::LoadBlockGreyscale(std::array<unsigned char, (8 * 8)>& buffer, size_t offset) const
+void ImageLoader::LoadBlockGreyscale(std::vector<unsigned char>& buffer, size_t offset) const
 {
 	size_t pixelIndex = 0;
 	size_t blockIndex = 0;
@@ -959,42 +985,60 @@ void ImageLoader::LoadBlockGreyscale(std::array<unsigned char, (8 * 8)>& buffer,
 
 void ImageLoader::LoadPixels(std::vector<unsigned char>& buffer) const
 {
-	//std::cout << info.name << ": " << std::endl << info << std::endl;
+	size_t H = info.startOfFrameInfo.width / data.MCUCount.x();
+	size_t V = info.startOfFrameInfo.height / data.MCUCount.y();
+	size_t C = (info.greyScale ? 1 : 4);
 
-	if (info.startOfFrameInfo.componentCount == 1)
-	{
-		LoadPixelsGreyscale(buffer);
-		return;
-	}
-
-	buffer.resize((info.startOfFrameInfo.width * info.startOfFrameInfo.height) * 4);
+	buffer.resize((info.startOfFrameInfo.width * info.startOfFrameInfo.height) * C);
 
 	for (size_t y = 0; y < data.MCUCount.y(); y++)
 	{
 		for (size_t x = 0; x < data.MCUCount.x(); x++)
 		{
-			std::array<unsigned char, (16 * 16) * 4> blockPixels{};
-			LoadBlock(blockPixels, y * data.MCUCount.x() + x);
+			//std::array<unsigned char, (H * V) * C> blockPixels{};
+			std::vector<unsigned char> blockPixels((H * V) * C);
 
-			for (size_t by = 0; by < 16; by++)
+			if (info.greyScale) LoadBlockGreyscale(blockPixels, y * data.MCUCount.x() + x);
+			else LoadBlock(blockPixels, y * data.MCUCount.x() + x);
+
+			for (size_t by = 0; by < V; by++)
 			{
-				for (size_t bx = 0; bx < 16; bx++)
+				for (size_t bx = 0; bx < H; bx++)
 				{
 
-					size_t bufferIndex = (y * 16 + by) * info.startOfFrameInfo.width * 4 + (x * 16 + bx) * 4;
-					size_t blockIndex = by * 16 * 4 + bx * 4;
+					size_t bufferIndex = (y * H + by) * info.startOfFrameInfo.width * C + (x * V + bx) * C;
+					size_t blockIndex = by * H * C + bx * C;
 
-					buffer[bufferIndex++] = blockPixels[blockIndex++];
-					buffer[bufferIndex++] = blockPixels[blockIndex++];
-					buffer[bufferIndex++] = blockPixels[blockIndex++];
-					buffer[bufferIndex++] = blockPixels[blockIndex++];
+					for (size_t i = 0; i < C; i++) { buffer[bufferIndex++] = blockPixels[blockIndex++]; }
 				}
 			}
 		}
 	}
 }
 
-void LoadBlockThread(std::array<unsigned char, (16 * 16) * 4>& buffer, const ImageData* data, size_t offset)
+void LoadBlockGreyscaleThread(std::vector<unsigned char>& buffer, const ImageData* data, size_t offset)
+{
+	size_t pixelIndex = 0;
+
+	for (size_t y = 0; y < 8; y++)
+	{
+		for (size_t x = 0; x < 8; x++)
+		{
+			double Y = static_cast<double>(data->blocks[offset][y * 8 + x]);
+
+			double R = Y;
+
+			if (R < 0) R = 0;
+			if (R > 255) R = 255;
+
+			unsigned char r = static_cast<unsigned char>(R);
+
+			buffer[pixelIndex++] = r;
+		}
+	}
+}
+
+void LoadBlockThread(std::vector<unsigned char>& buffer, const ImageData* data, size_t offset)
 {
 	size_t pixelIndex = 0;
 	size_t blockIndex = 0;
@@ -1055,24 +1099,29 @@ void LoadBlockThread(std::array<unsigned char, (16 * 16) * 4>& buffer, const Ima
 	}
 }
 
-void LoadPixelThread(std::vector<unsigned char>& buffer, const ImageData* data, size_t y, size_t width)
+void LoadPixelThread(std::vector<unsigned char>& buffer, const ImageData* data, size_t start, size_t end)
 {
-	for (size_t x = 0; x < data->MCUCount.x(); x++)
+	const size_t H = data->HVC.x();
+	const size_t V = data->HVC.y();
+	const size_t C = data->HVC.z();
+
+	for (size_t y = start; y < end; y++)
 	{
-		std::array<unsigned char, (16 * 16) * 4> blockPixels{};
-		LoadBlockThread(blockPixels, data, y * data->MCUCount.x() + x);
-
-		for (size_t by = 0; by < 16; by++)
+		for (size_t x = 0; x < data->MCUCount.x(); x++)
 		{
-			for (size_t bx = 0; bx < 16; bx++)
-			{
-				size_t bufferIndex = (y * 16 + by) * width * 4 + (x * 16 + bx) * 4;
-				size_t blockIndex = by * 16 * 4 + bx * 4;
+			std::vector<unsigned char> blockPixels((H * V) * C);
+			if (C == 1) LoadBlockGreyscaleThread(blockPixels, data, y * data->MCUCount.x() + x);
+			else LoadBlockThread(blockPixels, data, y * data->MCUCount.x() + x);
 
-				buffer[bufferIndex++] = blockPixels[blockIndex++];
-				buffer[bufferIndex++] = blockPixels[blockIndex++];
-				buffer[bufferIndex++] = blockPixels[blockIndex++];
-				buffer[bufferIndex++] = blockPixels[blockIndex++];
+			for (size_t by = 0; by < V; by++)
+			{
+				for (size_t bx = 0; bx < H; bx++)
+				{
+					size_t bufferIndex = (y * V + by) * data->dimensions.x() * C + (x * H + bx) * C;
+					size_t blockIndex = by * H * C + bx * C;
+
+					for (size_t i = 0; i < C; i++) { buffer[bufferIndex++] = blockPixels[blockIndex++]; }
+				}
 			}
 		}
 	}
@@ -1080,51 +1129,21 @@ void LoadPixelThread(std::vector<unsigned char>& buffer, const ImageData* data, 
 
 void ImageLoader::LoadPixelsThreaded(std::vector<unsigned char>& buffer) const
 {
-	//std::cout << info.name << ": " << std::endl << info << std::endl;
+	buffer.resize((data.dimensions.x() * data.dimensions.y()) * data.HVC.z());
 
-	//if (info.startOfFrameInfo.componentCount == 1)
-	//{
-	//	LoadPixelsGreyscale(buffer);
-	//	return;
-	//}
+	size_t threadCount = 8;
+	size_t threadLoad = data.MCUCount.y() / threadCount;
 
-	buffer.resize((info.startOfFrameInfo.width * info.startOfFrameInfo.height) * 4);
+	std::vector<std::future<void>> threads(threadCount);
 
-	std::vector<std::future<void>> threads(data.MCUCount.y());
-
-	for (size_t y = 0; y < data.MCUCount.y(); y++)
+	for (size_t i = 0; i < threadCount; i++)
 	{
-		threads[y] = std::async(LoadPixelThread, std::ref(buffer), &data, y, info.startOfFrameInfo.width);
+		threads[i] = std::async(LoadPixelThread, std::ref(buffer), &data, i * threadLoad, (i + 1) * threadLoad);
 	}
 
 	for (size_t i = 0; i < threads.size(); i++)
 	{
 		threads[i].wait();
-	}
-}
-
-void ImageLoader::LoadPixelsGreyscale(std::vector<unsigned char>& buffer) const
-{
-	buffer.resize((info.startOfFrameInfo.width * info.startOfFrameInfo.height));
-
-	for (size_t y = 0; y < data.MCUCount.y(); y++)
-	{
-		for (size_t x = 0; x < data.MCUCount.x(); x++)
-		{
-			std::array<unsigned char, (8 * 8)> blockPixels{};
-			LoadBlockGreyscale(blockPixels, y * data.MCUCount.x() + x);
-
-			for (size_t by = 0; by < 8; by++)
-			{
-				for (size_t bx = 0; bx < 8; bx++)
-				{
-					size_t bufferIndex = (y * 8 + by) * info.startOfFrameInfo.width + (x * 8 + bx);
-					size_t blockIndex = by * 8 + bx;
-
-					buffer[bufferIndex++] = blockPixels[blockIndex++];
-				}
-			}
-		}
 	}
 }
 

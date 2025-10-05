@@ -4,12 +4,28 @@
 #include "pass.hpp"
 #include "device.hpp"
 #include "swapchain.hpp"
+#include "buffer.hpp"
+#include "descriptor.hpp"
+#include "point.hpp"
+#include "matrix.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 #include <vector>
 #include <functional>
+
+struct UniformFrameData
+{
+	mat4 view;
+	mat4 projection;
+	point4D viewPosition;
+};
+
+struct UniformObjectData
+{
+	mat4 model;
+};
 
 /**
  * @file renderer.hpp
@@ -54,12 +70,29 @@ class Renderer
 		static uint32_t currentFrame;
 		static uint32_t renderIndex;
 
+		//static std::vector<VkCommandPool> commandPools;
+		//static std::vector<VkDescriptorPool> descriptorPools;
 		static std::vector<VkFence> fences;
 		static std::vector<VkSemaphore> renderSemaphores;
 		static std::vector<VkSemaphore> presentSemaphores;
 		static std::vector<Command> commands;
 		static std::vector<PassInfo> passes;
 
+		static size_t maxObjectCount;
+		static size_t currentObjectCount;
+
+		static UniformFrameData frameData;
+		static std::vector<UniformObjectData> objectsData;
+
+		static std::vector<Buffer> frameDataBuffers;
+		static std::vector<Buffer> objectsDataBuffers;
+
+		static VkPipelineLayout rootLayout;
+		static std::vector<Descriptor> descriptorSets;
+
+		static void CreateBuffers();
+		static void CreateSets();
+		static void CreatePools();
 		static void CreateFences();
 		static void CreateSemaphores();
 		static void CreateCommands();
@@ -101,4 +134,12 @@ class Renderer
 		static void RegisterCall(size_t index, T* object, void (T::*call)(VkCommandBuffer, uint32_t)) { RegisterCall(index, std::bind_front(call, object)); }
 		
 		static void Resize();
+
+		static size_t RegisterObject();
+		static UniformObjectData& GetCurrentObjectData(size_t dataIndex);
+		static UniformFrameData& GetCurrentFrameData();
+		static Descriptor& GetDescriptorSet(size_t setIndex);
+		static void BindObjectData(size_t dataIndex);
+		static void BindMaterialData(size_t set);
+		static std::vector<VkDescriptorSetLayout> GetDescriptorLayouts();
 };

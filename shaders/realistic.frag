@@ -4,12 +4,14 @@
 
 layout(set = 0, binding = 1) uniform sampler2D texDiff;
 layout(set = 0, binding = 2) uniform sampler2D texNorm;
-layout(set = 0, binding = 3) uniform sampler2D texARM;
+layout(set = 0, binding = 3) uniform sampler2D texRough;
+layout(set = 0, binding = 4) uniform sampler2D texMetal;
+layout(set = 0, binding = 5) uniform sampler2D texAO;
 
 layout(location = 0) in vec3 worldNormal;
 layout(location = 1) in vec2 worldCoordinate;
 layout(location = 2) in vec3 worldPosition;
-layout(location = 3) in vec3 viewPosition;
+layout(location = 3) flat in vec3 viewPosition;
 
 layout(location = 0) out vec4 pixelColor;
 
@@ -21,10 +23,13 @@ void main()
 	vec3 color = texture(texDiff, worldCoordinate).rgb;
 	vec3 weights = GetWeights(normalize(worldNormal), 1.0);
 	vec3 normal = SampleNormal(texNorm, worldCoordinate, normalize(worldNormal));
-	vec3 arm = texture(texARM, worldCoordinate).rgb;
-	float roughness = arm.g;
-	float metallic = arm.b;
-	float ao = arm.r;
+	float roughness = texture(texRough, worldCoordinate).r;
+	float metallic = texture(texMetal, worldCoordinate).r;
+	float ao = texture(texAO, worldCoordinate).r;
+	//vec3 arm = texture(texARM, worldCoordinate).rgb;
+	//float roughness = arm.g;
+	//float metallic = arm.b;
+	//float ao = arm.r;
 
 	PBRInput data;
 	data.N = normal;

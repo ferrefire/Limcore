@@ -93,7 +93,7 @@ class Descriptor
 		 * @param commandBuffer Command buffer to record the bind into.
 		 * @param pipelineLayout Pipeline layout that the descriptor set is compatible with.
 		 */
-		void Bind(size_t setID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
+		void Bind(size_t setIndex, size_t setID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int offset = -1);
 
 		/**
 		 * @brief Updates a descriptor set binding with buffer or image info.
@@ -102,7 +102,7 @@ class Descriptor
 		 * @param bufferInfo Optional buffer descriptor info (if updating a buffer binding).
 		 * @param imageInfo Optional image descriptor info (if updating an image binding).
 		 */
-		void Update(size_t setID, uint32_t binding, VkDescriptorBufferInfo* bufferInfo = nullptr, VkDescriptorImageInfo* imageInfo = nullptr);
+		void Update(size_t setID, uint32_t binding, VkDescriptorBufferInfo* bufferInfos = nullptr, VkDescriptorImageInfo* imageInfos = nullptr);
 
 		/**
 		 * @brief Updates a descriptor set binding with a buffer resource.
@@ -110,7 +110,7 @@ class Descriptor
 		 * @param binding Binding index within the descriptor set.
 		 * @param buffer Buffer object to bind.
 		 */
-		void Update(size_t setID, uint32_t binding, const Buffer& buffer);
+		void Update(size_t setID, uint32_t binding, const Buffer& buffer, size_t size = 0);
 
 		/**
 		 * @brief Updates a descriptor set binding with an image resource.
@@ -119,6 +119,8 @@ class Descriptor
 		 * @param image Image object to bind.
 		 */
 		void Update(size_t setID, uint32_t binding, const Image& image);
+
+		void Update(size_t setID, uint32_t binding, const std::vector<Image*> images);
 };
 
 std::ostream& operator<<(std::ostream& out, const DescriptorConfig& config);

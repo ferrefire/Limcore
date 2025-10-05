@@ -235,6 +235,8 @@ void Image::Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent, 
 	if (!image) throw (std::runtime_error("Image does not exist"));
 	if (!device) throw (std::runtime_error("Image has no device"));
 
+	if (extent.x() == 0 && extent.y() == 0 && extent.z() == 0) extent = {config.width, config.height, 1};
+
 	VkImageLayout originalLayout = config.currentLayout;
 	config.targetLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 

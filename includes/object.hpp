@@ -7,40 +7,41 @@
 #include "pipeline.hpp"
 #include "descriptor.hpp"
 #include "image.hpp"
+#include "renderer.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-struct UniformData
-{
-	mat4 model;
-	mat4 view;
-	mat4 projection;
-	point4D viewPosition;
-};
+//struct UniformData
+//{
+//	mat4 model;
+//	mat4 view;
+//	mat4 projection;
+//	point4D viewPosition;
+//};
 
 class Object
 {
 	private:
 		Pipeline* pipeline = nullptr;
-		Descriptor* descriptor = nullptr;
 		meshPNC32* mesh = nullptr;
-		Image* image = nullptr;
 		
-		UniformData data;
-		Buffer buffer;
+		//UniformData data;
+		//Buffer buffer;
 		size_t set;
+		size_t materialSet;
 
 	public:
 		Object();
 		~Object();
 
-		void Create(meshPNC32& objectMesh, Image& objectImage, Pipeline& objectPipeline, Descriptor& objectDescriptor);
+		void Create(meshPNC32& objectMesh, Pipeline& objectPipeline);
 
 		void Destroy();
 
-		UniformData& GetData();
+		UniformObjectData& GetData();
 		const size_t& GetSet() const;
+		const size_t& GetMaterialSet() const;
 
 		void Render(VkCommandBuffer commandBuffer, uint32_t currentFrame);
 };

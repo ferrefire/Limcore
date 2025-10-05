@@ -29,15 +29,12 @@ meshPNC32 croissantMesh;
 meshPNC32 lionMesh;
 
 Image checkeredImageDiff;
-//Image checkeredImageNorm;
-//Image checkeredImageARM;
+Image checkeredImageNorm;
+Image checkeredImageARM;
 
 Image cannonImageDiff;
 Image cannonImageNorm;
 Image cannonImageARM;
-//Image cannonImageRough;
-//Image cannonImageMetal;
-//Image cannonImageAO;
 
 Image croissantImageDiff;
 Image croissantImageNorm;
@@ -46,6 +43,9 @@ Image croissantImageARM;
 Image lionImageDiff;
 Image lionImageNorm;
 Image lionImageARM;
+
+Image whiteImage;
+Image blackImage;
 
 Object checkeredFloor;
 Object cannon;
@@ -66,31 +66,23 @@ void Frame()
 	angle += Time::deltaTime * 10.0;
 	if (angle > 360) angle -= 360;
 
-	checkeredFloor.GetData().viewPosition = Manager::GetCamera().GetPosition();
-	checkeredFloor.GetData().view = Manager::GetCamera().GetView();
-	checkeredFloor.GetData().projection = Manager::GetCamera().GetProjection();
+	Renderer::GetCurrentFrameData().viewPosition = Manager::GetCamera().GetPosition();
+	Renderer::GetCurrentFrameData().view = Manager::GetCamera().GetView();
+	Renderer::GetCurrentFrameData().projection = Manager::GetCamera().GetProjection();
+
 	checkeredFloor.GetData().model = mat4::Identity();
 	checkeredFloor.GetData().model.Scale(point3D(5, 5, 1));
 	checkeredFloor.GetData().model.Rotate(-90, Axis::x);
 	checkeredFloor.GetData().model.Translate(point3D(0.0, 0.0, 0.0));
 
-	cannon.GetData().viewPosition = Manager::GetCamera().GetPosition();
-	cannon.GetData().view = Manager::GetCamera().GetView();
-	cannon.GetData().projection = Manager::GetCamera().GetProjection();
 	cannon.GetData().model = mat4::Identity();
 	cannon.GetData().model.Rotate(angle, Axis::y);
 	cannon.GetData().model.Translate(point3D(0.0, 0.2, 0.0));
 
-	croissant.GetData().viewPosition = Manager::GetCamera().GetPosition();
-	croissant.GetData().view = Manager::GetCamera().GetView();
-	croissant.GetData().projection = Manager::GetCamera().GetProjection();
 	croissant.GetData().model = mat4::Identity();
 	croissant.GetData().model.Rotate(angle + 45, Axis::y);
 	croissant.GetData().model.Translate(point3D(2.0, 0.125, 0.0));
 
-	lion.GetData().viewPosition = Manager::GetCamera().GetPosition();
-	lion.GetData().view = Manager::GetCamera().GetView();
-	lion.GetData().projection = Manager::GetCamera().GetProjection();
 	lion.GetData().model = mat4::Identity();
 	lion.GetData().model.Rotate(angle - 45, Axis::y);
 	lion.GetData().model.Translate(point3D(-2.0, 0.5, 0.0));
@@ -107,55 +99,28 @@ void Start()
 	
 	Renderer::AddPass(passInfo);
 
-	std::vector<DescriptorConfig> realisticDescriptorConfigs(4);
-	realisticDescriptorConfigs[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	realisticDescriptorConfigs[0].stages = VK_SHADER_STAGE_VERTEX_BIT;
-	realisticDescriptorConfigs[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	realisticDescriptorConfigs[1].stages = VK_SHADER_STAGE_FRAGMENT_BIT;
-	realisticDescriptorConfigs[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	realisticDescriptorConfigs[2].stages = VK_SHADER_STAGE_FRAGMENT_BIT;
-	realisticDescriptorConfigs[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	realisticDescriptorConfigs[3].stages = VK_SHADER_STAGE_FRAGMENT_BIT;
-	realisticDescriptor.Create(realisticDescriptorConfigs);
-
-	std::vector<DescriptorConfig> descriptorConfigs(2);
-	descriptorConfigs[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorConfigs[0].stages = VK_SHADER_STAGE_VERTEX_BIT;
-	descriptorConfigs[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descriptorConfigs[1].stages = VK_SHADER_STAGE_FRAGMENT_BIT;
-	descriptor.Create(descriptorConfigs);
+	double startTime = Time::GetCurrentTime();
 
 	quadMesh.Create(ShapeType::Quad);
 	cannonMesh.Create(ModelLoader("cannon", ModelType::Gltf));
 	croissantMesh.Create(ModelLoader("croissant", ModelType::Gltf));
 	lionMesh.Create(ModelLoader("lion_head", ModelType::Gltf));
 
+	std::cout << "Mesh creation time: " << (Time::GetCurrentTime() - startTime) * 1000 << " ms." << std::endl << std::endl;
+
 	ImageConfig imageConfig = Image::DefaultConfig();
 	ImageConfig imageNormalConfig = Image::DefaultNormalConfig();
 	ImageConfig imageGreyscaleConfig = Image::DefaultGreyscaleConfig();
 
-	//std::vector<ImageLoader> loaders = ImageLoader::LoadImages({{"checkered_diff", ImageType::Jpg}});
-	//std::vector<ImageLoader> loaders;
-
-	//ImageLoader test = ImageLoader("checkered_diff", ImageType::Jpg);
-	//loaders.push_back(test);
-
 	imageConfig.width = 1024;
 	imageConfig.height = 1024;
-	//checkeredImageDiff.Create(imageConfig);
-	//checkeredImageDiff.Load(loaders[0]);
-	//checkeredImageDiff.Create(loaders[0], imageConfig);
-	//cannonImageDiff.Create(loaders[1], imageConfig);
-	//cannonImageNorm.Create(loaders[2], imageNormalConfig);
-	//cannonImageARM.Create(loaders[3], imageNormalConfig);
-	//croissantImageDiff.Create(loaders[4], imageConfig);
-	//croissantImageNorm.Create(loaders[5], imageNormalConfig);
-	//croissantImageARM.Create(loaders[6], imageNormalConfig);
 
-	double startTime = Time::GetCurrentTime();
+	startTime = Time::GetCurrentTime();
 
 	std::vector<ImageLoader*> loaders = ImageLoader::LoadImages({
 		{"checkered_diff", ImageType::Jpg},
+		{"checkered_norm", ImageType::Jpg},
+		{"checkered_arm", ImageType::Jpg},
 		{"cannon_diff", ImageType::Jpg},
 		{"cannon_norm", ImageType::Jpg},
 		{"cannon_arm", ImageType::Jpg},
@@ -168,22 +133,17 @@ void Start()
 	});
 
 	checkeredImageDiff.Create(*loaders[0], imageConfig);
-	cannonImageDiff.Create(*loaders[1], imageConfig);
-	cannonImageNorm.Create(*loaders[2], imageNormalConfig);
-	cannonImageARM.Create(*loaders[3], imageNormalConfig);
-	croissantImageDiff.Create(*loaders[4], imageConfig);
-	croissantImageNorm.Create(*loaders[5], imageNormalConfig);
-	croissantImageARM.Create(*loaders[6], imageNormalConfig);
-	lionImageDiff.Create(*loaders[7], imageConfig);
-	lionImageNorm.Create(*loaders[8], imageNormalConfig);
-	lionImageARM.Create(*loaders[9], imageNormalConfig);
-	//checkeredImageDiff.Create(ImageLoader("checkered_diff", ImageType::Jpg), imageConfig);
-	//cannonImageDiff.Create(ImageLoader("cannon_diff", ImageType::Jpg), imageConfig);
-	//cannonImageNorm.Create(ImageLoader("cannon_norm", ImageType::Jpg), imageNormalConfig);
-	//cannonImageARM.Create(ImageLoader("cannon_arm", ImageType::Jpg), imageNormalConfig);
-	//croissantImageDiff.Create(ImageLoader("croissant_diff", ImageType::Jpg), imageConfig);
-	//croissantImageNorm.Create(ImageLoader("croissant_norm", ImageType::Jpg), imageNormalConfig);
-	//croissantImageARM.Create(ImageLoader("croissant_arm", ImageType::Jpg), imageNormalConfig);
+	checkeredImageNorm.Create(*loaders[1], imageNormalConfig);
+	checkeredImageARM.Create(*loaders[2], imageNormalConfig);
+	cannonImageDiff.Create(*loaders[3], imageConfig);
+	cannonImageNorm.Create(*loaders[4], imageNormalConfig);
+	cannonImageARM.Create(*loaders[5], imageNormalConfig);
+	croissantImageDiff.Create(*loaders[6], imageConfig);
+	croissantImageNorm.Create(*loaders[7], imageNormalConfig);
+	croissantImageARM.Create(*loaders[8], imageNormalConfig);
+	lionImageDiff.Create(*loaders[9], imageConfig);
+	lionImageNorm.Create(*loaders[10], imageNormalConfig);
+	lionImageARM.Create(*loaders[11], imageNormalConfig);
 
 	std::cout << "Total creation time: " << (Time::GetCurrentTime() - startTime) * 1000 << " ms." << std::endl;
 
@@ -193,40 +153,34 @@ void Start()
 	}
 	loaders.clear();
 
+	ImageConfig placeholderImageConfig = Image::DefaultConfig();
+	placeholderImageConfig.width = 1;
+	placeholderImageConfig.height = 1;
+	placeholderImageConfig.depth = 1;
+	
+	std::array<unsigned char, 4> pixels{255, 255, 255, 255};
+	whiteImage.Create(placeholderImageConfig);
+	whiteImage.Update(pixels.data(), pixels.size());
+
 	PipelineConfig pipelineConfig = Pipeline::DefaultConfig();
 	pipelineConfig.shader = "default";
 	pipelineConfig.vertexInfo = cannonMesh.GetVertexInfo();
 	pipelineConfig.renderpass = pass.GetRenderpass();
-	pipelineConfig.descriptorLayouts = { descriptor.GetLayout() };
+	//pipelineConfig.descriptorLayouts = { descriptor.GetLayout() };
+	pipelineConfig.descriptorLayouts = Renderer::GetDescriptorLayouts();
 	pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
 	pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
 	pipeline.Create(pipelineConfig);
 
-	PipelineConfig realisticPipelineConfig = Pipeline::DefaultConfig();
-	realisticPipelineConfig.shader = "realistic";
-	realisticPipelineConfig.vertexInfo = cannonMesh.GetVertexInfo();
-	realisticPipelineConfig.renderpass = pass.GetRenderpass();
-	realisticPipelineConfig.descriptorLayouts = { realisticDescriptor.GetLayout() };
-	realisticPipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
-	realisticPipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
-	realisticPipeline.Create(realisticPipelineConfig);
-	
-	checkeredFloor.Create(quadMesh, checkeredImageDiff, pipeline, descriptor);
-	cannon.Create(cannonMesh, cannonImageDiff, realisticPipeline, realisticDescriptor);
-	croissant.Create(croissantMesh, croissantImageDiff, realisticPipeline, realisticDescriptor);
-	lion.Create(lionMesh, lionImageDiff, realisticPipeline, realisticDescriptor);
+	checkeredFloor.Create(quadMesh, pipeline);
+	cannon.Create(cannonMesh, pipeline);
+	croissant.Create(croissantMesh, pipeline);
+	lion.Create(lionMesh, pipeline);
 
-	//descriptor.Update(checkeredFloor.GetSet(), 2, checkeredImageNorm);
-	//descriptor.Update(checkeredFloor.GetSet(), 3, checkeredImageARM);
-	realisticDescriptor.Update(cannon.GetSet(), 2, cannonImageNorm);
-	realisticDescriptor.Update(cannon.GetSet(), 3, cannonImageARM);
-	//descriptor.Update(cannon.GetSet(), 3, cannonImageRough);
-	//descriptor.Update(cannon.GetSet(), 4, cannonImageMetal);
-	//descriptor.Update(cannon.GetSet(), 5, cannonImageAO);
-	realisticDescriptor.Update(croissant.GetSet(), 2, croissantImageNorm);
-	realisticDescriptor.Update(croissant.GetSet(), 3, croissantImageARM);
-	realisticDescriptor.Update(lion.GetSet(), 2, lionImageNorm);
-	realisticDescriptor.Update(lion.GetSet(), 3, lionImageARM);
+	Renderer::GetDescriptorSet(1).Update(checkeredFloor.GetMaterialSet(), 0, {&checkeredImageDiff, &checkeredImageNorm, &checkeredImageARM});
+	Renderer::GetDescriptorSet(1).Update(cannon.GetMaterialSet(), 0, {&cannonImageDiff, &cannonImageNorm, &cannonImageARM});
+	Renderer::GetDescriptorSet(1).Update(croissant.GetMaterialSet(), 0, {&croissantImageDiff, &croissantImageNorm, &croissantImageARM});
+	Renderer::GetDescriptorSet(1).Update(lion.GetMaterialSet(), 0, {&lionImageDiff, &lionImageNorm, &lionImageARM});
 
 	Manager::GetCamera().Move(point3D(0, 1, -2));
 }
@@ -239,8 +193,8 @@ void End()
 	lionMesh.Destroy();
 	
 	checkeredImageDiff.Destroy();
-	//checkeredImageNorm.Destroy();
-	//checkeredImageARM.Destroy();
+	checkeredImageNorm.Destroy();
+	checkeredImageARM.Destroy();
 
 	cannonImageDiff.Destroy();
 	cannonImageNorm.Destroy();
@@ -252,10 +206,15 @@ void End()
 	croissantImageDiff.Destroy();
 	croissantImageNorm.Destroy();
 	croissantImageARM.Destroy();
+	//croissantImageRough.Destroy();
+	//croissantImageAO.Destroy();
 
 	lionImageDiff.Destroy();
 	lionImageNorm.Destroy();
 	lionImageARM.Destroy();
+
+	whiteImage.Destroy();
+	//blackImage.Destroy();
 	
 	checkeredFloor.Destroy();
 	cannon.Destroy();
