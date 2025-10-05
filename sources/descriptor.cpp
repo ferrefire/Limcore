@@ -16,8 +16,9 @@ Descriptor::~Descriptor()
 	Destroy();
 }
 
-void Descriptor::Create(const std::vector<DescriptorConfig>& descriptorConfig, Device* descriptorDevice)
+void Descriptor::Create(size_t layoutSet, const std::vector<DescriptorConfig>& descriptorConfig, Device* descriptorDevice)
 {
+	set = layoutSet;
 	config = descriptorConfig;
 	device = descriptorDevice;
 
@@ -36,7 +37,7 @@ void Descriptor::CreateLayout()
 	for (int i = 0; i < config.size(); i++)
 	{
 		layoutBindings[i].binding = i;
-		layoutBindings[i].descriptorType = config[i].type;
+		layoutBindings[i].descriptorType = static_cast<VkDescriptorType>(config[i].type);
 		layoutBindings[i].descriptorCount = config[i].count;
 		layoutBindings[i].stageFlags = config[i].stages;
 	}
@@ -58,7 +59,7 @@ void Descriptor::CreatePool()
 	std::vector<VkDescriptorPoolSize> poolSizes(config.size());
 	for (int i = 0; i < config.size(); i++)
 	{
-		poolSizes[i].type = config[i].type;
+		poolSizes[i].type = static_cast<VkDescriptorType>(config[i].type);
 		poolSizes[i].descriptorCount = config[i].count * 10;
 	}
 
@@ -132,7 +133,7 @@ size_t Descriptor::GetNewSet()
 	return (setID);
 }
 
-void Descriptor::Bind(size_t setIndex, size_t setID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int offset)
+void Descriptor::Bind(size_t setID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int offset)
 {
 	if (!commandBuffer) throw (std::runtime_error("Cannot bind descriptor because command buffer does not exist"));
 	if (!pipelineLayout) throw (std::runtime_error("Cannot bind descriptor because pipeline layout does not exist"));
@@ -140,7 +141,7 @@ void Descriptor::Bind(size_t setIndex, size_t setID, VkCommandBuffer commandBuff
 
 	uint32_t dynamicOffset = (offset >= 0 ? CUI(offset) : 0);
 
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, setIndex, 1, &sets[setID], (offset >= 0 ? 1 : 0), &dynamicOffset);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, set, 1, &sets[setID], (offset >= 0 ? 1 : 0), &dynamicOffset);
 }
 
 void Descriptor::Update(size_t setID, uint32_t binding, VkDescriptorBufferInfo* bufferInfos, VkDescriptorImageInfo* imageInfos)
@@ -153,7 +154,7 @@ void Descriptor::Update(size_t setID, uint32_t binding, VkDescriptorBufferInfo* 
 	writeInfo.dstSet = sets[setID];
 	writeInfo.dstBinding = binding;
 	writeInfo.dstArrayElement = 0;
-	writeInfo.descriptorType = config[binding].type;
+	writeInfo.descriptorType = static_cast<VkDescriptorType>(config[binding].type);
 	writeInfo.descriptorCount = config[binding].count;
 	writeInfo.pBufferInfo = bufferInfos;
 	writeInfo.pImageInfo = imageInfos;

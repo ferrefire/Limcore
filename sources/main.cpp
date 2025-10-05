@@ -10,49 +10,44 @@
 #include "input.hpp"
 #include "time.hpp"
 #include "image.hpp"
-#include "object.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 #include <iostream>
 
+struct UniformData
+{
+	mat4 model;
+	mat4 view;
+	mat4 projection;
+	point4D viewPosition;
+};
+
+UniformData data{};
+Buffer buffer;
+
 Pass pass;
 Pipeline pipeline;
-Pipeline realisticPipeline;
 Descriptor descriptor;
-Descriptor realisticDescriptor;
+size_t setID;
 
-meshPNC32 quadMesh;
 meshPNC32 cannonMesh;
-meshPNC32 croissantMesh;
-meshPNC32 lionMesh;
-
-Image checkeredImageDiff;
-Image checkeredImageNorm;
-Image checkeredImageARM;
 
 Image cannonImageDiff;
 Image cannonImageNorm;
 Image cannonImageARM;
 
-Image croissantImageDiff;
-Image croissantImageNorm;
-Image croissantImageARM;
-
-Image lionImageDiff;
-Image lionImageNorm;
-Image lionImageARM;
-
-Image whiteImage;
-Image blackImage;
-
-Object checkeredFloor;
-Object cannon;
-Object croissant;
-Object lion;
-
 float angle = -45 + 180;
+
+void Render(VkCommandBuffer commandBuffer, uint32_t frameIndex)
+{
+	pipeline.Bind(commandBuffer);
+	descriptor.Bind(setID, commandBuffer, pipeline.GetLayout());
+	cannonMesh.Bind(commandBuffer);
+
+	vkCmdDrawIndexed(commandBuffer, cannonMesh.GetIndices().size(), 1, 0, 0, 0);
+}
 
 void Frame()
 {
@@ -66,26 +61,14 @@ void Frame()
 	angle += Time::deltaTime * 10.0;
 	if (angle > 360) angle -= 360;
 
-	Renderer::GetCurrentFrameData().viewPosition = Manager::GetCamera().GetPosition();
-	Renderer::GetCurrentFrameData().view = Manager::GetCamera().GetView();
-	Renderer::GetCurrentFrameData().projection = Manager::GetCamera().GetProjection();
+	data.model = mat4::Identity();
+	data.model.Rotate(angle, Axis::y);
+	data.model.Translate(point3D(0.0, 0.2, 0.0));
+	data.projection = Manager::GetCamera().GetProjection();
+	data.view = Manager::GetCamera().GetView();
+	data.viewPosition = Manager::GetCamera().GetPosition();
 
-	checkeredFloor.GetData().model = mat4::Identity();
-	checkeredFloor.GetData().model.Scale(point3D(5, 5, 1));
-	checkeredFloor.GetData().model.Rotate(-90, Axis::x);
-	checkeredFloor.GetData().model.Translate(point3D(0.0, 0.0, 0.0));
-
-	cannon.GetData().model = mat4::Identity();
-	cannon.GetData().model.Rotate(angle, Axis::y);
-	cannon.GetData().model.Translate(point3D(0.0, 0.2, 0.0));
-
-	croissant.GetData().model = mat4::Identity();
-	croissant.GetData().model.Rotate(angle + 45, Axis::y);
-	croissant.GetData().model.Translate(point3D(2.0, 0.125, 0.0));
-
-	lion.GetData().model = mat4::Identity();
-	lion.GetData().model.Rotate(angle - 45, Axis::y);
-	lion.GetData().model.Translate(point3D(-2.0, 0.5, 0.0));
+	buffer.Update(&data, sizeof(data));
 }
 
 void Start()
@@ -101,49 +84,25 @@ void Start()
 
 	double startTime = Time::GetCurrentTime();
 
-	quadMesh.Create(ShapeType::Quad);
 	cannonMesh.Create(ModelLoader("cannon", ModelType::Gltf));
-	croissantMesh.Create(ModelLoader("croissant", ModelType::Gltf));
-	lionMesh.Create(ModelLoader("lion_head", ModelType::Gltf));
-
-	std::cout << "Mesh creation time: " << (Time::GetCurrentTime() - startTime) * 1000 << " ms." << std::endl << std::endl;
+	
+	//std::cout << "Mesh creation time: " << (Time::GetCurrentTime() - startTime) * 1000 << " ms." << std::endl << std::endl;
 
 	ImageConfig imageConfig = Image::DefaultConfig();
 	ImageConfig imageNormalConfig = Image::DefaultNormalConfig();
 	ImageConfig imageGreyscaleConfig = Image::DefaultGreyscaleConfig();
 
-	imageConfig.width = 1024;
-	imageConfig.height = 1024;
-
 	startTime = Time::GetCurrentTime();
 
 	std::vector<ImageLoader*> loaders = ImageLoader::LoadImages({
-		{"checkered_diff", ImageType::Jpg},
-		{"checkered_norm", ImageType::Jpg},
-		{"checkered_arm", ImageType::Jpg},
 		{"cannon_diff", ImageType::Jpg},
 		{"cannon_norm", ImageType::Jpg},
 		{"cannon_arm", ImageType::Jpg},
-		{"croissant_diff", ImageType::Jpg},
-		{"croissant_norm", ImageType::Jpg},
-		{"croissant_arm", ImageType::Jpg},
-		{"lion_head_diff", ImageType::Jpg},
-		{"lion_head_norm", ImageType::Jpg},
-		{"lion_head_arm", ImageType::Jpg}
 	});
 
-	checkeredImageDiff.Create(*loaders[0], imageConfig);
-	checkeredImageNorm.Create(*loaders[1], imageNormalConfig);
-	checkeredImageARM.Create(*loaders[2], imageNormalConfig);
-	cannonImageDiff.Create(*loaders[3], imageConfig);
-	cannonImageNorm.Create(*loaders[4], imageNormalConfig);
-	cannonImageARM.Create(*loaders[5], imageNormalConfig);
-	croissantImageDiff.Create(*loaders[6], imageConfig);
-	croissantImageNorm.Create(*loaders[7], imageNormalConfig);
-	croissantImageARM.Create(*loaders[8], imageNormalConfig);
-	lionImageDiff.Create(*loaders[9], imageConfig);
-	lionImageNorm.Create(*loaders[10], imageNormalConfig);
-	lionImageARM.Create(*loaders[11], imageNormalConfig);
+	cannonImageDiff.Create(*loaders[0], imageConfig);
+	cannonImageNorm.Create(*loaders[1], imageNormalConfig);
+	cannonImageARM.Create(*loaders[2], imageNormalConfig);
 
 	std::cout << "Total creation time: " << (Time::GetCurrentTime() - startTime) * 1000 << " ms." << std::endl;
 
@@ -153,79 +112,50 @@ void Start()
 	}
 	loaders.clear();
 
-	ImageConfig placeholderImageConfig = Image::DefaultConfig();
-	placeholderImageConfig.width = 1;
-	placeholderImageConfig.height = 1;
-	placeholderImageConfig.depth = 1;
-	
-	std::array<unsigned char, 4> pixels{255, 255, 255, 255};
-	whiteImage.Create(placeholderImageConfig);
-	whiteImage.Update(pixels.data(), pixels.size());
+	BufferConfig bufferConfig{};
+	bufferConfig.mapped = true;
+	bufferConfig.size = sizeof(UniformData);
+	buffer.Create(bufferConfig);
+
+	std::vector<DescriptorConfig> descriptorConfigs(2);
+	descriptorConfigs[0].type = DescriptorType::UniformBuffer;
+	descriptorConfigs[0].stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+	descriptorConfigs[1].type = DescriptorType::CombinedSampler;
+	descriptorConfigs[1].stages = VK_SHADER_STAGE_FRAGMENT_BIT;
+	descriptorConfigs[1].count = 3;
+	descriptor.Create(0, descriptorConfigs);
+
+	setID = descriptor.GetNewSet();
+	descriptor.Update(setID, 0, buffer);
+	descriptor.Update(setID, 1, {&cannonImageDiff, &cannonImageNorm, &cannonImageARM});
 
 	PipelineConfig pipelineConfig = Pipeline::DefaultConfig();
 	pipelineConfig.shader = "default";
 	pipelineConfig.vertexInfo = cannonMesh.GetVertexInfo();
 	pipelineConfig.renderpass = pass.GetRenderpass();
-	//pipelineConfig.descriptorLayouts = { descriptor.GetLayout() };
-	pipelineConfig.descriptorLayouts = Renderer::GetDescriptorLayouts();
+	pipelineConfig.descriptorLayouts = { descriptor.GetLayout() };
 	pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
 	pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
 	pipeline.Create(pipelineConfig);
 
-	checkeredFloor.Create(quadMesh, pipeline);
-	cannon.Create(cannonMesh, pipeline);
-	croissant.Create(croissantMesh, pipeline);
-	lion.Create(lionMesh, pipeline);
-
-	Renderer::GetDescriptorSet(1).Update(checkeredFloor.GetMaterialSet(), 0, {&checkeredImageDiff, &checkeredImageNorm, &checkeredImageARM});
-	Renderer::GetDescriptorSet(1).Update(cannon.GetMaterialSet(), 0, {&cannonImageDiff, &cannonImageNorm, &cannonImageARM});
-	Renderer::GetDescriptorSet(1).Update(croissant.GetMaterialSet(), 0, {&croissantImageDiff, &croissantImageNorm, &croissantImageARM});
-	Renderer::GetDescriptorSet(1).Update(lion.GetMaterialSet(), 0, {&lionImageDiff, &lionImageNorm, &lionImageARM});
-
 	Manager::GetCamera().Move(point3D(0, 1, -2));
+
+	Renderer::RegisterCall(0, Render);
 }
 
 void End()
 {
-	quadMesh.Destroy();
 	cannonMesh.Destroy();
-	croissantMesh.Destroy();
-	lionMesh.Destroy();
-	
-	checkeredImageDiff.Destroy();
-	checkeredImageNorm.Destroy();
-	checkeredImageARM.Destroy();
+
+	buffer.Destroy();
 
 	cannonImageDiff.Destroy();
 	cannonImageNorm.Destroy();
 	cannonImageARM.Destroy();
-	//cannonImageRough.Destroy();
-	//cannonImageMetal.Destroy();
-	//cannonImageAO.Destroy();
-
-	croissantImageDiff.Destroy();
-	croissantImageNorm.Destroy();
-	croissantImageARM.Destroy();
-	//croissantImageRough.Destroy();
-	//croissantImageAO.Destroy();
-
-	lionImageDiff.Destroy();
-	lionImageNorm.Destroy();
-	lionImageARM.Destroy();
-
-	whiteImage.Destroy();
-	//blackImage.Destroy();
-	
-	checkeredFloor.Destroy();
-	cannon.Destroy();
-	croissant.Destroy();
-	lion.Destroy();
 
 	pass.Destroy();
 	descriptor.Destroy();
-	realisticDescriptor.Destroy();
 	pipeline.Destroy();
-	realisticPipeline.Destroy();
 }
 
 int main(int argc, char** argv)

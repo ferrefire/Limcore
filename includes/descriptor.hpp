@@ -20,10 +20,16 @@
  * binding and updating resources such as buffers and images.
  */
 
+enum class DescriptorType 
+{ 
+	UniformBuffer = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+	CombinedSampler = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+};
+
 /** @brief Configuration for a single descriptor binding. */
 struct DescriptorConfig
 {
-	VkDescriptorType type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; /**< @brief Type of descriptor (e.g., uniform buffer, sampler). */
+	DescriptorType type = DescriptorType::UniformBuffer; /**< @brief Type of descriptor (e.g., uniform buffer, sampler). */
 	VkShaderStageFlags stages = VK_SHADER_STAGE_ALL; /**< @brief Shader stages that can access this binding. */
 	uint32_t count = 1; /**< @brief Number of descriptors (array size). */
 };
@@ -45,6 +51,7 @@ struct DescriptorConfig
 class Descriptor
 {
 	private:
+		size_t set = 0;
 		std::vector<DescriptorConfig> config{};
 		Device* device = nullptr;
 
@@ -65,7 +72,7 @@ class Descriptor
 		 * @param descriptorConfig Vector of descriptor binding configurations.
 		 * @param descriptorDevice Device to use for creation; if @c nullptr, uses the stored device.
 		 */
-		void Create(const std::vector<DescriptorConfig>& descriptorConfig, Device* descriptorDevice = nullptr);
+		void Create(size_t layoutSet, const std::vector<DescriptorConfig>& descriptorConfig, Device* descriptorDevice = nullptr);
 
 		void Destroy(); /**< @brief Destroys the descriptor resources (layout, pool, sets). */
 
@@ -93,7 +100,7 @@ class Descriptor
 		 * @param commandBuffer Command buffer to record the bind into.
 		 * @param pipelineLayout Pipeline layout that the descriptor set is compatible with.
 		 */
-		void Bind(size_t setIndex, size_t setID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int offset = -1);
+		void Bind(size_t setID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int offset = -1);
 
 		/**
 		 * @brief Updates a descriptor set binding with buffer or image info.
