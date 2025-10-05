@@ -231,6 +231,26 @@ void Shape<V, I>::Rotate(const float& degrees, const Axis& axis)
 }
 
 SHAPE_TEMPLATE
+void Shape<V, I>::Scale(const point3D& scalar, bool scaleUV)
+{
+	for (Vertex<V>& vertex : vertices)
+	{
+		if constexpr (hasPosition)
+		{
+			vertex.position *= scalar;
+		}
+
+		if constexpr (hasIndices)
+		{
+			if (scaleUV)
+			{
+				vertex.coordinate *= scalar;
+			}
+		}
+	}
+}
+
+SHAPE_TEMPLATE
 void Shape<V, I>::Centerize()
 {
 	if (!hasPosition) return;

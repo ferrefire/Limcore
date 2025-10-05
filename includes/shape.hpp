@@ -118,6 +118,8 @@ class Shape
 		 */
 		void Rotate(const float& degrees, const Axis& axis);
 
+		void Scale(const point3D& scalar, bool scaleUV = false);
+
 		/**
 		 * @brief Recenters geometry around the origin.
 		 * @details Typically subtracts the centroid or AABB center from all vertices.

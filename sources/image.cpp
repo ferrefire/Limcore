@@ -41,6 +41,16 @@ void Image::Create(const ImageLoader& imageLoader, const ImageConfig& imageConfi
 	config.width = imageLoader.GetInfo().startOfFrameInfo.width;
 	config.height = imageLoader.GetInfo().startOfFrameInfo.height;
 
+	if (config.createMipmaps)
+	{
+		config.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(config.width, config.height)))) + 1;
+		config.targetLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		config.usage = Bitmask::SetFlag(config.usage, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+		config.usage = Bitmask::SetFlag(config.usage, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+		config.viewConfig.subresourceRange.levelCount = config.mipLevels;
+		config.samplerConfig.lodRange = point2D(0, VK_LOD_CLAMP_NONE);
+	}
+
 	CreateImage();
 	AllocateMemory();
 	CreateView();
@@ -48,6 +58,8 @@ void Image::Create(const ImageLoader& imageLoader, const ImageConfig& imageConfi
 	TransitionLayout();
 
 	Load(imageLoader);
+
+	if (config.createMipmaps) CreateMipmaps();
 }
 
 void Image::CreateImage()
@@ -72,6 +84,84 @@ void Image::CreateImage()
 
 	if (vkCreateImage(device->GetLogicalDevice(), &createInfo, nullptr, &image) != VK_SUCCESS)
 		throw (std::runtime_error("Failed to create image"));
+}
+
+void Image::CreateMipmaps()
+{
+	VkFormatProperties formatProperties;
+    vkGetPhysicalDeviceFormatProperties(device->GetPhysicalDevice(), config.format, &formatProperties);
+	if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
+		throw std::runtime_error("Cannont create image mipmaps because it's format does not support linear blitting");
+
+	Command command;
+	CommandConfig commandConfig{};
+	commandConfig.queueIndex = device->GetQueueIndex(QueueType::Graphics);
+	command.Create(commandConfig, device);
+	command.Begin();
+
+	VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.image = image;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.subresourceRange.aspectMask = config.viewConfig.subresourceRange.aspectMask;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+    barrier.subresourceRange.levelCount = 1;
+
+	int32_t mipWidth = config.width;
+	int32_t mipHeight = config.height;
+
+	for (uint32_t i = 1; i < config.mipLevels; i++)
+	{
+		barrier.subresourceRange.baseMipLevel = i - 1;
+		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+		vkCmdPipelineBarrier(command.GetBuffer(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+		VkImageBlit blit{};
+		blit.srcOffsets[0] = { 0, 0, 0 };
+		blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+		blit.srcSubresource.aspectMask = config.viewConfig.subresourceRange.aspectMask;
+		blit.srcSubresource.mipLevel = i - 1;
+		blit.srcSubresource.baseArrayLayer = 0;
+		blit.srcSubresource.layerCount = 1;
+		blit.dstOffsets[0] = { 0, 0, 0 };
+		blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+		blit.dstSubresource.aspectMask = config.viewConfig.subresourceRange.aspectMask;
+		blit.dstSubresource.mipLevel = i;
+		blit.dstSubresource.baseArrayLayer = 0;
+		blit.dstSubresource.layerCount = 1;
+
+		vkCmdBlitImage(command.GetBuffer(), image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+
+		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		vkCmdPipelineBarrier(command.GetBuffer(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+		if (mipWidth > 1) mipWidth /= 2;
+    	if (mipHeight > 1) mipHeight /= 2;
+	}
+
+	barrier.subresourceRange.baseMipLevel = config.mipLevels - 1;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+	vkCmdPipelineBarrier(command.GetBuffer(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+	command.End();
+	command.Submit();
+
+	config.currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	config.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 }
 
 void Image::CreateView()
@@ -223,9 +313,7 @@ void Image::Load(const ImageLoader& imageLoader)
 	if (!image) throw (std::runtime_error("Image does not exist"));
 	if (!device) throw (std::runtime_error("Image has no device"));
 
-	//imageLoader.LoadEntropyData();
 	std::vector<unsigned char> pixels{};
-	//imageLoader.LoadPixels(pixels);
 	imageLoader.LoadPixelsThreaded(pixels);
 	Update(&pixels[0], pixels.size(), {config.width, config.height, config.depth});
 }

@@ -18,35 +18,50 @@
 
 struct UniformData
 {
-	mat4 model;
 	mat4 view;
 	mat4 projection;
 	point4D viewPosition;
+	point4D lightDirection;
 };
 
 UniformData data{};
-Buffer buffer;
+std::vector<mat4> models(2);
+Buffer frameBuffer;
+Buffer objectBuffer;
 
 Pass pass;
 Pipeline pipeline;
-Descriptor descriptor;
-size_t setID;
+Descriptor frameDescriptor;
+Descriptor materialDescriptor;
+Descriptor objectDescriptor;
 
 meshPNC32 cannonMesh;
+meshPNC32 quadMesh;
 
 Image cannonImageDiff;
 Image cannonImageNorm;
 Image cannonImageARM;
 
+Image woodImageDiff;
+Image woodImageNorm;
+Image woodImageARM;
+
 float angle = -45 + 180;
 
 void Render(VkCommandBuffer commandBuffer, uint32_t frameIndex)
 {
+	frameDescriptor.Bind(0, commandBuffer, pipeline.GetLayout());
 	pipeline.Bind(commandBuffer);
-	descriptor.Bind(setID, commandBuffer, pipeline.GetLayout());
-	cannonMesh.Bind(commandBuffer);
 
+	materialDescriptor.Bind(0, commandBuffer, pipeline.GetLayout());
+	objectDescriptor.Bind(0, commandBuffer, pipeline.GetLayout(), 0);
+	cannonMesh.Bind(commandBuffer);
 	vkCmdDrawIndexed(commandBuffer, cannonMesh.GetIndices().size(), 1, 0, 0, 0);
+
+	materialDescriptor.Bind(1, commandBuffer, pipeline.GetLayout());
+	objectDescriptor.Bind(0, commandBuffer, pipeline.GetLayout(), 1 * sizeof(mat4));
+	quadMesh.Bind(commandBuffer);
+	vkCmdDrawIndexed(commandBuffer, quadMesh.GetIndices().size(), 1, 0, 0, 0);
 }
 
 void Frame()
@@ -58,17 +73,24 @@ void Frame()
 
 	Manager::GetCamera().UpdateView();
 
-	angle += Time::deltaTime * 10.0;
-	if (angle > 360) angle -= 360;
-
-	data.model = mat4::Identity();
-	data.model.Rotate(angle, Axis::y);
-	data.model.Translate(point3D(0.0, 0.2, 0.0));
-	data.projection = Manager::GetCamera().GetProjection();
 	data.view = Manager::GetCamera().GetView();
 	data.viewPosition = Manager::GetCamera().GetPosition();
 
-	buffer.Update(&data, sizeof(data));
+	frameBuffer.Update(&data, sizeof(data));
+
+	angle += Time::deltaTime * 10.0;
+	if (angle > 360) angle -= 360;
+
+	models[0] = mat4::Identity();
+	models[0].Rotate(angle, Axis::y);
+	models[0].Translate(point3D(0.0, 0.2, 0.0));
+
+	models[1] = mat4::Identity();
+	//models[1].Scale(point3D(5, 5, 1));
+	models[1].Rotate(-90, Axis::x);
+	//models[1].Translate(point3D(0.0, 0.0, 0.0));
+
+	objectBuffer.Update(models.data(), sizeof(mat4) * models.size());
 }
 
 void Start()
@@ -85,11 +107,17 @@ void Start()
 	double startTime = Time::GetCurrentTime();
 
 	cannonMesh.Create(ModelLoader("cannon", ModelType::Gltf));
+
+	shapePNC32 quadShape(ShapeType::Quad);
+	quadShape.Scale(point3D(5, 5, 1), true);
+	quadMesh.Create(quadShape);
 	
 	//std::cout << "Mesh creation time: " << (Time::GetCurrentTime() - startTime) * 1000 << " ms." << std::endl << std::endl;
 
 	ImageConfig imageConfig = Image::DefaultConfig();
+	imageConfig.createMipmaps = true;
 	ImageConfig imageNormalConfig = Image::DefaultNormalConfig();
+	imageNormalConfig.createMipmaps = true;
 	ImageConfig imageGreyscaleConfig = Image::DefaultGreyscaleConfig();
 
 	startTime = Time::GetCurrentTime();
@@ -98,11 +126,17 @@ void Start()
 		{"cannon_diff", ImageType::Jpg},
 		{"cannon_norm", ImageType::Jpg},
 		{"cannon_arm", ImageType::Jpg},
+		{"wood_diff", ImageType::Jpg},
+		{"wood_norm", ImageType::Jpg},
+		{"wood_arm", ImageType::Jpg},
 	});
 
 	cannonImageDiff.Create(*loaders[0], imageConfig);
 	cannonImageNorm.Create(*loaders[1], imageNormalConfig);
 	cannonImageARM.Create(*loaders[2], imageNormalConfig);
+	woodImageDiff.Create(*loaders[3], imageConfig);
+	woodImageNorm.Create(*loaders[4], imageNormalConfig);
+	woodImageARM.Create(*loaders[5], imageNormalConfig);
 
 	std::cout << "Total creation time: " << (Time::GetCurrentTime() - startTime) * 1000 << " ms." << std::endl;
 
@@ -112,28 +146,51 @@ void Start()
 	}
 	loaders.clear();
 
-	BufferConfig bufferConfig{};
-	bufferConfig.mapped = true;
-	bufferConfig.size = sizeof(UniformData);
-	buffer.Create(bufferConfig);
+	data.projection = Manager::GetCamera().GetProjection();
+	data.lightDirection = point4D(point3D(0.2, 0.5, -0.4).Unitized());
 
-	std::vector<DescriptorConfig> descriptorConfigs(2);
-	descriptorConfigs[0].type = DescriptorType::UniformBuffer;
-	descriptorConfigs[0].stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-	descriptorConfigs[1].type = DescriptorType::CombinedSampler;
-	descriptorConfigs[1].stages = VK_SHADER_STAGE_FRAGMENT_BIT;
-	descriptorConfigs[1].count = 3;
-	descriptor.Create(0, descriptorConfigs);
+	BufferConfig frameBufferConfig{};
+	frameBufferConfig.mapped = true;
+	frameBufferConfig.size = sizeof(UniformData);
+	frameBuffer.Create(frameBufferConfig);
 
-	setID = descriptor.GetNewSet();
-	descriptor.Update(setID, 0, buffer);
-	descriptor.Update(setID, 1, {&cannonImageDiff, &cannonImageNorm, &cannonImageARM});
+	BufferConfig objectBufferConfig{};
+	objectBufferConfig.mapped = true;
+	objectBufferConfig.size = sizeof(mat4) * models.size();
+	objectBuffer.Create(objectBufferConfig);
+
+	std::vector<DescriptorConfig> frameDescriptorConfigs(1);
+	frameDescriptorConfigs[0].type = DescriptorType::UniformBuffer;
+	frameDescriptorConfigs[0].stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+	frameDescriptor.Create(0, frameDescriptorConfigs);
+
+	std::vector<DescriptorConfig> materialDescriptorConfigs(1);
+	materialDescriptorConfigs[0].type = DescriptorType::CombinedSampler;
+	materialDescriptorConfigs[0].stages = VK_SHADER_STAGE_FRAGMENT_BIT;
+	materialDescriptorConfigs[0].count = 3;
+	materialDescriptor.Create(1, materialDescriptorConfigs);
+
+	std::vector<DescriptorConfig> objectDescriptorConfigs(1);
+	objectDescriptorConfigs[0].type = DescriptorType::DynamicUniformBuffer;
+	objectDescriptorConfigs[0].stages = VK_SHADER_STAGE_VERTEX_BIT;
+	objectDescriptor.Create(2, objectDescriptorConfigs);
+
+	frameDescriptor.GetNewSet();
+	frameDescriptor.Update(0, 0, frameBuffer);
+
+	materialDescriptor.GetNewSet();
+	materialDescriptor.Update(0, 0, {&cannonImageDiff, &cannonImageNorm, &cannonImageARM});
+	materialDescriptor.GetNewSet();
+	materialDescriptor.Update(1, 0, {&woodImageDiff, &woodImageNorm, &woodImageARM});
+
+	objectDescriptor.GetNewSet();
+	objectDescriptor.Update(0, 0, objectBuffer, sizeof(mat4));
 
 	PipelineConfig pipelineConfig = Pipeline::DefaultConfig();
 	pipelineConfig.shader = "default";
 	pipelineConfig.vertexInfo = cannonMesh.GetVertexInfo();
 	pipelineConfig.renderpass = pass.GetRenderpass();
-	pipelineConfig.descriptorLayouts = { descriptor.GetLayout() };
+	pipelineConfig.descriptorLayouts = { frameDescriptor.GetLayout(), materialDescriptor.GetLayout(), objectDescriptor.GetLayout() };
 	pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
 	pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
 	pipeline.Create(pipelineConfig);
@@ -146,15 +203,22 @@ void Start()
 void End()
 {
 	cannonMesh.Destroy();
+	quadMesh.Destroy();
 
-	buffer.Destroy();
+	frameBuffer.Destroy();
+	objectBuffer.Destroy();
 
 	cannonImageDiff.Destroy();
 	cannonImageNorm.Destroy();
 	cannonImageARM.Destroy();
+	woodImageDiff.Destroy();
+	woodImageNorm.Destroy();
+	woodImageARM.Destroy();
 
 	pass.Destroy();
-	descriptor.Destroy();
+	frameDescriptor.Destroy();
+	materialDescriptor.Destroy();
+	objectDescriptor.Destroy();
 	pipeline.Destroy();
 }
 

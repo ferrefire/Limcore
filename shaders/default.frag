@@ -4,13 +4,13 @@
 
 layout(set = 0, binding = 0) uniform Variables
 {
-	mat4 model;
 	mat4 view;
 	mat4 projection;
 	vec4 viewPosition;
+	vec4 lightDirection;
 } variables;
 
-layout(set = 0, binding = 1) uniform sampler2D textures[3];
+layout(set = 1, binding = 0) uniform sampler2D textures[3];
 
 layout(location = 0) in vec3 worldNormal;
 layout(location = 1) in vec2 worldCoordinate;
@@ -35,7 +35,7 @@ void main()
 	PBRInput data;
 	data.N = normal;
 	data.V = normalize(viewPosition - worldPosition);
-	data.L = normalize(vec3(0.2, 1, -0.4));
+	data.L = variables.lightDirection.xyz;
 	data.albedo = color;
 	data.metallic = metallic;
 	data.roughness = roughness;
