@@ -254,7 +254,7 @@ void ModelLoader::GetGltfInfo(const std::string& name, size_t meshID)
 
 	if (indicesIndex != "")
 	{
-		info.indexConfig = VK_INDEX_TYPE_UINT16;
+		info.indexConfig = VK_INDEX_TYPE_UINT32;
 		std::string accessContent = accessors[std::stoi(indicesIndex)];
 		std::string viewContent = views[std::stoi(GetValue(accessContent, "bufferView"))];
 		info.attributes[AttributeType::Index] = GetAttribute(accessContent, viewContent);
@@ -667,6 +667,10 @@ void ImageLoader::LoadEntropyData()
 	size_t V = info.startOfFrameInfo.height / data.MCUCount.y();
 	size_t C = (info.greyScale ? 1 : 4);
 	data.HVC = {H, V, C};
+	data.subSamplePower = std::max(maxH, maxV);
+
+	//std::cout << info.name << " = " << data.HVC << std::endl;
+	//if (info.name.contains("norm")) data.normalMap = true;
 
 	//std::cout << "mcucount: " << data.MCUCount << std::endl; 
 
@@ -1040,17 +1044,22 @@ void LoadBlockGreyscaleThread(std::vector<unsigned char>& buffer, const ImageDat
 
 void LoadBlockThread(std::vector<unsigned char>& buffer, const ImageData* data, size_t offset)
 {
+	const size_t H = data->HVC.x();
+	const size_t V = data->HVC.y();
+	const size_t C = data->HVC.z();
+	const size_t P = data->subSamplePower;
+
 	size_t pixelIndex = 0;
 	size_t blockIndex = 0;
 
-	for (size_t y = 0; y < 16; y++)
+	for (size_t y = 0; y < V; y++)
 	{
-		for (size_t x = 0; x < 16; x++)
+		for (size_t x = 0; x < H; x++)
 		{
 			int yi = y;
 			int xi = x;
-			int yci = y / 2;
-			int xci = x / 2;
+			int yci = y / P;
+			int xci = x / P;
 			if (y < 8 && x < 8)
 			{
 				blockIndex = 0;
@@ -1072,12 +1081,12 @@ void LoadBlockThread(std::vector<unsigned char>& buffer, const ImageData* data, 
 				yi -= 8;
 			}
 
-			double Y = static_cast<double>(data->blocks[blockIndex + (6 * offset)][yi * 8 + xi]);
-			double Cb = static_cast<double>(data->blocks[4 + (6 * offset)][yci * 8 + xci]);
-			double Cr = static_cast<double>(data->blocks[5 + (6 * offset)][yci * 8 + xci]);
+			double Y = static_cast<double>(data->blocks[blockIndex + ((P * P + 2) * offset)][yi * 8 + xi]);
+			double Cb = static_cast<double>(data->blocks[(P * P) + ((P * P + 2) * offset)][yci * 8 + xci]);
+			double Cr = static_cast<double>(data->blocks[(P * P) + 1 + ((P * P + 2) * offset)][yci * 8 + xci]);
 
 			double R = (Y + 1.402 * (Cr - 128));
-			double G = (Y - 0.34414 * (Cb - 128) - 0.71414 * (Cr - 128));
+			double G = (Y - 0.344136 * (Cb - 128) - 0.714136 * (Cr - 128));
 			double B = (Y + 1.772 * (Cb - 128));
 
 			if (R < 0) R = 0;

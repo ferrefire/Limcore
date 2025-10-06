@@ -8,6 +8,7 @@ layout(set = 0, binding = 0) uniform Variables
 	mat4 projection;
 	vec4 viewPosition;
 	vec4 lightDirection;
+	vec4 test;
 } variables;
 
 layout(set = 1, binding = 0) uniform sampler2D textures[3];
@@ -43,9 +44,13 @@ void main()
 
 	vec3 diffuse = PBRLighting(data);
 
-	vec3 ambientDiffuse = 0.075 * color * vec3(1.0, 0.9, 0.7);
+	vec3 ambientDiffuse = 0.1 * color * vec3(1.0, 0.9, 0.7);
 	vec3 ambient = ambientDiffuse * ao;
 	diffuse += ambient;
 
 	pixelColor = vec4(diffuse, 1.0);
+	//pixelColor = vec4(normalize(UnpackNormal(texture(textures[1], worldCoordinate), 1.0) * 0.5 + 0.5), 1.0);
+	//pixelColor = vec4(UnpackNormal(texture(textures[1], worldCoordinate), 1.0), 1.0);
+	//pixelColor = vec4((normal * 0.5 + 0.5), 1.0);
+	//pixelColor = vec4(worldCoordinate, 1.0, 1.0);
 }

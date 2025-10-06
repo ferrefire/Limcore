@@ -177,11 +177,14 @@ struct ImageData
 	Point<size_t, 3> dimensions{};
 	Point<size_t, 3> subSampling{};
 	Point<size_t, 2> maxHV{};
+	size_t subSamplePower = 1;
 
 	std::vector<HuffmanTree> huffmanTables;
 	std::vector<std::array<int16_t, 1 << FAST_BITS>> fastHuffmanTables;
 
 	std::vector<DataBlock> blocks;
+
+	bool normalMap = false;
 };
 
 class ByteReader

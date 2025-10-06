@@ -22,10 +22,11 @@ struct UniformData
 	mat4 projection;
 	point4D viewPosition;
 	point4D lightDirection;
+	point4D test = point4D(1.0);
 };
 
 UniformData data{};
-std::vector<mat4> models(2);
+std::vector<mat4> models(3);
 Buffer frameBuffer;
 Buffer objectBuffer;
 
@@ -37,6 +38,7 @@ Descriptor objectDescriptor;
 
 meshPNC32 cannonMesh;
 meshPNC32 quadMesh;
+meshPNC32 lionMesh;
 
 Image cannonImageDiff;
 Image cannonImageNorm;
@@ -45,6 +47,10 @@ Image cannonImageARM;
 Image woodImageDiff;
 Image woodImageNorm;
 Image woodImageARM;
+
+Image lionImageDiff;
+Image lionImageNorm;
+Image lionImageARM;
 
 float angle = -45 + 180;
 
@@ -62,6 +68,11 @@ void Render(VkCommandBuffer commandBuffer, uint32_t frameIndex)
 	objectDescriptor.Bind(0, commandBuffer, pipeline.GetLayout(), 1 * sizeof(mat4));
 	quadMesh.Bind(commandBuffer);
 	vkCmdDrawIndexed(commandBuffer, quadMesh.GetIndices().size(), 1, 0, 0, 0);
+
+	materialDescriptor.Bind(2, commandBuffer, pipeline.GetLayout());
+	objectDescriptor.Bind(0, commandBuffer, pipeline.GetLayout(), 2 * sizeof(mat4));
+	lionMesh.Bind(commandBuffer);
+	vkCmdDrawIndexed(commandBuffer, lionMesh.GetIndices().size(), 1, 0, 0, 0);
 }
 
 void Frame()
@@ -76,6 +87,10 @@ void Frame()
 	data.view = Manager::GetCamera().GetView();
 	data.viewPosition = Manager::GetCamera().GetPosition();
 
+	if (Input::GetKey(GLFW_KEY_UP).pressed) data.test.x() = 1.0;
+	if (Input::GetKey(GLFW_KEY_DOWN).pressed) data.test.x() = 0.0;
+	//if (data.test.x() < 0.0) data.test.x() = 0.0;
+
 	frameBuffer.Update(&data, sizeof(data));
 
 	angle += Time::deltaTime * 10.0;
@@ -83,12 +98,14 @@ void Frame()
 
 	models[0] = mat4::Identity();
 	models[0].Rotate(angle, Axis::y);
-	models[0].Translate(point3D(0.0, 0.2, 0.0));
+	models[0].Translate(point3D(0.0, 0.1875, 0.0));
 
 	models[1] = mat4::Identity();
-	//models[1].Scale(point3D(5, 5, 1));
 	models[1].Rotate(-90, Axis::x);
-	//models[1].Translate(point3D(0.0, 0.0, 0.0));
+
+	models[2] = mat4::Identity();
+	models[2].Rotate(angle + 45, Axis::y);
+	models[2].Translate(point3D(2.0, 0.5, 0.0));
 
 	objectBuffer.Update(models.data(), sizeof(mat4) * models.size());
 }
@@ -107,6 +124,7 @@ void Start()
 	double startTime = Time::GetCurrentTime();
 
 	cannonMesh.Create(ModelLoader("cannon", ModelType::Gltf));
+	lionMesh.Create(ModelLoader("lion_head", ModelType::Gltf));
 
 	shapePNC32 quadShape(ShapeType::Quad);
 	quadShape.Scale(point3D(5, 5, 1), true);
@@ -116,8 +134,12 @@ void Start()
 
 	ImageConfig imageConfig = Image::DefaultConfig();
 	imageConfig.createMipmaps = true;
+	imageConfig.samplerConfig.anisotropyEnabled = VK_TRUE;
+	imageConfig.samplerConfig.maxAnisotropy = 8;
 	ImageConfig imageNormalConfig = Image::DefaultNormalConfig();
 	imageNormalConfig.createMipmaps = true;
+	imageNormalConfig.samplerConfig.anisotropyEnabled = VK_TRUE;
+	imageNormalConfig.samplerConfig.maxAnisotropy = 8;
 	ImageConfig imageGreyscaleConfig = Image::DefaultGreyscaleConfig();
 
 	startTime = Time::GetCurrentTime();
@@ -129,6 +151,9 @@ void Start()
 		{"wood_diff", ImageType::Jpg},
 		{"wood_norm", ImageType::Jpg},
 		{"wood_arm", ImageType::Jpg},
+		{"lion_head_diff", ImageType::Jpg},
+		{"lion_head_norm", ImageType::Jpg},
+		{"lion_head_arm", ImageType::Jpg},
 	});
 
 	cannonImageDiff.Create(*loaders[0], imageConfig);
@@ -137,6 +162,9 @@ void Start()
 	woodImageDiff.Create(*loaders[3], imageConfig);
 	woodImageNorm.Create(*loaders[4], imageNormalConfig);
 	woodImageARM.Create(*loaders[5], imageNormalConfig);
+	lionImageDiff.Create(*loaders[6], imageConfig);
+	lionImageNorm.Create(*loaders[7], imageNormalConfig);
+	lionImageARM.Create(*loaders[8], imageNormalConfig);
 
 	std::cout << "Total creation time: " << (Time::GetCurrentTime() - startTime) * 1000 << " ms." << std::endl;
 
@@ -182,6 +210,8 @@ void Start()
 	materialDescriptor.Update(0, 0, {&cannonImageDiff, &cannonImageNorm, &cannonImageARM});
 	materialDescriptor.GetNewSet();
 	materialDescriptor.Update(1, 0, {&woodImageDiff, &woodImageNorm, &woodImageARM});
+	materialDescriptor.GetNewSet();
+	materialDescriptor.Update(2, 0, {&lionImageDiff, &lionImageNorm, &lionImageARM});
 
 	objectDescriptor.GetNewSet();
 	objectDescriptor.Update(0, 0, objectBuffer, sizeof(mat4));
@@ -204,6 +234,7 @@ void End()
 {
 	cannonMesh.Destroy();
 	quadMesh.Destroy();
+	lionMesh.Destroy();
 
 	frameBuffer.Destroy();
 	objectBuffer.Destroy();
@@ -214,6 +245,9 @@ void End()
 	woodImageDiff.Destroy();
 	woodImageNorm.Destroy();
 	woodImageARM.Destroy();
+	lionImageDiff.Destroy();
+	lionImageNorm.Destroy();
+	lionImageARM.Destroy();
 
 	pass.Destroy();
 	frameDescriptor.Destroy();
@@ -225,6 +259,7 @@ void End()
 int main(int argc, char** argv)
 {
 	Manager::ParseArguments(argv, argc);
+	Manager::GetConfig().deviceConfig.anisotropic = true;
 	Manager::Create();
 
 	Manager::RegisterStartCall(Start);
