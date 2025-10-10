@@ -39,10 +39,15 @@ void Swapchain::CreateSwapchain()
 
 	WindowConfig windowConfig = window->GetConfig();
 
+	frameCount = windowConfig.capabilities.minImageCount + 1;
+	if (windowConfig.capabilities.maxImageCount > 0 && frameCount > windowConfig.capabilities.maxImageCount)
+		frameCount = windowConfig.capabilities.maxImageCount;
+
 	VkSwapchainCreateInfoKHR createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	createInfo.surface = window->GetSurface();
-	createInfo.minImageCount = windowConfig.capabilities.minImageCount;
+	//createInfo.minImageCount = windowConfig.capabilities.minImageCount;
+	createInfo.minImageCount = frameCount;
 	createInfo.imageFormat = windowConfig.format.format;
 	createInfo.imageColorSpace = windowConfig.format.colorSpace;
 	createInfo.imageExtent = windowConfig.extent;
@@ -72,7 +77,7 @@ void Swapchain::RetrieveImages()
 
 	if (images.size() == 0) throw (std::runtime_error("Failed to retrieve swapchain images"));
 
-	frameCount = CUI(images.size());
+	//frameCount = CUI(images.size());
 }
 
 void Swapchain::CreateViews()

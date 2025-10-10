@@ -95,6 +95,8 @@ class Descriptor
 		 */
 		size_t GetNewSet();
 
+		size_t GetNewSetDynamic();
+
 		/**
 		 * @brief Binds a descriptor set to a command buffer.
 		 * @param setID Index of the descriptor set to bind.
@@ -102,6 +104,8 @@ class Descriptor
 		 * @param pipelineLayout Pipeline layout that the descriptor set is compatible with.
 		 */
 		void Bind(size_t setID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int offset = -1);
+
+		void BindDynamic(size_t baseSetID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int offset = -1);
 
 		/**
 		 * @brief Updates a descriptor set binding with buffer or image info.
@@ -119,6 +123,8 @@ class Descriptor
 		 * @param buffer Buffer object to bind.
 		 */
 		void Update(size_t setID, uint32_t binding, const Buffer& buffer, size_t size = 0);
+
+		void UpdateDynamic(size_t baseSetID, uint32_t binding, const std::vector<Buffer*> buffers, size_t size = 0);
 
 		/**
 		 * @brief Updates a descriptor set binding with an image resource.

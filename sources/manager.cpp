@@ -73,9 +73,12 @@ void Manager::CreateVulkan()
 	swapchain.Create(&window, &device);
 	std::cout << "Swapchain created: " << swapchain << std::endl;
 
+	if (config.framesInFlight > swapchain.GetFrameCount()) config.framesInFlight = swapchain.GetFrameCount();
+	std::cout << "Frames in flight: " << config.framesInFlight << std::endl;
+
 	Descriptor::CreatePools();
 
-	Renderer::Create(2, &device, &swapchain);
+	Renderer::Create(config.framesInFlight, &device, &swapchain);
 
 	CameraConfig cameraConfig{};
 	cameraConfig.width = window.GetConfig().extent.width;
@@ -168,6 +171,8 @@ void Manager::Start()
 void Manager::Frame()
 {
 	glfwPollEvents();
+
+	Renderer::WaitForFrame();
 
 	if (resizing) Resize();
 

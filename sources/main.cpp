@@ -10,6 +10,7 @@
 #include "input.hpp"
 #include "time.hpp"
 #include "image.hpp"
+#include "utilities.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -26,8 +27,8 @@ struct UniformData
 
 UniformData data{};
 std::vector<mat4> models(3);
-Buffer frameBuffer;
-Buffer objectBuffer;
+std::vector<Buffer> frameBuffers;
+std::vector<Buffer> objectBuffers;
 
 Pass pass;
 Pipeline pipeline;
@@ -55,21 +56,21 @@ float angle = -45 + 180;
 
 void Render(VkCommandBuffer commandBuffer, uint32_t frameIndex)
 {
-	frameDescriptor.Bind(0, commandBuffer, pipeline.GetLayout());
+	frameDescriptor.BindDynamic(0, commandBuffer, pipeline.GetLayout());
 	pipeline.Bind(commandBuffer);
 
 	materialDescriptor.Bind(0, commandBuffer, pipeline.GetLayout());
-	objectDescriptor.Bind(0, commandBuffer, pipeline.GetLayout(), 0);
+	objectDescriptor.BindDynamic(0, commandBuffer, pipeline.GetLayout(), 0);
 	cannonMesh.Bind(commandBuffer);
 	vkCmdDrawIndexed(commandBuffer, cannonMesh.GetIndices().size(), 1, 0, 0, 0);
 
 	materialDescriptor.Bind(1, commandBuffer, pipeline.GetLayout());
-	objectDescriptor.Bind(0, commandBuffer, pipeline.GetLayout(), 1 * sizeof(mat4));
+	objectDescriptor.BindDynamic(0, commandBuffer, pipeline.GetLayout(), 1 * sizeof(mat4));
 	quadMesh.Bind(commandBuffer);
 	vkCmdDrawIndexed(commandBuffer, quadMesh.GetIndices().size(), 1, 0, 0, 0);
 
 	materialDescriptor.Bind(2, commandBuffer, pipeline.GetLayout());
-	objectDescriptor.Bind(0, commandBuffer, pipeline.GetLayout(), 2 * sizeof(mat4));
+	objectDescriptor.BindDynamic(0, commandBuffer, pipeline.GetLayout(), 2 * sizeof(mat4));
 	lionMesh.Bind(commandBuffer);
 	vkCmdDrawIndexed(commandBuffer, lionMesh.GetIndices().size(), 1, 0, 0, 0);
 }
@@ -86,7 +87,7 @@ void Frame()
 	data.view = Manager::GetCamera().GetView();
 	data.viewPosition = Manager::GetCamera().GetPosition();
 
-	frameBuffer.Update(&data, sizeof(data));
+	frameBuffers[Renderer::GetCurrentFrame()].Update(&data, sizeof(data));
 
 	angle += Time::deltaTime * 10.0;
 	if (angle > 360) angle -= 360;
@@ -102,7 +103,7 @@ void Frame()
 	models[2].Rotate(angle + 45, Axis::y);
 	models[2].Translate(point3D(2.0, 0.5, 0.0));
 
-	objectBuffer.Update(models.data(), sizeof(mat4) * models.size());
+	objectBuffers[Renderer::GetCurrentFrame()].Update(models.data(), sizeof(mat4) * models.size());
 }
 
 void Start()
@@ -175,12 +176,14 @@ void Start()
 	BufferConfig frameBufferConfig{};
 	frameBufferConfig.mapped = true;
 	frameBufferConfig.size = sizeof(UniformData);
-	frameBuffer.Create(frameBufferConfig);
+	frameBuffers.resize(Renderer::GetFrameCount());
+	for (Buffer& buffer : frameBuffers) { buffer.Create(frameBufferConfig); }
 
 	BufferConfig objectBufferConfig{};
 	objectBufferConfig.mapped = true;
 	objectBufferConfig.size = sizeof(mat4) * models.size();
-	objectBuffer.Create(objectBufferConfig);
+	objectBuffers.resize(Renderer::GetFrameCount());
+	for (Buffer& buffer : objectBuffers) { buffer.Create(objectBufferConfig); }
 
 	std::vector<DescriptorConfig> frameDescriptorConfigs(1);
 	frameDescriptorConfigs[0].type = DescriptorType::UniformBuffer;
@@ -198,8 +201,8 @@ void Start()
 	objectDescriptorConfigs[0].stages = VK_SHADER_STAGE_VERTEX_BIT;
 	objectDescriptor.Create(2, objectDescriptorConfigs);
 
-	frameDescriptor.GetNewSet();
-	frameDescriptor.Update(0, 0, frameBuffer);
+	frameDescriptor.GetNewSetDynamic();
+	frameDescriptor.UpdateDynamic(0, 0, Utilities::Pointerize(frameBuffers));
 
 	materialDescriptor.GetNewSet();
 	materialDescriptor.Update(0, 0, {&cannonImageDiff, &cannonImageNorm, &cannonImageARM});
@@ -208,8 +211,8 @@ void Start()
 	materialDescriptor.GetNewSet();
 	materialDescriptor.Update(2, 0, {&lionImageDiff, &lionImageNorm, &lionImageARM});
 
-	objectDescriptor.GetNewSet();
-	objectDescriptor.Update(0, 0, objectBuffer, sizeof(mat4));
+	objectDescriptor.GetNewSetDynamic();
+	objectDescriptor.UpdateDynamic(0, 0, Utilities::Pointerize(objectBuffers), sizeof(mat4));
 
 	PipelineConfig pipelineConfig = Pipeline::DefaultConfig();
 	pipelineConfig.shader = "default";
@@ -231,8 +234,11 @@ void End()
 	quadMesh.Destroy();
 	lionMesh.Destroy();
 
-	frameBuffer.Destroy();
-	objectBuffer.Destroy();
+	for (Buffer& buffer : frameBuffers) { buffer.Destroy(); }
+	frameBuffers.clear();
+
+	for (Buffer& buffer : objectBuffers) { buffer.Destroy(); }
+	objectBuffers.clear();
 
 	cannonImageDiff.Destroy();
 	cannonImageNorm.Destroy();
@@ -255,6 +261,7 @@ int main(int argc, char** argv)
 {
 	Manager::ParseArguments(argv, argc);
 	Manager::GetConfig().deviceConfig.anisotropic = true;
+	//Manager::GetConfig().framesInFlight = 3;
 	Manager::Create();
 
 	Manager::RegisterStartCall(Start);

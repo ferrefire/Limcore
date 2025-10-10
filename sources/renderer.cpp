@@ -129,6 +129,22 @@ PassInfo& Renderer::GetPassInfo(size_t index)
 	return (passes[index]);
 }
 
+uint32_t Renderer::GetFrameCount()
+{
+	return (frameCount);
+}
+
+uint32_t Renderer::GetCurrentFrame()
+{
+	return (currentFrame);
+}
+
+void Renderer::WaitForFrame()
+{
+	if (vkWaitForFences(device->GetLogicalDevice(), 1, &fences[currentFrame], VK_TRUE, UINT64_MAX) != VK_SUCCESS)
+		throw (std::runtime_error("Failed to wait for fence"));
+}
+
 void Renderer::Frame()
 {
 	if (passes.size() == 0) return;
@@ -138,9 +154,6 @@ void Renderer::Frame()
 		if (passInfo.pass == nullptr) return;
 		if (passInfo.calls.size() == 0) return;
 	}
-
-	if (vkWaitForFences(device->GetLogicalDevice(), 1, &fences[currentFrame], VK_TRUE, UINT64_MAX) != VK_SUCCESS)
-		throw (std::runtime_error("Failed to wait for fence"));
 
 	VkResult acquireResult = vkAcquireNextImageKHR(device->GetLogicalDevice(), swapchain->GetSwapchain(), UINT64_MAX, 
 		renderSemaphores[currentFrame], VK_NULL_HANDLE, &renderIndex);

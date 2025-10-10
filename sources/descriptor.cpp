@@ -3,6 +3,7 @@
 #include "manager.hpp"
 #include "printer.hpp"
 #include "utilities.hpp"
+#include "renderer.hpp"
 
 #include <stdexcept>
 
@@ -70,7 +71,7 @@ void Descriptor::AllocateSet(VkDescriptorSet& set)
 void Descriptor::Destroy()
 {
 	if (!device) return;
-	
+
 	sets.clear();
 
 	if (layout)
@@ -94,12 +95,21 @@ const std::vector<DescriptorConfig>& Descriptor::GetConfig() const
 
 size_t Descriptor::GetNewSet()
 {
-	if (sets.size() >= 10) throw (std::runtime_error("Maximum amount of sets already allocated"));
+	//if (sets.size() >= 10) throw (std::runtime_error("Maximum amount of sets already allocated"));
 
 	size_t setID = sets.size();
 	sets.resize(setID + 1);
 
 	AllocateSet(sets[setID]);
+
+	return (setID);
+}
+
+size_t Descriptor::GetNewSetDynamic()
+{
+	size_t setID = GetNewSet();
+
+	for (size_t i = 1; i < Renderer::GetFrameCount(); i++) { GetNewSet(); }
 
 	return (setID);
 }
@@ -113,6 +123,11 @@ void Descriptor::Bind(size_t setID, VkCommandBuffer commandBuffer, VkPipelineLay
 	uint32_t dynamicOffset = (offset >= 0 ? CUI(offset) : 0);
 
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, set, 1, &sets[setID], (offset >= 0 ? 1 : 0), &dynamicOffset);
+}
+
+void Descriptor::BindDynamic(size_t baseSetID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int offset)
+{
+	Bind(baseSetID + Renderer::GetCurrentFrame(), commandBuffer, pipelineLayout, offset);
 }
 
 void Descriptor::Update(size_t setID, uint32_t binding, VkDescriptorBufferInfo* bufferInfos, VkDescriptorImageInfo* imageInfos)
@@ -140,6 +155,18 @@ void Descriptor::Update(size_t setID, uint32_t binding, const Buffer& buffer, si
 	bufferInfo.range = size == 0 ? buffer.GetConfig().size : size;
 
 	Update(setID, binding, {&bufferInfo}, {});
+}
+
+void Descriptor::UpdateDynamic(size_t baseSetID, uint32_t binding, const std::vector<Buffer*> buffers, size_t size)
+{
+	if (buffers.size() != Renderer::GetFrameCount()) throw (std::runtime_error("Cannot update dynamicly because buffer count does not match frame count"));
+
+	for (size_t i = 0; i < buffers.size(); i++)
+	{
+		if (buffers[i] == nullptr) throw (std::runtime_error("Buffer cannot be null"));
+
+		Update(baseSetID + i, binding, *buffers[i], size);
+	}
 }
 
 void Descriptor::Update(size_t setID, uint32_t binding, const Image& image)

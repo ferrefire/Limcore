@@ -85,7 +85,11 @@ class Renderer
 		 * @return Reference to the PassInfo.
 		 */
 		static PassInfo& GetPassInfo(size_t index);
+		
+		static uint32_t GetFrameCount();
+		static uint32_t GetCurrentFrame();
 
+		static void WaitForFrame();
 		static void Frame();
 
 		/**

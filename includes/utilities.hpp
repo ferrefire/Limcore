@@ -103,6 +103,9 @@ class Utilities
 		static float Radians(float degrees);
 
 		static bool HasDirectory(const std::filesystem::path& path, const std::string& directory);
+
+		template <typename T>
+		static std::vector<T*> Pointerize(std::vector<T>& vector);
 };
 
 #include "utilities.tpp"
