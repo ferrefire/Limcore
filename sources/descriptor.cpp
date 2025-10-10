@@ -25,7 +25,6 @@ void Descriptor::Create(size_t layoutSet, const std::vector<DescriptorConfig>& d
 	if (!device) device = &Manager::GetDevice();
 
 	CreateLayout();
-	CreatePool();
 }
 
 void Descriptor::CreateLayout()
@@ -51,28 +50,6 @@ void Descriptor::CreateLayout()
 		throw (std::runtime_error("Failed to create descriptor layout"));
 }
 
-void Descriptor::CreatePool()
-{
-	if (pool) throw (std::runtime_error("Descriptor pool already exists"));
-	if (!device) throw (std::runtime_error("Descriptor has no device"));
-
-	std::vector<VkDescriptorPoolSize> poolSizes(config.size());
-	for (int i = 0; i < config.size(); i++)
-	{
-		poolSizes[i].type = static_cast<VkDescriptorType>(config[i].type);
-		poolSizes[i].descriptorCount = config[i].count * 10;
-	}
-
-	VkDescriptorPoolCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	createInfo.poolSizeCount = CUI(poolSizes.size());
-	createInfo.pPoolSizes = poolSizes.data();
-	createInfo.maxSets = 10; //Make value dynamic
-
-	if (vkCreateDescriptorPool(device->GetLogicalDevice(), &createInfo, nullptr, &pool) != VK_SUCCESS)
-		throw (std::runtime_error("Failed to create descriptor pool"));
-}
-
 void Descriptor::AllocateSet(VkDescriptorSet& set)
 {
 	if (set) throw (std::runtime_error("Descriptor set is already allocated"));
@@ -93,14 +70,8 @@ void Descriptor::AllocateSet(VkDescriptorSet& set)
 void Descriptor::Destroy()
 {
 	if (!device) return;
-
-	if (pool)
-	{
-		vkDestroyDescriptorPool(device->GetLogicalDevice(), pool, nullptr);
-		pool = nullptr;
-
-		sets.clear();
-	}
+	
+	sets.clear();
 
 	if (layout)
 	{
@@ -204,6 +175,43 @@ void Descriptor::Update(size_t setID, uint32_t binding, const std::vector<Image*
 	Update(setID, binding, {}, imageInfos.data());
 }
 
+void Descriptor::CreatePools(Device* descriptorDevice)
+{
+	if (pool != nullptr) throw (std::runtime_error("Descriptor pool already exists"));
+	if (!descriptorDevice) descriptorDevice = &Manager::GetDevice();
+	if (!descriptorDevice) throw (std::runtime_error("Descriptor has no device"));
+
+	VkDescriptorPoolSize poolSizes[] = 
+	{
+		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100},
+		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 100},
+		{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100},
+		//{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 50},
+		//{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 25},
+		//{VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 15},
+	};
+
+	VkDescriptorPoolCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	createInfo.poolSizeCount = CUI(std::size(poolSizes));
+	createInfo.pPoolSizes = poolSizes;
+	createInfo.maxSets = 50;
+	//createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+
+	if (vkCreateDescriptorPool(descriptorDevice->GetLogicalDevice(), &createInfo, nullptr, &pool) != VK_SUCCESS)
+		throw (std::runtime_error("Failed to create descriptor pool"));
+}
+
+void Descriptor::DestroyPools(Device* descriptorDevice)
+{
+	if (pool == nullptr) return;
+	if (!descriptorDevice) descriptorDevice = &Manager::GetDevice();
+	if (!descriptorDevice) return;
+
+	vkDestroyDescriptorPool(descriptorDevice->GetLogicalDevice(), pool, nullptr);
+	pool = nullptr;
+}
+
 std::ostream& operator<<(std::ostream& out, const DescriptorConfig& config)
 {
 	out << std::endl;
@@ -223,3 +231,5 @@ std::ostream& operator<<(std::ostream& out, const Descriptor& descriptor)
 
 	return (out);
 }
+
+VkDescriptorPool Descriptor::pool = nullptr;

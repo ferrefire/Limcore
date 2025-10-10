@@ -52,16 +52,16 @@ struct DescriptorConfig
 class Descriptor
 {
 	private:
+		static VkDescriptorPool pool;
+
 		size_t set = 0;
 		std::vector<DescriptorConfig> config{};
 		Device* device = nullptr;
 
         VkDescriptorSetLayout layout = nullptr;
-		VkDescriptorPool pool = nullptr;
 		std::vector<VkDescriptorSet> sets;
 
 		void CreateLayout();
-		void CreatePool();
 		void AllocateSet(VkDescriptorSet& set);
 
     public:
@@ -129,6 +129,9 @@ class Descriptor
 		void Update(size_t setID, uint32_t binding, const Image& image);
 
 		void Update(size_t setID, uint32_t binding, const std::vector<Image*> images);
+
+		static void CreatePools(Device* descriptorDevice = nullptr);
+		static void DestroyPools(Device* descriptorDevice = nullptr);
 };
 
 std::ostream& operator<<(std::ostream& out, const DescriptorConfig& config);

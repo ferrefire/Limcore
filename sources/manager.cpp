@@ -5,6 +5,7 @@
 #include "utilities.hpp"
 #include "input.hpp"
 #include "time.hpp"
+#include "descriptor.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -58,15 +59,22 @@ void Manager::CreateVulkan()
 	device.SetConfig(config.deviceConfig);
 
 	Graphics::CreateInstance();
+
 	device.CreatePhysical();
+
 	window.CreateSurface(device);
 	std::cout << "Window created: " << window << std::endl;
+
 	device.SelectQueues();
 	device.CreateLogical();
 	device.RetrieveQueues();
 	std::cout << "Device created: " << device << std::endl;
+
 	swapchain.Create(&window, &device);
 	std::cout << "Swapchain created: " << swapchain << std::endl;
+
+	Descriptor::CreatePools();
+
 	Renderer::Create(2, &device, &swapchain);
 
 	CameraConfig cameraConfig{};
@@ -105,6 +113,7 @@ void Manager::DestroyVulkan()
 	{
 		swapchain.Destroy();
 		Renderer::Destroy();
+		Descriptor::DestroyPools();
 		window.DestroySurface();
 		device.Destroy();
 	}

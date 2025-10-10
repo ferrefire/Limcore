@@ -8,7 +8,6 @@ layout(set = 0, binding = 0) uniform Variables
 	mat4 projection;
 	vec4 viewPosition;
 	vec4 lightDirection;
-	vec4 test;
 } variables;
 
 layout(set = 1, binding = 0) uniform sampler2D textures[3];

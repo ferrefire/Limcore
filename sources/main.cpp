@@ -22,7 +22,6 @@ struct UniformData
 	mat4 projection;
 	point4D viewPosition;
 	point4D lightDirection;
-	point4D test = point4D(1.0);
 };
 
 UniformData data{};
@@ -86,10 +85,6 @@ void Frame()
 
 	data.view = Manager::GetCamera().GetView();
 	data.viewPosition = Manager::GetCamera().GetPosition();
-
-	if (Input::GetKey(GLFW_KEY_UP).pressed) data.test.x() = 1.0;
-	if (Input::GetKey(GLFW_KEY_DOWN).pressed) data.test.x() = 0.0;
-	//if (data.test.x() < 0.0) data.test.x() = 0.0;
 
 	frameBuffer.Update(&data, sizeof(data));
 
