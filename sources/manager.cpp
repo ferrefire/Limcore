@@ -6,6 +6,7 @@
 #include "input.hpp"
 #include "time.hpp"
 #include "descriptor.hpp"
+#include "command.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -76,6 +77,8 @@ void Manager::CreateVulkan()
 	if (config.framesInFlight > swapchain.GetFrameCount()) config.framesInFlight = swapchain.GetFrameCount();
 	std::cout << "Frames in flight: " << config.framesInFlight << std::endl;
 
+	Command::CreatePools();
+
 	Descriptor::CreatePools();
 
 	Renderer::Create(config.framesInFlight, &device, &swapchain);
@@ -117,6 +120,7 @@ void Manager::DestroyVulkan()
 		swapchain.Destroy();
 		Renderer::Destroy();
 		Descriptor::DestroyPools();
+		Command::DestroyPools();
 		window.DestroySurface();
 		device.Destroy();
 	}

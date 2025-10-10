@@ -89,7 +89,7 @@ void Renderer::CreateCommands()
 		commandConfig.waitDestinations = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 		commandConfig.signalSemaphores = {presentSemaphores[i]};
 
-		commands[i].Create(commandConfig, device);
+		commands[i].Create(commandConfig, i, device);
 	}
 }
 
@@ -143,6 +143,8 @@ void Renderer::WaitForFrame()
 {
 	if (vkWaitForFences(device->GetLogicalDevice(), 1, &fences[currentFrame], VK_TRUE, UINT64_MAX) != VK_SUCCESS)
 		throw (std::runtime_error("Failed to wait for fence"));
+
+	Command::ResetPool();
 }
 
 void Renderer::Frame()
