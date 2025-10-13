@@ -75,7 +75,7 @@ void Manager::CreateVulkan()
 	std::cout << "Swapchain created: " << swapchain << std::endl;
 
 	if (config.framesInFlight > swapchain.GetFrameCount()) config.framesInFlight = swapchain.GetFrameCount();
-	std::cout << "Frames in flight: " << config.framesInFlight << std::endl;
+	std::cout << "Frames in flight: " << config.framesInFlight << std::endl << std::endl;
 
 	Command::CreatePools();
 
