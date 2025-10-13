@@ -50,14 +50,17 @@ class Command
 	enum State {Idle, Began, Ended};
 
 	private:
+		static std::vector<VkCommandPool> pools;
+
 		State state = Idle;
 		CommandConfig config{};
 		Device* device = nullptr;
+		size_t frame = 0;
 
-		VkCommandPool pool = nullptr;
+		//VkCommandPool pool = nullptr;
 		VkCommandBuffer buffer = nullptr;
 
-		void CreatePool();
+		//void CreatePool();
 		void AllocateBuffer();
 
 	public:
@@ -69,6 +72,7 @@ class Command
 		 * @param commandConfig Configuration describing command buffer setup.
 		 * @param commandDevice Device to use for allocation; if @c nullptr, uses the stored device.
 		 */
+		void Create(const CommandConfig& commandConfig, size_t commandFrame, Device* commandDevice = nullptr);
 		void Create(const CommandConfig& commandConfig, Device* commandDevice = nullptr);
 
 		void Destroy(); /**< @brief Destroys the command pool and buffer. */
@@ -102,4 +106,8 @@ class Command
 		 * @warning Requires the Command to be in the @c Ended state.
 		 */
 		void Submit();
+
+		static void CreatePools(Device* commandDevice = nullptr);
+		static void DestroyPools(Device* commandDevice = nullptr);
+		static void ResetPool(Device* commandDevice = nullptr);
 };

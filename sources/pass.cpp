@@ -25,13 +25,19 @@ std::vector<VkAttachmentDescription> PassConfig::GetAttachments()
 	return (attachments);
 }
 
-std::vector<VkImageView> PassConfig::GetViews()
+std::vector<VkImageView> PassConfig::GetViews(size_t frame)
 {
 	std::vector<VkImageView> views;
 
-	for (AttachmentConfig& attachment : colorAttachments) views.push_back(attachment.view);
+	for (AttachmentConfig& attachment : colorAttachments)
+	{
+		views.push_back(attachment.views.size() <= frame ? nullptr : attachment.views[frame]);
+	}
 
-	if (depth) views.push_back(depthAttachment.view);
+	if (depth)
+	{
+		views.push_back(depthAttachment.views.size() <= frame ? nullptr : depthAttachment.views[frame]);
+	}
 
 	return (views);
 }
@@ -69,16 +75,21 @@ void Pass::Create(const PassConfig& passConfig, Device* passDevice)
 	CreateFramebuffers();
 
 	Manager::RegisterResizeCall(this, &Pass::Recreate);
+
+	//std::cout << "Pass images: " << images.size() << std::endl;
 }
 
 void Pass::CreateImages()
 {
 	if (config.depth)
 	{
-		images.push_back(new Image());
-		ImageConfig imageConfig = Image::DefaultDepthConfig();
-		images[images.size() - 1]->Create(imageConfig, device);
-		config.depthAttachment.view = images[images.size() - 1]->GetView();
+		for (size_t i = 0; i < Manager::GetSwapchain().GetFrameCount(); i++)
+		{
+			images.push_back(new Image());
+			ImageConfig imageConfig = Image::DefaultDepthConfig();
+			images[images.size() - 1]->Create(imageConfig, device);
+			config.depthAttachment.views.push_back(images[images.size() - 1]->GetView());
+		}
 	}
 }
 
@@ -114,7 +125,7 @@ void Pass::CreateFramebuffers()
 	framebuffers.resize(swapchainViews.size());
 	for (int i = 0; i < swapchainViews.size(); i++)
 	{
-		std::vector<VkImageView> views = config.GetViews();
+		std::vector<VkImageView> views = config.GetViews(i);
 		views[0] = swapchainViews[i];
 
 		VkFramebufferCreateInfo createInfo{};
@@ -156,6 +167,9 @@ void Pass::DestroyImages()
 		delete(image);
 	}
 	images.clear();
+
+	for (AttachmentConfig& attachment : config.colorAttachments) { attachment.views.clear(); }
+	config.depthAttachment.views.clear();
 }
 
 void Pass::DestroyFramebuffers()

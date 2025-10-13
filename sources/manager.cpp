@@ -5,6 +5,8 @@
 #include "utilities.hpp"
 #include "input.hpp"
 #include "time.hpp"
+#include "descriptor.hpp"
+#include "command.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -58,16 +60,28 @@ void Manager::CreateVulkan()
 	device.SetConfig(config.deviceConfig);
 
 	Graphics::CreateInstance();
+
 	device.CreatePhysical();
+
 	window.CreateSurface(device);
 	std::cout << "Window created: " << window << std::endl;
+
 	device.SelectQueues();
 	device.CreateLogical();
 	device.RetrieveQueues();
 	std::cout << "Device created: " << device << std::endl;
+
 	swapchain.Create(&window, &device);
 	std::cout << "Swapchain created: " << swapchain << std::endl;
-	Renderer::Create(2, &device, &swapchain);
+
+	if (config.framesInFlight > swapchain.GetFrameCount()) config.framesInFlight = swapchain.GetFrameCount();
+	std::cout << "Frames in flight: " << config.framesInFlight << std::endl << std::endl;
+
+	Command::CreatePools();
+
+	Descriptor::CreatePools();
+
+	Renderer::Create(config.framesInFlight, &device, &swapchain);
 
 	CameraConfig cameraConfig{};
 	cameraConfig.width = window.GetConfig().extent.width;
@@ -105,6 +119,8 @@ void Manager::DestroyVulkan()
 	{
 		swapchain.Destroy();
 		Renderer::Destroy();
+		Descriptor::DestroyPools();
+		Command::DestroyPools();
 		window.DestroySurface();
 		device.Destroy();
 	}
@@ -159,6 +175,8 @@ void Manager::Start()
 void Manager::Frame()
 {
 	glfwPollEvents();
+
+	Renderer::WaitForFrame();
 
 	if (resizing) Resize();
 

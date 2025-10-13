@@ -67,6 +67,7 @@ struct ImageConfig
 	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 	VkImageLayout currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	VkImageLayout targetLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	bool createMipmaps = false;
 
 	ImageViewConfig viewConfig{};
 	ImageSamplerConfig samplerConfig{};
@@ -100,6 +101,7 @@ class Image
 		VkDeviceMemory memory = nullptr;
 
 		void CreateImage();
+		void CreateMipmaps();
 		void CreateView();
 		void CreateSampler();
 		void AllocateMemory();
@@ -155,6 +157,8 @@ class Image
 		static ImageViewConfig DefaultViewConfig();
 
 		static ImageConfig DefaultConfig();
+		static ImageConfig DefaultNormalConfig();
+		static ImageConfig DefaultGreyscaleConfig();
 
 		/**
 		 * @brief Provides a default configuration for depth images.

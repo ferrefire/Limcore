@@ -20,10 +20,17 @@
  * binding and updating resources such as buffers and images.
  */
 
+enum class DescriptorType 
+{ 
+	UniformBuffer = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+	DynamicUniformBuffer = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+	CombinedSampler = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+};
+
 /** @brief Configuration for a single descriptor binding. */
 struct DescriptorConfig
 {
-	VkDescriptorType type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; /**< @brief Type of descriptor (e.g., uniform buffer, sampler). */
+	DescriptorType type = DescriptorType::UniformBuffer; /**< @brief Type of descriptor (e.g., uniform buffer, sampler). */
 	VkShaderStageFlags stages = VK_SHADER_STAGE_ALL; /**< @brief Shader stages that can access this binding. */
 	uint32_t count = 1; /**< @brief Number of descriptors (array size). */
 };
@@ -45,15 +52,16 @@ struct DescriptorConfig
 class Descriptor
 {
 	private:
+		static VkDescriptorPool pool;
+
+		size_t set = 0;
 		std::vector<DescriptorConfig> config{};
 		Device* device = nullptr;
 
         VkDescriptorSetLayout layout = nullptr;
-		VkDescriptorPool pool = nullptr;
 		std::vector<VkDescriptorSet> sets;
 
 		void CreateLayout();
-		void CreatePool();
 		void AllocateSet(VkDescriptorSet& set);
 
     public:
@@ -65,7 +73,7 @@ class Descriptor
 		 * @param descriptorConfig Vector of descriptor binding configurations.
 		 * @param descriptorDevice Device to use for creation; if @c nullptr, uses the stored device.
 		 */
-		void Create(const std::vector<DescriptorConfig>& descriptorConfig, Device* descriptorDevice = nullptr);
+		void Create(size_t layoutSet, const std::vector<DescriptorConfig>& descriptorConfig, Device* descriptorDevice = nullptr);
 
 		void Destroy(); /**< @brief Destroys the descriptor resources (layout, pool, sets). */
 
@@ -87,13 +95,17 @@ class Descriptor
 		 */
 		size_t GetNewSet();
 
+		size_t GetNewSetDynamic();
+
 		/**
 		 * @brief Binds a descriptor set to a command buffer.
 		 * @param setID Index of the descriptor set to bind.
 		 * @param commandBuffer Command buffer to record the bind into.
 		 * @param pipelineLayout Pipeline layout that the descriptor set is compatible with.
 		 */
-		void Bind(size_t setID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
+		void Bind(size_t setID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int offset = -1);
+
+		void BindDynamic(size_t baseSetID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int offset = -1);
 
 		/**
 		 * @brief Updates a descriptor set binding with buffer or image info.
@@ -102,7 +114,7 @@ class Descriptor
 		 * @param bufferInfo Optional buffer descriptor info (if updating a buffer binding).
 		 * @param imageInfo Optional image descriptor info (if updating an image binding).
 		 */
-		void Update(size_t setID, uint32_t binding, VkDescriptorBufferInfo* bufferInfo = nullptr, VkDescriptorImageInfo* imageInfo = nullptr);
+		void Update(size_t setID, uint32_t binding, VkDescriptorBufferInfo* bufferInfos = nullptr, VkDescriptorImageInfo* imageInfos = nullptr);
 
 		/**
 		 * @brief Updates a descriptor set binding with a buffer resource.
@@ -110,7 +122,9 @@ class Descriptor
 		 * @param binding Binding index within the descriptor set.
 		 * @param buffer Buffer object to bind.
 		 */
-		void Update(size_t setID, uint32_t binding, const Buffer& buffer);
+		void Update(size_t setID, uint32_t binding, const Buffer& buffer, size_t size = 0);
+
+		void UpdateDynamic(size_t baseSetID, uint32_t binding, const std::vector<Buffer*> buffers, size_t size = 0);
 
 		/**
 		 * @brief Updates a descriptor set binding with an image resource.
@@ -119,6 +133,11 @@ class Descriptor
 		 * @param image Image object to bind.
 		 */
 		void Update(size_t setID, uint32_t binding, const Image& image);
+
+		void Update(size_t setID, uint32_t binding, const std::vector<Image*> images);
+
+		static void CreatePools(Device* descriptorDevice = nullptr);
+		static void DestroyPools(Device* descriptorDevice = nullptr);
 };
 
 std::ostream& operator<<(std::ostream& out, const DescriptorConfig& config);

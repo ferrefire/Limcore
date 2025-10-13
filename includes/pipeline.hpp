@@ -103,4 +103,6 @@ class Pipeline
 		 * @return A @ref PipelineConfig with common defaults filled in.
 		 */
 		static PipelineConfig DefaultConfig();
+
+		static void CreateLayout(VkPipelineLayout* layout, std::vector<VkDescriptorSetLayout> descriptorLayouts, Device* device = nullptr);
 };

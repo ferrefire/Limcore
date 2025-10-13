@@ -18,3 +18,14 @@ std::string Utilities::ToBits(T byte)
 	
 	return (bs.to_string());
 }
+
+template <typename T>
+std::vector<T*> Utilities::Pointerize(std::vector<T>& vector)
+{
+	std::vector<T*> result;
+	result.reserve(vector.size());
+
+	for (T& element : vector) { result.push_back(&element); }
+
+	return (result);
+}

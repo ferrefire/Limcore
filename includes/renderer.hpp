@@ -4,6 +4,10 @@
 #include "pass.hpp"
 #include "device.hpp"
 #include "swapchain.hpp"
+#include "buffer.hpp"
+#include "descriptor.hpp"
+#include "point.hpp"
+#include "matrix.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -81,7 +85,11 @@ class Renderer
 		 * @return Reference to the PassInfo.
 		 */
 		static PassInfo& GetPassInfo(size_t index);
+		
+		static uint32_t GetFrameCount();
+		static uint32_t GetCurrentFrame();
 
+		static void WaitForFrame();
 		static void Frame();
 
 		/**

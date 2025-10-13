@@ -22,7 +22,7 @@
 /** @brief Per-attachment configuration for a Vulkan render pass / framebuffer. */
 struct AttachmentConfig
 {
-	VkImageView view = nullptr; /**< @brief Image view used by the attachment (e.g., swapchain image or depth image). */
+	std::vector<VkImageView> views; /**< @brief Image view used by the attachment (e.g., swapchain image or depth image). */
 	VkAttachmentDescription description{}; /**< @brief Attachment description (format, load/store ops, layouts, etc.). */
 	VkAttachmentReference reference{}; /**< @brief Reference used by subpasses to bind this attachment. */
 	VkClearValue clear{}; /**< @brief Clear color/depth/stencil value applied when loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR. */
@@ -52,7 +52,7 @@ struct PassConfig
 	 * @brief Gets the image views of all configured attachments.
 	 * @return Vector of @c VkImageView for color attachments (and depth if present).
 	 */
-	std::vector<VkImageView> GetViews();
+	std::vector<VkImageView> GetViews(size_t frame = 0);
 
 	/**
 	 * @brief Gets clear values for all configured attachments.
