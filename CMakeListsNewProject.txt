@@ -9,6 +9,7 @@ FILE(GLOB SOURCE_FILES sources/*.cpp)
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC "includes")
+target_compile_options(${PROJECT_NAME} PRIVATE $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-O3>)
 
 include(FetchContent)
 
