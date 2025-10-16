@@ -38,6 +38,7 @@ struct DeviceConfig
 	bool anisotropic = false;
 	bool shaderDouble = false;
 	bool geometryShader = false;
+	bool wireframeMode = false;
 };
 
 /** @brief Contains information about different queue families. */

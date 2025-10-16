@@ -112,10 +112,7 @@ void Frame()
 
 	if (Input::GetKey(GLFW_KEY_P).pressed)
 	{
-		Command computeCommand;
-		CommandConfig commandConfig{};
-		commandConfig.queueIndex = Manager::GetDevice().GetQueueIndex(QueueType::Graphics);
-		computeCommand.Create(commandConfig);
+		Command computeCommand(CommandConfig{});
 		computeCommand.Begin();
 
 		computeDescriptor.Bind(0, computeCommand.GetBuffer(), computePipeline.GetLayout());
@@ -124,7 +121,7 @@ void Frame()
 
 		computeCommand.End();
 		computeCommand.Submit();
-		computeCommand.Destroy();
+		//computeCommand.Destroy();
 
 		std::cout << "Compute shader executed." << std::endl;
 	}
@@ -307,6 +304,8 @@ int main(int argc, char** argv)
 {
 	Manager::ParseArguments(argv, argc);
 	Manager::GetConfig().deviceConfig.anisotropic = true;
+	//Manager::GetConfig().wireframe = true;
+	//Manager::GetConfig().useValidationLayers = false;
 	//Manager::GetConfig().framesInFlight = 3;
 	Manager::Create();
 

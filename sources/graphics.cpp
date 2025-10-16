@@ -22,7 +22,7 @@ void Graphics::CreateInstance()
 {
 	if (instance) throw (std::runtime_error("Vulkan instance already exists"));
 
-	if (HasValidationLayers()) validationLayersEnabled = true;
+	if (Manager::GetConfig().useValidationLayers && HasValidationLayers()) validationLayersEnabled = true;
 	std::cout << "Vulkan validation layers: " << (validationLayersEnabled ? "enabled" : "disabled") << std::endl << std::endl;
 
 	VkApplicationInfo appInfo{};

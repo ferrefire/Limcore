@@ -57,6 +57,7 @@ void Manager::CreateGLFW()
 void Manager::CreateVulkan()
 {
 	if (config.integrated) config.deviceConfig.type = DeviceType::Integrated;
+	if (config.wireframe) config.deviceConfig.wireframeMode = true;
 	device.SetConfig(config.deviceConfig);
 
 	Graphics::CreateInstance();

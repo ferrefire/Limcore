@@ -66,6 +66,7 @@ void Device::CreateLogical()
 	if (config.anisotropic) deviceFeatures.samplerAnisotropy = VK_TRUE;
 	if (config.shaderDouble) deviceFeatures.shaderFloat64 = VK_TRUE;
 	if (config.geometryShader) deviceFeatures.geometryShader = VK_TRUE;
+	if (config.wireframeMode) deviceFeatures.fillModeNonSolid = VK_TRUE;
 
 	std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 

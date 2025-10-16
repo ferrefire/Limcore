@@ -232,7 +232,7 @@ PipelineConfig Pipeline::DefaultConfig()
 	config.rasterization.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	config.rasterization.depthClampEnable = VK_FALSE;
 	config.rasterization.rasterizerDiscardEnable = VK_FALSE;
-	config.rasterization.polygonMode = VK_POLYGON_MODE_FILL;
+	config.rasterization.polygonMode = Manager::GetConfig().wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
 	config.rasterization.lineWidth = 1.0f;
 	config.rasterization.cullMode = VK_CULL_MODE_BACK_BIT;
 	//config.rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
