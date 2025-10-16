@@ -9,7 +9,7 @@ Shape<V, I>::Shape()
 SHAPE_TEMPLATE
 Shape<V, I>::Shape(ShapeType type, ShapeSettings shapeSettings)
 {
-	Create(type);
+	Create(type, shapeSettings);
 }
 
 SHAPE_TEMPLATE
