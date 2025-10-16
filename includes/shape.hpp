@@ -25,7 +25,13 @@
 
 #define SHAPE_TEMPLATE template <VertexConfig V, VkIndexType I>
 
-enum class ShapeType { Quad, Cube };
+enum class ShapeType { Quad, Plane, Cube };
+
+struct ShapeSettings
+{
+	bool scalarized = true;
+	size_t resolution = 1; 
+};
 
 /**
  * @brief Geometry builder/container for a specific vertex layout and index type.
@@ -54,7 +60,10 @@ class Shape
 		std::vector<Vertex<V>> vertices;
 		std::vector<indexType> indices;
 
+		ShapeSettings settings{};
+
 		void CreateQuad();
+		void CreatePlane();
 		void CreateCube();
 
 	public:
@@ -65,14 +74,14 @@ class Shape
 		 * @brief Constructs and initializes a primitive shape.
 		 * @param type Primitive type to build (quad or cube).
 		 */
-		Shape(ShapeType type);
+		Shape(ShapeType type, ShapeSettings shapeSettings = ShapeSettings{});
 
 		/**
 		 * @brief Constructs geometry from a model loader.
 		 * @param loader Model loader providing geometry.
 		 * @param scalarized If true, flattens/expands attributes to match layout @p V.
 		 */
-		Shape(ModelLoader loader, bool scalarized = true);
+		Shape(ModelLoader loader, ShapeSettings shapeSettings = ShapeSettings{});
 
 		/** @brief Destroys the shape and clears geometry. */
 		~Shape();
@@ -81,14 +90,14 @@ class Shape
 		 * @brief Creates a primitive shape.
 		 * @param type Primitive type to build.
 		 */
-		void Create(ShapeType type);
+		void Create(ShapeType type, ShapeSettings shapeSettings = ShapeSettings{});
 
 		/**
 		 * @brief Creates geometry from a model loader.
 		 * @param loader Model loader providing geometry.
 		 * @param scalarized If true, flattens/expands attributes so that the geometry has a scale of 1.
 		 */
-		void Create(ModelLoader loader, bool scalarized = true);
+		void Create(ModelLoader loader, ShapeSettings shapeSettings = ShapeSettings{});
 
 		/** @brief Clears vertices and indices. */
 		void Destroy();
