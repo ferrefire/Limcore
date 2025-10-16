@@ -65,6 +65,7 @@ class Command
 
 	public:
 		Command(); /**< @brief Constructs an empty Command object. */
+		Command(const CommandConfig& commandConfig, Device* commandDevice = nullptr);
 		~Command(); /**< @brief Destroys the command pool and buffer. */
 
 		/**

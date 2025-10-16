@@ -4,6 +4,7 @@
 #include "printer.hpp"
 #include "utilities.hpp"
 #include "renderer.hpp"
+#include "bitmask.hpp"
 
 #include <stdexcept>
 
@@ -40,6 +41,8 @@ void Descriptor::CreateLayout()
 		layoutBindings[i].descriptorType = static_cast<VkDescriptorType>(config[i].type);
 		layoutBindings[i].descriptorCount = config[i].count;
 		layoutBindings[i].stageFlags = config[i].stages;
+
+		if (Bitmask::HasFlag(config[i].stages, VK_SHADER_STAGE_COMPUTE_BIT)) compute = true;
 	}
 
 	VkDescriptorSetLayoutCreateInfo createInfo{};
@@ -122,7 +125,8 @@ void Descriptor::Bind(size_t setID, VkCommandBuffer commandBuffer, VkPipelineLay
 
 	uint32_t dynamicOffset = (offset >= 0 ? CUI(offset) : 0);
 
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, set, 1, &sets[setID], (offset >= 0 ? 1 : 0), &dynamicOffset);
+	vkCmdBindDescriptorSets(commandBuffer, (compute ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS),
+		pipelineLayout, set, 1, &sets[setID], (offset >= 0 ? 1 : 0), &dynamicOffset);
 }
 
 void Descriptor::BindDynamic(size_t baseSetID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int offset)
@@ -213,8 +217,8 @@ void Descriptor::CreatePools(Device* descriptorDevice)
 		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100},
 		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 100},
 		{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100},
+		{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 100},
 		//{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 50},
-		//{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 25},
 		//{VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 15},
 	};
 

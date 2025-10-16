@@ -11,6 +11,11 @@ Command::Command()
 
 }
 
+Command::Command(const CommandConfig& commandConfig, Device* commandDevice)
+{
+	Create(commandConfig, commandDevice);
+}
+
 Command::~Command()
 {
 	Destroy();

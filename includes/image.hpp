@@ -157,6 +157,7 @@ class Image
 		static ImageViewConfig DefaultViewConfig();
 
 		static ImageConfig DefaultConfig();
+		static ImageConfig DefaultStorageConfig();
 		static ImageConfig DefaultNormalConfig();
 		static ImageConfig DefaultGreyscaleConfig();
 
