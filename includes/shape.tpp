@@ -169,14 +169,41 @@ void Shape<V, I>::CreatePlane()
         {
 			vertices.push_back(Vertex<V>{});
 
+			float xPos = ((float)x / settings.resolution) - 0.5f;
+			float zPos = ((float)z / settings.resolution) - 0.5f;
+
 			if constexpr (hasPosition)
 			{
-				vertices[vertices.size() - 1].position = point3D(((float)x / settings.resolution) - 0.5f, 0, ((float)z / settings.resolution) - 0.5f);
+				vertices[vertices.size() - 1].position = point3D(xPos, 0, zPos);
 			}
 
+			if constexpr (hasNormal)
+			{
+				vertices[vertices.size() - 1].normal = point3D(0, 1, 0);
+			}
 
+			if constexpr (hasCoordinate)
+			{
+				vertices[vertices.size() - 1].coordinate = point2D(xPos + 0.5f, zPos + 0.5f);
+			}
         }
-    }
+	}
+
+	if constexpr (hasIndices)
+	{
+		for (size_t ti = 0, vi = 0, x = 0; x < settings.resolution; ++vi, ++x)
+    	{
+    	    for (size_t z = 0; z < settings.resolution; ti += 6, ++vi, ++z)
+    	    {
+    	        indices.push_back(vi);
+    	        indices.push_back(vi + 1);
+    	        indices.push_back(vi + settings.resolution + 2);
+    	        indices.push_back(vi);
+    	        indices.push_back(vi + settings.resolution + 2);
+    	        indices.push_back(vi + settings.resolution + 1);
+    	    }
+    	}
+	}
 }
 
 SHAPE_TEMPLATE
