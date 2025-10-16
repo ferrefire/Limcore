@@ -7,15 +7,15 @@ Shape<V, I>::Shape()
 }
 
 SHAPE_TEMPLATE
-Shape<V, I>::Shape(ShapeType type)
+Shape<V, I>::Shape(ShapeType type, ShapeSettings shapeSettings)
 {
 	Create(type);
 }
 
 SHAPE_TEMPLATE
-Shape<V, I>::Shape(ModelLoader loader, bool scalarized)
+Shape<V, I>::Shape(ModelLoader loader, ShapeSettings shapeSettings)
 {
-	Create(loader, scalarized);
+	Create(loader, shapeSettings);
 }
 
 SHAPE_TEMPLATE
@@ -25,23 +25,28 @@ Shape<V, I>::~Shape()
 }
 
 SHAPE_TEMPLATE
-void Shape<V, I>::Create(ShapeType type)
+void Shape<V, I>::Create(ShapeType type, ShapeSettings shapeSettings)
 {
 	Destroy();
+
+	settings = shapeSettings;
 
 	switch (type)
 	{
 		case ShapeType::Quad: CreateQuad(); break;
 		case ShapeType::Cube: CreateCube(); break;
+		case ShapeType::Plane: CreatePlane(); break;
 	}
 
-	Scalarize();
+	if (settings.scalarized) Scalarize();
 }
 
 SHAPE_TEMPLATE
-void Shape<V, I>::Create(ModelLoader loader, bool scalarized)
+void Shape<V, I>::Create(ModelLoader loader, ShapeSettings shapeSettings)
 {
 	Destroy();
+
+	settings = shapeSettings;
 
 	const ModelInfo& info = loader.GetInfo();
 	vertices.resize(info.size);
@@ -99,11 +104,11 @@ void Shape<V, I>::Create(ModelLoader loader, bool scalarized)
 
 	if (info.count > 0)
 	{
-		Shape<V, I> other(ModelLoader(info.name, info.type, info.ID + 1), false);
+		Shape<V, I> other(ModelLoader(info.name, info.type, info.ID + 1), {false, 1});
 		Join(other);
 	}
 
-	if (scalarized) Scalarize();
+	if (settings.scalarized) Scalarize();
 }
 
 SHAPE_TEMPLATE
@@ -111,6 +116,7 @@ void Shape<V, I>::Destroy()
 {
 	vertices.clear();
 	indices.clear();
+	settings = ShapeSettings{};
 }
 
 SHAPE_TEMPLATE
@@ -152,6 +158,25 @@ void Shape<V, I>::CreateQuad()
 		indices.push_back(2);
 		indices.push_back(3);
 	}
+}
+
+SHAPE_TEMPLATE
+void Shape<V, I>::CreatePlane()
+{
+	for (size_t i = 0, x = 0; x <= settings.resolution; ++x)
+    {
+        for (size_t z = 0; z <= settings.resolution; ++z, ++i)
+        {
+			vertices.push_back(Vertex<V>{});
+
+			if constexpr (hasPosition)
+			{
+				vertices[vertices.size() - 1].position = point3D(((float)x / settings.resolution) - 0.5f, 0, ((float)z / settings.resolution) - 0.5f);
+			}
+
+
+        }
+    }
 }
 
 SHAPE_TEMPLATE
@@ -240,7 +265,7 @@ void Shape<V, I>::Scale(const point3D& scalar, bool scaleUV)
 			vertex.position *= scalar;
 		}
 
-		if constexpr (hasIndices)
+		if constexpr (hasCoordinate)
 		{
 			if (scaleUV)
 			{
