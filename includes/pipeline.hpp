@@ -19,6 +19,8 @@
  * depth/stencil state, and dynamic states.
  */
 
+enum class PipelineType { Graphics, Compute, Shadow };
+
 /** @brief Configuration for creating a Vulkan graphics pipeline. */
 struct PipelineConfig
 {
@@ -42,6 +44,8 @@ struct PipelineConfig
 	std::vector<VkDynamicState> dynamicStates;
 	VkViewport viewport{};
 	VkRect2D scissor{};
+
+	PipelineType type = PipelineType::Graphics;
 };
 
 /**
@@ -70,6 +74,8 @@ class Pipeline
 		VkShaderModule CreateShader(const std::vector<char>& code);
 		void CreateConfig();
 		void CreateLayout();
+		void CreateGraphicsPipeline();
+		void CreateComputePipeline();
 		void CreatePipeline();
 
 	public:

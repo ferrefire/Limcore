@@ -368,6 +368,18 @@ ImageConfig Image::DefaultConfig()
 	return (config);
 }
 
+ImageConfig Image::DefaultStorageConfig()
+{
+	ImageConfig config{};
+	config.format = VK_FORMAT_R16_UNORM;
+	config.targetLayout = VK_IMAGE_LAYOUT_GENERAL;
+	config.usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	config.viewConfig = Image::DefaultViewConfig();
+	config.viewConfig.format = config.format;
+
+	return (config);
+}
+
 ImageConfig Image::DefaultNormalConfig()
 {
 	ImageConfig config{};
@@ -375,7 +387,7 @@ ImageConfig Image::DefaultNormalConfig()
 	config.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	config.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	config.viewConfig = Image::DefaultViewConfig();
-	config.viewConfig.format = VK_FORMAT_R8G8B8A8_UNORM;
+	config.viewConfig.format = config.format;
 
 	return (config);
 }
@@ -432,6 +444,7 @@ std::map<VkImageLayout, VkAccessFlags> Image::transitionAccesses =
 		std::pair<VkImageLayout, VkAccessFlags>{VK_IMAGE_LAYOUT_UNDEFINED, 0},
 		std::pair<VkImageLayout, VkAccessFlags>{VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
 		std::pair<VkImageLayout, VkAccessFlags>{VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
+		std::pair<VkImageLayout, VkAccessFlags>{VK_IMAGE_LAYOUT_GENERAL, 0}, // Check if correct later
 	};
 
 std::map<VkImageLayout, VkPipelineStageFlags> Image::transitionStages = 
@@ -439,4 +452,5 @@ std::map<VkImageLayout, VkPipelineStageFlags> Image::transitionStages =
 		std::pair<VkImageLayout, VkPipelineStageFlags>{VK_IMAGE_LAYOUT_UNDEFINED, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT},
 		std::pair<VkImageLayout, VkPipelineStageFlags>{VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT},
 		std::pair<VkImageLayout, VkPipelineStageFlags>{VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT},
+		std::pair<VkImageLayout, VkPipelineStageFlags>{VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT}, // Check if correct later
 	};

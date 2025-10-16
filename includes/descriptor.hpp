@@ -25,6 +25,7 @@ enum class DescriptorType
 	UniformBuffer = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 	DynamicUniformBuffer = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
 	CombinedSampler = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+	StorageImage = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
 };
 
 /** @brief Configuration for a single descriptor binding. */
@@ -60,6 +61,8 @@ class Descriptor
 
         VkDescriptorSetLayout layout = nullptr;
 		std::vector<VkDescriptorSet> sets;
+
+		bool compute = false;
 
 		void CreateLayout();
 		void AllocateSet(VkDescriptorSet& set);

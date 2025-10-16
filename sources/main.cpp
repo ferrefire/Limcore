@@ -11,6 +11,7 @@
 #include "time.hpp"
 #include "image.hpp"
 #include "utilities.hpp"
+#include "command.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -35,6 +36,10 @@ Pipeline pipeline;
 Descriptor frameDescriptor;
 Descriptor materialDescriptor;
 Descriptor objectDescriptor;
+
+Pipeline computePipeline;
+Descriptor computeDescriptor;
+Image computeImage;
 
 meshPNC32 cannonMesh;
 meshPNC32 quadMesh;
@@ -104,6 +109,25 @@ void Frame()
 	models[2].Translate(point3D(2.0, 0.5, 0.0));
 
 	objectBuffers[Renderer::GetCurrentFrame()].Update(models.data(), sizeof(mat4) * models.size());
+
+	if (Input::GetKey(GLFW_KEY_P).pressed)
+	{
+		Command computeCommand;
+		CommandConfig commandConfig{};
+		commandConfig.queueIndex = Manager::GetDevice().GetQueueIndex(QueueType::Graphics);
+		computeCommand.Create(commandConfig);
+		computeCommand.Begin();
+
+		computeDescriptor.Bind(0, computeCommand.GetBuffer(), computePipeline.GetLayout());
+		computePipeline.Bind(computeCommand.GetBuffer());
+		vkCmdDispatch(computeCommand.GetBuffer(), 1024 / 8, 1024 / 8, 1);
+
+		computeCommand.End();
+		computeCommand.Submit();
+		computeCommand.Destroy();
+
+		std::cout << "Compute shader executed." << std::endl;
+	}
 }
 
 void Start()
@@ -170,6 +194,11 @@ void Start()
 	}
 	loaders.clear();
 
+	ImageConfig imageStorageConfig = Image::DefaultStorageConfig();
+	imageStorageConfig.width = 1024;
+	imageStorageConfig.height = 1024;
+	computeImage.Create(imageStorageConfig);
+
 	data.projection = Manager::GetCamera().GetProjection();
 	data.lightDirection = point4D(point3D(0.2, 0.5, -0.4).Unitized());
 
@@ -214,6 +243,14 @@ void Start()
 	objectDescriptor.GetNewSetDynamic();
 	objectDescriptor.UpdateDynamic(0, 0, Utilities::Pointerize(objectBuffers), sizeof(mat4));
 
+	std::vector<DescriptorConfig> computeDescriptorConfigs(1);
+	computeDescriptorConfigs[0].type = DescriptorType::StorageImage;
+	computeDescriptorConfigs[0].stages = VK_SHADER_STAGE_COMPUTE_BIT;
+	computeDescriptor.Create(0, computeDescriptorConfigs);
+
+	computeDescriptor.GetNewSet();
+	computeDescriptor.Update(0, 0, computeImage);
+
 	PipelineConfig pipelineConfig = Pipeline::DefaultConfig();
 	pipelineConfig.shader = "default";
 	pipelineConfig.vertexInfo = cannonMesh.GetVertexInfo();
@@ -222,6 +259,12 @@ void Start()
 	pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
 	pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
 	pipeline.Create(pipelineConfig);
+
+	PipelineConfig computePipelineConfig{};
+	computePipelineConfig.shader = "heightmap";
+	computePipelineConfig.type = PipelineType::Compute;
+	computePipelineConfig.descriptorLayouts = { computeDescriptor.GetLayout() };
+	computePipeline.Create(computePipelineConfig);
 
 	Manager::GetCamera().Move(point3D(0, 1, -2));
 
@@ -249,12 +292,15 @@ void End()
 	lionImageDiff.Destroy();
 	lionImageNorm.Destroy();
 	lionImageARM.Destroy();
+	computeImage.Destroy();
 
 	pass.Destroy();
 	frameDescriptor.Destroy();
 	materialDescriptor.Destroy();
 	objectDescriptor.Destroy();
+	computeDescriptor.Destroy();
 	pipeline.Destroy();
+	computePipeline.Destroy();
 }
 
 int main(int argc, char** argv)

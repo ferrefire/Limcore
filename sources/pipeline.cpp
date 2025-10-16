@@ -48,6 +48,20 @@ void Pipeline::CreateConfig()
 
 	std::string path = Utilities::GetPath();
 
+	if (config.type == PipelineType::Compute)
+	{
+		VkShaderModule computeShader = CreateShader(Utilities::FileToBinary(path + "/shaders/" + config.shader + ".comp.spv"));
+
+		config.shaderStages.resize(1);
+
+		config.shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		config.shaderStages[0].stage = VK_SHADER_STAGE_COMPUTE_BIT;
+		config.shaderStages[0].module = computeShader;
+		config.shaderStages[0].pName = "main";
+
+		return;
+	}
+
 	VkShaderModule vertexShader = CreateShader(Utilities::FileToBinary(path + "/shaders/" + config.shader + ".vert.spv"));
 	VkShaderModule fragmentShader = CreateShader(Utilities::FileToBinary(path + "/shaders/" + config.shader + ".frag.spv"));
 
@@ -93,11 +107,12 @@ void Pipeline::CreateLayout()
 		throw (std::runtime_error("Failed to create pipeline layout"));
 }
 
-void Pipeline::CreatePipeline()
+void Pipeline::CreateGraphicsPipeline()
 {
 	if (pipeline) throw (std::runtime_error("Pipeline already exists"));
 	if (!layout) throw (std::runtime_error("Pipeline has no layout"));
 	if (!device) throw (std::runtime_error("Pipeline has no device"));
+	if (config.type != PipelineType::Graphics) throw (std::runtime_error("Invalid pipeline type"));
 
 	VkGraphicsPipelineCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -123,6 +138,37 @@ void Pipeline::CreatePipeline()
 		vkDestroyShaderModule(device->GetLogicalDevice(), shaderStage.module, nullptr);
 
 	config.shaderStages.clear();
+}
+
+void Pipeline::CreateComputePipeline()
+{
+	if (pipeline) throw (std::runtime_error("Pipeline already exists"));
+	if (!layout) throw (std::runtime_error("Pipeline has no layout"));
+	if (!device) throw (std::runtime_error("Pipeline has no device"));
+	if (config.type != PipelineType::Compute) throw (std::runtime_error("Invalid pipeline type"));
+
+	VkComputePipelineCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+	createInfo.stage = config.shaderStages[0];
+	createInfo.layout = layout;
+
+	if (vkCreateComputePipelines(device->GetLogicalDevice(), VK_NULL_HANDLE, 1, &createInfo, nullptr, &pipeline) != VK_SUCCESS)
+		throw (std::runtime_error("Failed to create pipeline"));
+
+	for (VkPipelineShaderStageCreateInfo& shaderStage : config.shaderStages)
+		vkDestroyShaderModule(device->GetLogicalDevice(), shaderStage.module, nullptr);
+
+	config.shaderStages.clear();
+}
+
+void Pipeline::CreatePipeline()
+{
+	if (pipeline) throw (std::runtime_error("Pipeline already exists"));
+	if (!layout) throw (std::runtime_error("Pipeline has no layout"));
+	if (!device) throw (std::runtime_error("Pipeline has no device"));
+
+	if (config.type == PipelineType::Graphics) CreateGraphicsPipeline();
+	else if (config.type == PipelineType::Compute) CreateComputePipeline();
 }
 
 void Pipeline::Destroy()
@@ -156,12 +202,19 @@ const VkPipelineLayout& Pipeline::GetLayout() const
 	return (layout);
 }
 
+VkPipelineBindPoint GetBindPoint(PipelineType type)
+{
+	if (type == PipelineType::Graphics || type == PipelineType::Shadow) return (VK_PIPELINE_BIND_POINT_GRAPHICS);
+	else if (type == PipelineType::Compute) return (VK_PIPELINE_BIND_POINT_COMPUTE);
+	else throw (std::runtime_error("Pipeline type has no bind point"));
+}
+
 void Pipeline::Bind(VkCommandBuffer commandBuffer)
 {
 	if (!commandBuffer) throw (std::runtime_error("Can't bind pipeline because the command buffer does not exist"));
 	if (!pipeline) throw (std::runtime_error("Pipeline does not exist"));
 
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+	vkCmdBindPipeline(commandBuffer, GetBindPoint(config.type), pipeline);
 }
 
 PipelineConfig Pipeline::DefaultConfig()
