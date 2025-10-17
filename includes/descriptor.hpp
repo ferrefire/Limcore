@@ -3,6 +3,7 @@
 #include "device.hpp"
 #include "buffer.hpp"
 #include "image.hpp"
+#include "pipeline.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -62,8 +63,6 @@ class Descriptor
         VkDescriptorSetLayout layout = nullptr;
 		std::vector<VkDescriptorSet> sets;
 
-		bool compute = false;
-
 		void CreateLayout();
 		void AllocateSet(VkDescriptorSet& set);
 
@@ -106,9 +105,9 @@ class Descriptor
 		 * @param commandBuffer Command buffer to record the bind into.
 		 * @param pipelineLayout Pipeline layout that the descriptor set is compatible with.
 		 */
-		void Bind(size_t setID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int offset = -1);
+		void Bind(size_t setID, VkCommandBuffer commandBuffer, const Pipeline& pipeline, int offset = -1);
 
-		void BindDynamic(size_t baseSetID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int offset = -1);
+		void BindDynamic(size_t baseSetID, VkCommandBuffer commandBuffer, const Pipeline& pipeline, int offset = -1);
 
 		/**
 		 * @brief Updates a descriptor set binding with buffer or image info.

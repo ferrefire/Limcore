@@ -61,21 +61,21 @@ float angle = -45 + 180;
 
 void Render(VkCommandBuffer commandBuffer, uint32_t frameIndex)
 {
-	frameDescriptor.BindDynamic(0, commandBuffer, pipeline.GetLayout());
+	frameDescriptor.BindDynamic(0, commandBuffer, pipeline);
 	pipeline.Bind(commandBuffer);
 
-	materialDescriptor.Bind(0, commandBuffer, pipeline.GetLayout());
-	objectDescriptor.BindDynamic(0, commandBuffer, pipeline.GetLayout(), 0);
+	materialDescriptor.Bind(0, commandBuffer, pipeline);
+	objectDescriptor.BindDynamic(0, commandBuffer, pipeline, 0);
 	cannonMesh.Bind(commandBuffer);
 	vkCmdDrawIndexed(commandBuffer, cannonMesh.GetIndices().size(), 1, 0, 0, 0);
 
-	materialDescriptor.Bind(1, commandBuffer, pipeline.GetLayout());
-	objectDescriptor.BindDynamic(0, commandBuffer, pipeline.GetLayout(), 1 * sizeof(mat4));
+	materialDescriptor.Bind(1, commandBuffer, pipeline);
+	objectDescriptor.BindDynamic(0, commandBuffer, pipeline, 1 * sizeof(mat4));
 	quadMesh.Bind(commandBuffer);
 	vkCmdDrawIndexed(commandBuffer, quadMesh.GetIndices().size(), 1, 0, 0, 0);
 
-	materialDescriptor.Bind(2, commandBuffer, pipeline.GetLayout());
-	objectDescriptor.BindDynamic(0, commandBuffer, pipeline.GetLayout(), 2 * sizeof(mat4));
+	materialDescriptor.Bind(2, commandBuffer, pipeline);
+	objectDescriptor.BindDynamic(0, commandBuffer, pipeline, 2 * sizeof(mat4));
 	lionMesh.Bind(commandBuffer);
 	vkCmdDrawIndexed(commandBuffer, lionMesh.GetIndices().size(), 1, 0, 0, 0);
 }
@@ -115,7 +115,7 @@ void Frame()
 		Command computeCommand(CommandConfig{});
 		computeCommand.Begin();
 
-		computeDescriptor.Bind(0, computeCommand.GetBuffer(), computePipeline.GetLayout());
+		computeDescriptor.Bind(0, computeCommand.GetBuffer(), computePipeline);
 		computePipeline.Bind(computeCommand.GetBuffer());
 		vkCmdDispatch(computeCommand.GetBuffer(), 1024 / 8, 1024 / 8, 1);
 

@@ -42,7 +42,7 @@ void Descriptor::CreateLayout()
 		layoutBindings[i].descriptorCount = config[i].count;
 		layoutBindings[i].stageFlags = config[i].stages;
 
-		if (Bitmask::HasFlag(config[i].stages, VK_SHADER_STAGE_COMPUTE_BIT)) compute = true;
+		//if (Bitmask::HasFlag(config[i].stages, VK_SHADER_STAGE_COMPUTE_BIT)) compute = true;
 	}
 
 	VkDescriptorSetLayoutCreateInfo createInfo{};
@@ -117,21 +117,22 @@ size_t Descriptor::GetNewSetDynamic()
 	return (setID);
 }
 
-void Descriptor::Bind(size_t setID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int offset)
+void Descriptor::Bind(size_t setID, VkCommandBuffer commandBuffer, const Pipeline& pipeline, int offset)
 {
 	if (!commandBuffer) throw (std::runtime_error("Cannot bind descriptor because command buffer does not exist"));
-	if (!pipelineLayout) throw (std::runtime_error("Cannot bind descriptor because pipeline layout does not exist"));
+	//if (!pipelineLayout) throw (std::runtime_error("Cannot bind descriptor because pipeline layout does not exist"));
 	if (!sets[setID]) throw (std::runtime_error("Descriptor has no set"));
 
 	uint32_t dynamicOffset = (offset >= 0 ? CUI(offset) : 0);
 
-	vkCmdBindDescriptorSets(commandBuffer, (compute ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS),
-		pipelineLayout, set, 1, &sets[setID], (offset >= 0 ? 1 : 0), &dynamicOffset);
+	vkCmdBindDescriptorSets(commandBuffer, (pipeline.GetConfig().type == PipelineType::Compute ? 
+		VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS),
+		pipeline.GetLayout(), set, 1, &sets[setID], (offset >= 0 ? 1 : 0), &dynamicOffset);
 }
 
-void Descriptor::BindDynamic(size_t baseSetID, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int offset)
+void Descriptor::BindDynamic(size_t baseSetID, VkCommandBuffer commandBuffer, const Pipeline& pipeline, int offset)
 {
-	Bind(baseSetID + Renderer::GetCurrentFrame(), commandBuffer, pipelineLayout, offset);
+	Bind(baseSetID + Renderer::GetCurrentFrame(), commandBuffer, pipeline, offset);
 }
 
 void Descriptor::Update(size_t setID, uint32_t binding, VkDescriptorBufferInfo* bufferInfos, VkDescriptorImageInfo* imageInfos)
