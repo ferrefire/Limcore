@@ -98,6 +98,8 @@ class Pipeline
 		 */
 		const VkPipelineLayout& GetLayout() const;
 
+		const PipelineConfig& GetConfig() const;
+
 		/**
 		 * @brief Binds the pipeline to a command buffer.
 		 * @param commandBuffer Command buffer to record the bind into.

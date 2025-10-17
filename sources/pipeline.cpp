@@ -202,6 +202,11 @@ const VkPipelineLayout& Pipeline::GetLayout() const
 	return (layout);
 }
 
+const PipelineConfig& Pipeline::GetConfig() const
+{
+	return (config);
+}
+
 VkPipelineBindPoint GetBindPoint(PipelineType type)
 {
 	if (type == PipelineType::Graphics || type == PipelineType::Shadow) return (VK_PIPELINE_BIND_POINT_GRAPHICS);
