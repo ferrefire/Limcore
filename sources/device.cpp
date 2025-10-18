@@ -70,6 +70,17 @@ void Device::CreateLogical()
 
 	std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
+	/*VkPhysicalDeviceVulkan13Features f13{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
+	VkPhysicalDeviceVulkan12Features f12{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
+	VkPhysicalDeviceVulkan11Features f11{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES};
+
+	VkPhysicalDeviceFeatures2 feats{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
+	feats.pNext = &f13;
+	f13.pNext = &f12;
+	f12.pNext = &f11;
+
+	vkGetPhysicalDeviceFeatures2(physicalDevice, &feats);*/
+
 	VkDeviceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	createInfo.queueCreateInfoCount = CUI(queueCreateInfos.size());
@@ -77,6 +88,7 @@ void Device::CreateLogical()
 	createInfo.pEnabledFeatures = &deviceFeatures;
 	createInfo.enabledExtensionCount = CUI(deviceExtensions.size());
 	createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+	//createInfo.pNext = &feats;
 
 	if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &logicalDevice) != VK_SUCCESS)
 		throw (std::runtime_error("Failed to create logical device"));
@@ -295,6 +307,15 @@ std::ostream& operator<<(std::ostream& out, const Device& device)
 	vkGetPhysicalDeviceProperties(device.GetPhysicalDevice(), &deviceProperties);
 
 	out << deviceProperties;
+
+	VkPhysicalDeviceProperties props{};
+	vkGetPhysicalDeviceProperties(device.GetPhysicalDevice(), &props);
+
+	printf("Device reports: %u.%u.%u\n",
+	       VK_VERSION_MAJOR(props.apiVersion),
+	       VK_VERSION_MINOR(props.apiVersion),
+	       VK_VERSION_PATCH(props.apiVersion));
+
 
 	return (out);
 }

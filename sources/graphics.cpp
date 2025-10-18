@@ -25,6 +25,22 @@ void Graphics::CreateInstance()
 	if (Manager::GetConfig().useValidationLayers && HasValidationLayers()) validationLayersEnabled = true;
 	std::cout << "Vulkan validation layers: " << (validationLayersEnabled ? "enabled" : "disabled") << std::endl << std::endl;
 
+	uint32_t instanceVersion = VK_API_VERSION_1_0;
+	PFN_vkEnumerateInstanceVersion pfnEnumerateInstanceVersion =
+	    reinterpret_cast<PFN_vkEnumerateInstanceVersion>(
+	        vkGetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion"));
+
+	if (pfnEnumerateInstanceVersion) 
+	{
+	    pfnEnumerateInstanceVersion(&instanceVersion);
+	}
+
+	printf("Loader/Runtime instance version: %u.%u.%u\n",
+	       VK_VERSION_MAJOR(instanceVersion),
+	       VK_VERSION_MINOR(instanceVersion),
+	       VK_VERSION_PATCH(instanceVersion));
+
+
 	VkApplicationInfo appInfo{};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.pApplicationName = "limcore";
@@ -48,6 +64,7 @@ void Graphics::CreateInstance()
 	createInfo.ppEnabledExtensionNames = extensions.data();
 	createInfo.enabledLayerCount = validationLayersEnabled ? CUI(validationLayers.size()) : 0;
 	createInfo.ppEnabledLayerNames = validationLayersEnabled ? validationLayers.data() : nullptr;
+	createInfo.pApplicationInfo = &appInfo;
 
 	if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
 		throw (std::runtime_error("Failed to create Vulkan instance"));
