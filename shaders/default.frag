@@ -52,4 +52,8 @@ void main()
 	//pixelColor = vec4(UnpackNormal(texture(textures[1], worldCoordinate), 1.0), 1.0);
 	//pixelColor = vec4((normal * 0.5 + 0.5), 1.0);
 	//pixelColor = vec4(worldCoordinate, 1.0, 1.0);
+	//pixelColor = vec4(texture(textures[1], worldCoordinate).rgb, 1.0);
+
+	//if (worldPosition.z > 0 && abs(worldPosition.x) < 0.1) pixelColor = vec4(0, 0, 1, 1);
+	//if (worldPosition.x > 0 && abs(worldPosition.z) < 0.1) pixelColor = vec4(0, 1, 0, 1);
 }

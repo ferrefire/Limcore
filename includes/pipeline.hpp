@@ -35,6 +35,7 @@ struct PipelineConfig
 	VkPipelineColorBlendAttachmentState colorBlendAttachment{};
 	VkPipelineColorBlendStateCreateInfo colorBlending{};
 	VkPipelineDynamicStateCreateInfo dynamics{};
+	VkPipelineTessellationStateCreateInfo tesselationState{};
 
 	std::string shader = "";
 	VertexInfo vertexInfo{};
@@ -46,6 +47,7 @@ struct PipelineConfig
 	VkRect2D scissor{};
 
 	PipelineType type = PipelineType::Graphics;
+	bool tesselation = false;
 };
 
 /**
@@ -72,6 +74,9 @@ class Pipeline
 		VkPipeline pipeline = nullptr;
 
 		VkShaderModule CreateShader(const std::vector<char>& code);
+		void CreateGraphicsConfig();
+		void CreateComputeConfig();
+		void CreateTesselationConfig();
 		void CreateConfig();
 		void CreateLayout();
 		void CreateGraphicsPipeline();
