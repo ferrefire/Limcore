@@ -42,25 +42,9 @@ VkShaderModule Pipeline::CreateShader(const std::vector<char>& code)
 	return (shaderModule);
 }
 
-void Pipeline::CreateConfig()
+void Pipeline::CreateGraphicsConfig()
 {
-	if (config.shader == "") throw std::runtime_error("Pipeline config has no shader");
-
 	std::string path = Utilities::GetPath();
-
-	if (config.type == PipelineType::Compute)
-	{
-		VkShaderModule computeShader = CreateShader(Utilities::FileToBinary(path + "/shaders/" + config.shader + ".comp.spv"));
-
-		config.shaderStages.resize(1);
-
-		config.shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		config.shaderStages[0].stage = VK_SHADER_STAGE_COMPUTE_BIT;
-		config.shaderStages[0].module = computeShader;
-		config.shaderStages[0].pName = "main";
-
-		return;
-	}
 
 	VkShaderModule vertexShader = CreateShader(Utilities::FileToBinary(path + "/shaders/" + config.shader + ".vert.spv"));
 	VkShaderModule fragmentShader = CreateShader(Utilities::FileToBinary(path + "/shaders/" + config.shader + ".frag.spv"));
@@ -93,6 +77,78 @@ void Pipeline::CreateConfig()
 	if (!Utilities::Contains(config.dynamicStates, VK_DYNAMIC_STATE_SCISSOR)) config.viewportState.pScissors = &config.scissor;
 }
 
+void Pipeline::CreateComputeConfig()
+{
+	std::string path = Utilities::GetPath();
+
+	VkShaderModule computeShader = CreateShader(Utilities::FileToBinary(path + "/shaders/" + config.shader + ".comp.spv"));
+
+	config.shaderStages.resize(1);
+
+	config.shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	config.shaderStages[0].stage = VK_SHADER_STAGE_COMPUTE_BIT;
+	config.shaderStages[0].module = computeShader;
+	config.shaderStages[0].pName = "main";
+}
+
+void Pipeline::CreateTesselationConfig()
+{
+	std::string path = Utilities::GetPath();
+
+	VkShaderModule vertexShader = CreateShader(Utilities::FileToBinary(path + "/shaders/" + config.shader + ".vert.spv"));
+	VkShaderModule controlShader = CreateShader(Utilities::FileToBinary(path + "/shaders/" + config.shader + ".tesc.spv"));
+	VkShaderModule evaluationShader = CreateShader(Utilities::FileToBinary(path + "/shaders/" + config.shader + ".tese.spv"));
+	VkShaderModule fragmentShader = CreateShader(Utilities::FileToBinary(path + "/shaders/" + config.shader + ".frag.spv"));
+
+	config.shaderStages.resize(4);
+
+	config.shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	config.shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+	config.shaderStages[0].module = vertexShader;
+	config.shaderStages[0].pName = "main";
+
+	config.shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	config.shaderStages[1].stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+	config.shaderStages[1].module = controlShader;
+	config.shaderStages[1].pName = "main";
+
+	config.shaderStages[2].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	config.shaderStages[2].stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+	config.shaderStages[2].module = evaluationShader;
+	config.shaderStages[2].pName = "main";
+
+	config.shaderStages[3].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	config.shaderStages[3].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	config.shaderStages[3].module = fragmentShader;
+	config.shaderStages[3].pName = "main";
+
+	config.vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	config.vertexInput.vertexBindingDescriptionCount = config.vertexInfo.bindingCount;
+	config.vertexInput.pVertexBindingDescriptions = &config.vertexInfo.bindingDescription;
+	config.vertexInput.vertexAttributeDescriptionCount = config.vertexInfo.attributeCount;
+	config.vertexInput.pVertexAttributeDescriptions = config.vertexInfo.attributeDescriptions.data();
+
+	config.dynamics.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	config.dynamics.dynamicStateCount = CUI(config.dynamicStates.size());
+	config.dynamics.pDynamicStates = (config.dynamicStates.size() > 0 ? config.dynamicStates.data() : nullptr);
+
+	config.colorBlending.pAttachments = &config.colorBlendAttachment;
+
+	if (!Utilities::Contains(config.dynamicStates, VK_DYNAMIC_STATE_VIEWPORT)) config.viewportState.pViewports = &config.viewport;
+	if (!Utilities::Contains(config.dynamicStates, VK_DYNAMIC_STATE_SCISSOR)) config.viewportState.pScissors = &config.scissor;
+}
+
+void Pipeline::CreateConfig()
+{
+	if (config.shader == "") throw std::runtime_error("Pipeline config has no shader");
+
+	std::string path = Utilities::GetPath();
+
+	if (config.type == PipelineType::Graphics && !config.tesselation) CreateGraphicsConfig();
+	else if (config.type == PipelineType::Graphics && config.tesselation) CreateTesselationConfig();
+	else if (config.type == PipelineType::Compute) CreateComputeConfig();
+}
+
 void Pipeline::CreateLayout()
 {
 	if (layout) throw (std::runtime_error("Pipeline layout already exists"));
@@ -120,7 +176,7 @@ void Pipeline::CreateGraphicsPipeline()
 	createInfo.pStages = config.shaderStages.data();
 	createInfo.pVertexInputState = &config.vertexInput;
 	createInfo.pInputAssemblyState = &config.inputAssembly;
-	//createInfo.pTessellationState = &config.tesselation;
+	if (config.tesselation) createInfo.pTessellationState = &config.tesselationState;
 	createInfo.pViewportState = &config.viewportState;
 	createInfo.pRasterizationState = &config.rasterization;
 	createInfo.pMultisampleState = &config.multisampling;
@@ -276,6 +332,9 @@ PipelineConfig Pipeline::DefaultConfig()
 	config.colorBlending.blendConstants[1] = 0.0f;
 	config.colorBlending.blendConstants[2] = 0.0f;
 	config.colorBlending.blendConstants[3] = 0.0f;
+
+	config.tesselationState.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+	config.tesselationState.patchControlPoints = 3;
 
 	config.viewport.x = 0.0f;
 	config.viewport.y = 0.0f;
