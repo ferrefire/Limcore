@@ -286,6 +286,9 @@ PipelineConfig Pipeline::DefaultConfig()
 	config.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	config.inputAssembly.primitiveRestartEnable = VK_FALSE;
 
+	config.tesselationState.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+	config.tesselationState.patchControlPoints = 3;
+
 	config.viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	config.viewportState.viewportCount = 1;
 	config.viewportState.scissorCount = 1;
@@ -332,9 +335,6 @@ PipelineConfig Pipeline::DefaultConfig()
 	config.colorBlending.blendConstants[1] = 0.0f;
 	config.colorBlending.blendConstants[2] = 0.0f;
 	config.colorBlending.blendConstants[3] = 0.0f;
-
-	config.tesselationState.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
-	config.tesselationState.patchControlPoints = 3;
 
 	config.viewport.x = 0.0f;
 	config.viewport.y = 0.0f;

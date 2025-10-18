@@ -27,7 +27,7 @@ struct PipelineConfig
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 	VkPipelineVertexInputStateCreateInfo vertexInput{};
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
-	VkPipelineTessellationStateCreateInfo tesselation{};
+	VkPipelineTessellationStateCreateInfo tesselationState{};
 	VkPipelineViewportStateCreateInfo viewportState{};
 	VkPipelineRasterizationStateCreateInfo rasterization{};
 	VkPipelineMultisampleStateCreateInfo multisampling{};
@@ -35,7 +35,6 @@ struct PipelineConfig
 	VkPipelineColorBlendAttachmentState colorBlendAttachment{};
 	VkPipelineColorBlendStateCreateInfo colorBlending{};
 	VkPipelineDynamicStateCreateInfo dynamics{};
-	VkPipelineTessellationStateCreateInfo tesselationState{};
 
 	std::string shader = "";
 	VertexInfo vertexInfo{};
