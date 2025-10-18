@@ -122,6 +122,8 @@ void Pipeline::CreateTesselationConfig()
 	config.shaderStages[3].module = fragmentShader;
 	config.shaderStages[3].pName = "main";
 
+	config.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+
 	config.vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	config.vertexInput.vertexBindingDescriptionCount = config.vertexInfo.bindingCount;
 	config.vertexInput.pVertexBindingDescriptions = &config.vertexInfo.bindingDescription;
