@@ -295,7 +295,7 @@ Matrix<R, C, T> Matrix<R, C, T>::Projection(const T& fov, const T& ratio, const 
 	result(2, 3) = (far * -near) / (far - near);
 	result(3, 3) = 0;
 
-	//result(1, 1) *= -1;
+	result(1, 1) *= -1;
 
 	/*const T tangent = tan((fov * 0.0174532925) * 0.5);
 

@@ -181,10 +181,7 @@ void Renderer::RecordCommands()
 	{
 		passInfo.pass->Begin(commands[currentFrame].GetBuffer(), renderIndex);
 
-		VkViewport viewport = passInfo.viewport;
-		viewport.y = viewport.height;
-		viewport.height *= -1;
-		vkCmdSetViewport(commands[currentFrame].GetBuffer(), 0, 1, &viewport);
+		vkCmdSetViewport(commands[currentFrame].GetBuffer(), 0, 1, &passInfo.viewport);
 		vkCmdSetScissor(commands[currentFrame].GetBuffer(), 0, 1, &passInfo.scissor);
 
 		for (std::function<void(VkCommandBuffer, uint32_t)> call : passInfo.calls)
