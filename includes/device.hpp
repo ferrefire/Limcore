@@ -39,6 +39,7 @@ struct DeviceConfig
 	bool shaderDouble = false;
 	bool geometryShader = false;
 	bool wireframeMode = false;
+	bool depthBounds = true;
 };
 
 /** @brief Contains information about different queue families. */
