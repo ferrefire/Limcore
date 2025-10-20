@@ -75,6 +75,8 @@ class Camera
 		 */
 		const CameraConfig& GetConfig() const;
 
+		void SetConfig(const CameraConfig& newConfig);
+
 		/**
 		 * @brief Gets the aspect ratio of the viewport.
 		 * @return Aspect ratio (width / height).

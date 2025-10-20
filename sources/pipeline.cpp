@@ -320,7 +320,7 @@ PipelineConfig Pipeline::DefaultConfig()
 	config.depthStencil.depthTestEnable = VK_TRUE;
 	config.depthStencil.depthWriteEnable = VK_TRUE;
 	config.depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-	config.depthStencil.depthBoundsTestEnable = VK_FALSE;
+	config.depthStencil.depthBoundsTestEnable = VK_TRUE;
 	config.depthStencil.minDepthBounds = 0.0f;
 	config.depthStencil.maxDepthBounds = 1.0f;
 	config.depthStencil.stencilTestEnable = VK_FALSE;

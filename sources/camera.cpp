@@ -34,6 +34,14 @@ const CameraConfig& Camera::GetConfig() const
 	return (config);
 }
 
+void Camera::SetConfig(const CameraConfig& newConfig)
+{
+	config = newConfig;
+
+	UpdateView();
+	UpdateProjection();
+}
+
 const float Camera::GetAspect() const
 {
 	return (static_cast<float>(config.width) / static_cast<float>(config.height));
