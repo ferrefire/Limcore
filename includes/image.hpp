@@ -150,6 +150,8 @@ class Image
 		 */
 		void Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent = {}, Point<int32_t, 3> offset = {});
 
+		void CopyTo(Image& target);
+
 		/**
 		 * @brief Provides a default image view configuration.
 		 * @return ImageViewConfig with common defaults.
