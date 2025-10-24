@@ -342,17 +342,17 @@ void Image::Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent, 
 	TransitionLayout();
 }
 
-void Image::CopyTo(Image& target)
+void Image::CopyTo(Image& target, Command& command)
 {
 	//if (!buffer) throw (std::runtime_error("Buffer does not exist"));
 	if (!device) throw (std::runtime_error("Buffer has no device"));
 
 	//const ImageConfig& imageConfig = target.GetConfig();
 
-	Command command;
-	CommandConfig commandConfig{};
-	//commandConfig.queueIndex = device->GetQueueIndex(QueueType::Graphics);
-	command.Create(commandConfig, device);
+	//Command command;
+	//CommandConfig commandConfig{};
+	////commandConfig.queueIndex = device->GetQueueIndex(QueueType::Graphics);
+	//command.Create(commandConfig, device);
 	command.Begin();
 
 	VkImageCopy copyInfo{};
