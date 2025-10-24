@@ -342,6 +342,38 @@ void Image::Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent, 
 	TransitionLayout();
 }
 
+void Image::CopyTo(Image& target)
+{
+	//if (!buffer) throw (std::runtime_error("Buffer does not exist"));
+	if (!device) throw (std::runtime_error("Buffer has no device"));
+
+	//const ImageConfig& imageConfig = target.GetConfig();
+
+	Command command;
+	CommandConfig commandConfig{};
+	//commandConfig.queueIndex = device->GetQueueIndex(QueueType::Graphics);
+	command.Create(commandConfig, device);
+	command.Begin();
+
+	VkImageCopy copyInfo{};
+	copyInfo.dstOffset = {0, 0, 0};
+	copyInfo.srcOffset = {0, 0, 0};
+	copyInfo.extent = {config.width, config.height, config.depth};
+	copyInfo.dstSubresource.aspectMask = target.config.viewConfig.subresourceRange.aspectMask;
+	copyInfo.dstSubresource.mipLevel = 0;
+	copyInfo.dstSubresource.baseArrayLayer = 0;
+	copyInfo.dstSubresource.layerCount = target.config.arrayLayers;
+	copyInfo.srcSubresource.aspectMask = config.viewConfig.subresourceRange.aspectMask;
+	copyInfo.srcSubresource.mipLevel = 0;
+	copyInfo.srcSubresource.baseArrayLayer = 0;
+	copyInfo.srcSubresource.layerCount = config.arrayLayers;
+
+	vkCmdCopyImage(command.GetBuffer(), image, config.currentLayout, target.image, target.config.currentLayout, 1, &copyInfo);
+
+	command.End();
+	command.Submit();
+}
+
 ImageViewConfig Image::DefaultViewConfig()
 {
 	ImageViewConfig config{};

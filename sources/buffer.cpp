@@ -162,7 +162,6 @@ void Buffer::CopyTo(VkBuffer target, size_t offset)
 void Buffer::CopyTo(Image& target, Point<uint32_t, 3> extent, Point<int32_t, 3> offset)
 {
 	if (!buffer) throw (std::runtime_error("Buffer does not exist"));
-	//if (!target) throw (std::runtime_error("Buffer copy target does not exist"));
 	if (!device) throw (std::runtime_error("Buffer has no device"));
 
 	const ImageConfig& imageConfig = target.GetConfig();
