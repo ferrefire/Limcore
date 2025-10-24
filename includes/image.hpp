@@ -3,6 +3,7 @@
 #include "device.hpp"
 #include "point.hpp"
 #include "loader.hpp"
+#include "command.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -150,7 +151,7 @@ class Image
 		 */
 		void Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent = {}, Point<int32_t, 3> offset = {});
 
-		void CopyTo(Image& target);
+		void CopyTo(Image& target, Command& command);
 
 		/**
 		 * @brief Provides a default image view configuration.
