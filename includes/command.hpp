@@ -84,6 +84,8 @@ class Command
 		 */
 		const VkCommandBuffer& GetBuffer() const;
 
+		CommandConfig& GetConfig();
+
 		/**
 		 * @brief Begins recording commands.
 		 * @warning Must be followed by @ref End() before submission.

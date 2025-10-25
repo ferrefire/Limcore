@@ -91,6 +91,11 @@ const VkCommandBuffer& Command::GetBuffer() const
 	return (buffer);
 }
 
+CommandConfig& Command::GetConfig()
+{
+	return (config);
+}
+
 void Command::Begin()
 {
 	if (!buffer) throw (std::runtime_error("Command has no buffer"));
