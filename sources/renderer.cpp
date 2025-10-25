@@ -175,6 +175,17 @@ void Renderer::Frame()
 
 void Renderer::RecordCommands()
 {
+	CommandConfig originalCommandConfig;
+	if (frameSemaphores.size() > 0)
+	{
+		originalCommandConfig = commands[currentFrame].GetConfig();
+		for (auto frameSemaphore : frameSemaphores)
+		{
+			commands[currentFrame].GetConfig().waitSemaphores.push_back(frameSemaphore.first);
+			commands[currentFrame].GetConfig().waitDestinations.push_back(frameSemaphore.second);
+		}
+	}
+
 	commands[currentFrame].Begin();
 
 	for (PassInfo& passInfo : passes)
@@ -195,6 +206,12 @@ void Renderer::RecordCommands()
 	commands[currentFrame].End();
 
 	commands[currentFrame].Submit();
+
+	if (frameSemaphores.size() > 0)
+	{
+		commands[currentFrame].GetConfig() = originalCommandConfig;
+		frameSemaphores.clear();
+	}
 }
 
 void Renderer::PresentFrame()
@@ -257,6 +274,13 @@ void Renderer::Resize()
 	}
 }
 
+void Renderer::AddFrameSemaphore(VkSemaphore semaphore, VkPipelineStageFlags waitStage)
+{
+	if (semaphore == nullptr) return;
+
+	frameSemaphores.push_back({semaphore, waitStage});
+}
+
 Device* Renderer::device = nullptr;
 Swapchain* Renderer::swapchain = nullptr;
 
@@ -267,5 +291,6 @@ uint32_t Renderer::renderIndex = 0;
 std::vector<VkFence> Renderer::fences;
 std::vector<VkSemaphore> Renderer::renderSemaphores;
 std::vector<VkSemaphore> Renderer::presentSemaphores;
+std::vector<std::pair<VkSemaphore, VkPipelineStageFlags>> Renderer::frameSemaphores;
 std::vector<Command> Renderer::commands;
 std::vector<PassInfo> Renderer::passes;
