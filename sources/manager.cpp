@@ -226,6 +226,7 @@ void Manager::ParseArguments(char** arguments, const int& count)
 		if (std::string(arguments[i]) == "fs") config.fullscreen = true;
 		else if (std::string(arguments[i]) == "ig") config.integrated = true;
 		else if (std::string(arguments[i]) == "wf") config.wireframe = true;
+		else if (std::string(arguments[i]) == "uc") config.uncapped = true;
 	}
 }
 
