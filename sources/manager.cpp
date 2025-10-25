@@ -47,6 +47,7 @@ void Manager::CreateGLFW()
 
 	WindowConfig windowConfig{};
 	windowConfig.fullscreen = config.fullscreen;
+	if (config.uncapped) windowConfig.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
 	window.SetConfig(windowConfig);
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
