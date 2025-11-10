@@ -10,6 +10,9 @@
 #include <filesystem>
 #include <thread>
 #include <future>
+#include <cstdint>
+#include <cstring>
+#include <algorithm>
 
 ByteReader::ByteReader(const uint8_t* data, size_t size) : position(data), end(data + size) {}
 
@@ -648,6 +651,8 @@ void ImageLoader::LoadEntropyData()
 {
 	double start = Time::GetCurrentTime();
 
+	//if (info.name.contains("norm")) data.normalMap = true;
+
 	size_t totalBlockCount = 0;
 	size_t maxH = 0;
 	size_t maxV = 0;
@@ -666,11 +671,12 @@ void ImageLoader::LoadEntropyData()
 	size_t H = info.startOfFrameInfo.width / data.MCUCount.x();
 	size_t V = info.startOfFrameInfo.height / data.MCUCount.y();
 	size_t C = (info.greyScale ? 1 : 4);
+	//if (data.normalMap) {C = 2;}
 	data.HVC = {H, V, C};
 	data.subSamplePower = std::max(maxH, maxV);
 
 	//std::cout << info.name << " = " << data.HVC << std::endl;
-	//if (info.name.contains("norm")) data.normalMap = true;
+	
 
 	//std::cout << "mcucount: " << data.MCUCount << std::endl; 
 
@@ -1102,8 +1108,12 @@ void LoadBlockThread(std::vector<unsigned char>& buffer, const ImageData* data, 
 
 			buffer[pixelIndex++] = r;
 			buffer[pixelIndex++] = g;
-			buffer[pixelIndex++] = b;
-			buffer[pixelIndex++] = 255;
+
+			if (!data->normalMap)
+			{
+				buffer[pixelIndex++] = b;
+				buffer[pixelIndex++] = 255;
+			}
 		}
 	}
 }
@@ -1113,12 +1123,13 @@ void LoadPixelThread(std::vector<unsigned char>& buffer, const ImageData* data, 
 	const size_t H = data->HVC.x();
 	const size_t V = data->HVC.y();
 	const size_t C = data->HVC.z();
+	const size_t CI = data->normalMap ? 2 : C;
 
 	for (size_t y = start; y < end; y++)
 	{
 		for (size_t x = 0; x < data->MCUCount.x(); x++)
 		{
-			std::vector<unsigned char> blockPixels((H * V) * C);
+			std::vector<unsigned char> blockPixels((H * V) * CI);
 			if (C == 1) LoadBlockGreyscaleThread(blockPixels, data, y * data->MCUCount.x() + x);
 			else LoadBlockThread(blockPixels, data, y * data->MCUCount.x() + x);
 
@@ -1126,10 +1137,10 @@ void LoadPixelThread(std::vector<unsigned char>& buffer, const ImageData* data, 
 			{
 				for (size_t bx = 0; bx < H; bx++)
 				{
-					size_t bufferIndex = (y * V + by) * data->dimensions.x() * C + (x * H + bx) * C;
-					size_t blockIndex = by * H * C + bx * C;
+					size_t bufferIndex = (y * V + by) * data->dimensions.x() * CI + (x * H + bx) * CI;
+					size_t blockIndex = by * H * CI + bx * CI;
 
-					for (size_t i = 0; i < C; i++) { buffer[bufferIndex++] = blockPixels[blockIndex++]; }
+					for (size_t i = 0; i < CI; i++) { buffer[bufferIndex++] = blockPixels[blockIndex++]; }
 				}
 			}
 		}
@@ -1138,7 +1149,7 @@ void LoadPixelThread(std::vector<unsigned char>& buffer, const ImageData* data, 
 
 void ImageLoader::LoadPixelsThreaded(std::vector<unsigned char>& buffer) const
 {
-	buffer.resize((data.dimensions.x() * data.dimensions.y()) * data.HVC.z());
+	buffer.resize((data.dimensions.x() * data.dimensions.y()) * (data.normalMap ? 2 : data.HVC.z()));
 
 	size_t threadCount = 8;
 	size_t threadLoad = data.MCUCount.y() / threadCount;
@@ -1154,6 +1165,371 @@ void ImageLoader::LoadPixelsThreaded(std::vector<unsigned char>& buffer) const
 	{
 		threads[i].wait();
 	}
+}
+
+uint16_t PackRGB565(uint8_t r, uint8_t g, uint8_t b)
+{
+	uint16_t R = (uint16_t)((r * 31 + 127) / 255);
+	uint16_t G = (uint16_t)((g * 63 + 127) / 255);
+	uint16_t B = (uint16_t)((b * 31 + 127) / 255);
+	return (uint16_t)((R << 11) | (G << 5) | B);
+}
+
+Point<uint8_t, 3> UnpackRGB565(uint16_t c)
+{
+	uint8_t R5 = (c >> 11) & 31;
+	uint8_t G6 = (c >> 5) & 63;
+	uint8_t B5 = c & 31;
+
+	Point<uint8_t, 3> rgb{};
+	rgb.x() = (uint8_t)((R5 << 3) | (R5 >> 2));
+	rgb.y() = (uint8_t)((G6 << 2) | (G6 >> 4));
+	rgb.z() = (uint8_t)((B5 << 3) | (B5 >> 2));
+
+	return (rgb);
+}
+
+uint32_t RGBError(Point<uint8_t, 3> rgb0, Point<uint8_t, 3> rgb1)
+{
+	int dr = int(rgb0.x()) - int(rgb1.x());
+    int dg = int(rgb0.y()) - int(rgb1.y());
+    int db = int(rgb0.z()) - int(rgb1.z());
+    // Weights ~ (3,6,1). Tweak to taste.
+    return uint32_t(3*dr*dr + 6*dg*dg + 1*db*db);
+}
+
+Point<uint8_t, 3> LoadRGBClamped(unsigned char* pixels, Point<int, 2> xy, Point<int, 3> whs)
+{
+	int x = std::min(whs.x() - 1, std::max(0, xy.x()));
+	int y = std::min(whs.y() - 1, std::max(0, xy.y()));
+
+	int offset = y * whs.z() + x * 4;
+	
+	Point<uint8_t, 3> rgb{};
+	rgb.x() = pixels[offset];
+	rgb.y() = pixels[offset + 1];
+	rgb.z() = pixels[offset + 2];
+
+	return (rgb);
+}
+
+void LoadCompressedBlockBC1(unsigned char* buffer, unsigned char* pixels, Point<int, 2> xy, Point<int, 3> whs)
+{
+	uint8_t block[16][3];
+	int idx = 0;
+	uint8_t rMin=255, gMin=255, bMin=255, rMax=0, gMax=0, bMax=0;
+
+	for (int dy = 0; dy < 4; dy++)
+	{
+		for (int dx = 0; dx < 4; dx++, idx++)
+		{
+			Point<int, 2> dxy(dx, dy);
+			Point<uint8_t, 3> rgb = LoadRGBClamped(pixels, xy + dxy, whs);
+
+			block[idx][0] = rgb.x();
+			block[idx][1] = rgb.y();
+			block[idx][2] = rgb.z();
+
+			rMin = std::min(rMin, rgb.x()); gMin = std::min(gMin, rgb.y()); bMin = std::min(bMin, rgb.z());
+        	rMax = std::max(rMax, rgb.x()); gMax = std::max(gMax, rgb.y()); bMax = std::max(bMax, rgb.z());
+		}
+	}
+
+	uint16_t c0 = PackRGB565(rMax, gMax, bMax);
+	uint16_t c1 = PackRGB565(rMin, gMin, bMin);
+
+	if (c0 <= c1) {std::swap(c0, c1);}
+
+	Point<uint8_t, 3> p0rgb = UnpackRGB565(c0);
+	Point<uint8_t, 3> p1rgb = UnpackRGB565(c1);
+
+	uint8_t p2r = (uint8_t)((2 * p0rgb.x() + p1rgb.x() + 1) / 3);
+	uint8_t p2g = (uint8_t)((2 * p0rgb.y() + p1rgb.y() + 1) / 3);
+	uint8_t p2b = (uint8_t)((2 * p0rgb.z() + p1rgb.z() + 1) / 3);
+
+	uint8_t p3r = (uint8_t)((p0rgb.x() + 2 * p1rgb.x() + 1) / 3);
+	uint8_t p3g = (uint8_t)((p0rgb.y() + 2 * p1rgb.y() + 1) / 3);
+	uint8_t p3b = (uint8_t)((p0rgb.z() + 2 * p1rgb.z() + 1) / 3);
+
+	Point<uint8_t, 3> p2rgb(p2r, p2g, p2b);
+	Point<uint8_t, 3> p3rgb(p3r, p3g, p3b);
+
+	uint32_t indexBits = 0;
+	for (int i = 0; i < 16; i++)
+	{
+		Point<uint8_t, 3> blockRGB(block[i][0], block[i][1], block[i][2]);
+
+		uint32_t e0 = RGBError(blockRGB, p0rgb);
+		uint32_t e1 = RGBError(blockRGB, p1rgb);
+		uint32_t e2 = RGBError(blockRGB, p2rgb);
+		uint32_t e3 = RGBError(blockRGB, p3rgb);
+
+		uint32_t idx2 = 0;
+		uint32_t best = e0;
+		if (e1 < best) {best = e1; idx2 = 1;}
+        if (e2 < best) {best = e2; idx2 = 2;}
+        if (e3 < best) {best = e3; idx2 = 3;}
+
+		indexBits |= (idx2 & 3) << (2 * i); // little-endian packing
+	}
+
+	buffer[0] = (uint8_t)(c0 & 0xFF);
+	buffer[1] = (uint8_t)(c0 >> 8);
+	buffer[2] = (uint8_t)(c1 & 0xFF);
+	buffer[3] = (uint8_t)(c1 >> 8);
+	std::memcpy(buffer + 4, &indexBits, 4);
+}
+
+std::array<uint8_t, 8> BuildBC4Palette(uint8_t a0, uint8_t a1)
+{
+	std::array<uint8_t, 8> palette{};
+	palette[0] = a0;
+	palette[1] = a1;
+
+	if (a0 > a1)
+	{
+		palette[2] = (uint8_t)((6 * int(a0) + 1 * int(a1) + 3) / 7);
+		palette[3] = (uint8_t)((5 * int(a0) + 2 * int(a1) + 3) / 7);
+		palette[4] = (uint8_t)((4 * int(a0) + 3 * int(a1) + 3) / 7);
+		palette[5] = (uint8_t)((3 * int(a0) + 4 * int(a1) + 3) / 7);
+		palette[6] = (uint8_t)((2 * int(a0) + 5 * int(a1) + 3) / 7);
+		palette[7] = (uint8_t)((1 * int(a0) + 6 * int(a1) + 3) / 7);
+	}
+	else
+	{
+		palette[2] = (uint8_t)((4 * int(a0) + 1 * int(a1) + 2) / 5);
+		palette[3] = (uint8_t)((3 * int(a0) + 2 * int(a1) + 2) / 5);
+		palette[4] = (uint8_t)((2 * int(a0) + 3 * int(a1) + 2) / 5);
+		palette[5] = (uint8_t)((1 * int(a0) + 4 * int(a1) + 2) / 5);
+		palette[6] = 0;
+		palette[7] = 255;
+	}
+
+	return (palette);
+}
+
+void LoadCompressedBlockBC5(unsigned char* buffer, unsigned char* pixels, Point<int, 2> xy, Point<int, 3> whs, int channel)
+{
+	uint8_t block[16];
+	int idx = 0;
+	uint8_t vMin=255, vMax=0;
+
+	for (int dy = 0; dy < 4; dy++)
+	{
+		for (int dx = 0; dx < 4; dx++, idx++)
+		{
+			Point<int, 2> dxy(dx, dy);
+			Point<uint8_t, 3> rgb = LoadRGBClamped(pixels, xy + dxy, whs);
+
+			uint8_t c = (channel == 0) ? rgb.x() : rgb.y();
+			block[idx] = c;
+
+			vMin = std::min(vMin, c);
+        	vMax = std::max(vMax, c);
+		}
+	}
+
+	if (vMin == vMax)
+	{
+		uint8_t a0 = vMax;
+		uint8_t a1 = (uint8_t)std::max(0, vMax - 1);
+		std::array<uint8_t, 8> palette = BuildBC4Palette(a0, a1);
+
+		uint64_t bits = 0;
+		buffer[0] = a0;
+		buffer[1] = a1;
+		std::memcpy(buffer + 2, &bits, 6);
+
+		return;
+	}
+
+	uint8_t initial_a0 = vMax;
+	uint8_t initial_a1 = vMin;
+
+	uint8_t best_a0 = 0, best_a1 = 0;
+	uint64_t bestBits = 0;
+	uint32_t bestError = 0xFFFFFFFFu;
+
+	for (int order = 0; order < 2; order++)
+	{
+		uint8_t a0 = initial_a0, a1 = initial_a1;
+		if (order == 1) {std::swap(a0, a1);}
+
+		std::array<uint8_t, 8> palette = BuildBC4Palette(a0, a1);
+		uint64_t bits = 0;
+		uint32_t error = 0;
+
+		for (int i = 0; i < 16; i++)
+		{
+			uint8_t v = block[i];
+			int bestJ = 0;
+
+			int d = int(v) - int(palette[0]);
+			int bestd2 = d * d;
+
+			for (int j = 1; j < 8; j++)
+			{
+				int dd = int(v) - int(palette[j]);
+				int d2 = dd * dd;
+				if (d2 < bestd2) {bestd2 = d2; bestJ = j;}
+			}
+
+			error += (uint32_t)bestd2;
+			bits |= (uint64_t)(bestJ & 7) << (3 * i);
+		}
+
+		if (error < bestError)
+		{
+			bestError = error;
+			best_a0 = a0;
+			best_a1 = a1;
+			bestBits = bits;
+		}
+	}
+
+	buffer[0] = best_a0;
+	buffer[1] = best_a1;
+	std::memcpy(buffer + 2, &bestBits, 6);
+}
+
+void ImageLoader::LoadCompressedPixels(std::vector<unsigned char>& buffer, unsigned char* pixels, Point<int, 2> wh, CompressionType compressionType) const
+{
+	const size_t BW = (wh.x() + 3) / 4;
+	const size_t BH = (wh.y() + 3) / 4;
+
+	Point<int, 3> whs(wh.x(), wh.y(), wh.x() * 4);
+
+	//Load normal maps as RGBA8 instead of RG8!
+
+	//std::vector<unsigned char> pixels{};
+	//LoadPixelsThreaded(pixels);
+	
+	const int pixelSize = (compressionType == CompressionType::BC1 ? 8 : 16);
+	buffer.resize((BW * BH) * pixelSize);
+	unsigned char* bufferData = buffer.data();
+
+	for (int y = 0; y < wh.y(); y += 4)
+	{
+		for (int x = 0; x < wh.x(); x += 4)
+		{
+			Point<int, 2> xy(x, y);
+
+			if (compressionType == CompressionType::BC1)
+			{
+				LoadCompressedBlockBC1(bufferData, pixels, xy, whs);
+			}
+			else if (compressionType == CompressionType::BC5)
+			{
+				LoadCompressedBlockBC5(bufferData, pixels, xy, whs, 0);
+				LoadCompressedBlockBC5(bufferData + 8, pixels, xy, whs, 1);
+			}
+
+			bufferData += pixelSize;
+		}
+	}
+}
+
+float SRGBToLinear(float c)
+{
+	return ((c <= 0.04045f) ? (c / 12.92f) : std::pow((c + 0.055f) / 1.055f, 2.4f));
+}
+
+float LinearToSRGB(float c)
+{
+	c = std::max(0.f, std::min(1.f, c));
+	return ((c <= 0.0031308f) ? (12.92f * c) : (1.055f * std::pow(c, 1.f/2.4f) - 0.055f));
+}
+
+std::vector<MipLevel> ImageLoader::LoadMipmaps(size_t mipLevels, bool srgb) const
+{
+	std::vector<MipLevel> mipmaps(mipLevels);
+
+	mipmaps[0].width = data.dimensions.x();
+	mipmaps[0].height = data.dimensions.y();
+	mipmaps[0].level = 0;
+	LoadPixelsThreaded(mipmaps[0].pixels);
+
+	int level = 0;
+	for (int i = 1; i < mipLevels; i++)
+	{
+		const int prevLevel = i - 1;
+		const int prevWidth = mipmaps[prevLevel].width;
+		const int prevHeight = mipmaps[prevLevel].height;
+		const int currentWidth = std::max(1, prevWidth >> 1);
+		const int currentHeight = std::max(1, prevHeight >> 1);
+
+		mipmaps[i].width = currentWidth;
+		mipmaps[i].height = currentHeight;
+		mipmaps[i].level = i;
+		mipmaps[i].pixels.resize((currentWidth * currentHeight) * 4);
+
+		for (int y = 0; y < currentHeight; y++)
+		{
+			for (int x = 0; x < currentWidth; x++)
+			{
+				int sx = x * 2;
+				int sy = y * 2;
+
+				point4D totalRGB(0.0f);
+				for (int dy = 0; dy < 2; dy++)
+				{
+					for (int dx = 0; dx < 2; dx++)
+					{
+						int index = ((sy + dy) * prevWidth + (sx + dx)) * 4;
+						point4D currentRGB;
+						currentRGB.x() = float(mipmaps[prevLevel].pixels[index]) / 255.0f;
+						currentRGB.y() = float(mipmaps[prevLevel].pixels[index + 1]) / 255.0f;
+						currentRGB.z() = float(mipmaps[prevLevel].pixels[index + 2]) / 255.0f;
+						currentRGB.w() = float(mipmaps[prevLevel].pixels[index + 3]) / 255.0f;
+
+						if (srgb)
+						{
+							currentRGB.x() = SRGBToLinear(currentRGB.x());
+							currentRGB.y() = SRGBToLinear(currentRGB.y());
+							currentRGB.z() = SRGBToLinear(currentRGB.z());
+						}
+
+						totalRGB += currentRGB;
+					}
+				}
+
+				totalRGB *= 0.25f;
+
+				if (srgb)
+				{
+					totalRGB.x() = LinearToSRGB(totalRGB.x());
+					totalRGB.y() = LinearToSRGB(totalRGB.y());
+					totalRGB.z() = LinearToSRGB(totalRGB.z());
+				}
+
+				int index = (y * currentWidth + x) * 4;
+				mipmaps[i].pixels[index] = (uint8_t)std::lround(std::clamp(totalRGB.x(), 0.0f, 1.0f) * 255.0f);
+				mipmaps[i].pixels[index + 1] = (uint8_t)std::lround(std::clamp(totalRGB.y(), 0.0f, 1.0f) * 255.0f);
+				mipmaps[i].pixels[index + 2] = (uint8_t)std::lround(std::clamp(totalRGB.z(), 0.0f, 1.0f) * 255.0f);
+				mipmaps[i].pixels[index + 3] = (uint8_t)std::lround(std::clamp(totalRGB.w(), 0.0f, 1.0f) * 255.0f);
+			}
+		}
+	}
+
+	return (mipmaps);
+}
+
+std::vector<MipLevel> ImageLoader::LoadCompressedMipmaps(size_t mipLevels, bool srgb, CompressionType compressionType) const
+{
+	std::vector<MipLevel> mipmaps = LoadMipmaps(mipLevels, srgb);
+	std::vector<MipLevel> compressedMipmaps(mipLevels);
+
+	for (int i = 0; i < mipLevels; i++)
+	{
+		compressedMipmaps[i].width = mipmaps[i].width;
+		compressedMipmaps[i].height = mipmaps[i].height;
+		compressedMipmaps[i].level = mipmaps[i].level;
+
+		Point<int, 2> wh(mipmaps[i].width, mipmaps[i].height);
+		LoadCompressedPixels(compressedMipmaps[i].pixels, mipmaps[i].pixels.data(), wh, compressionType);
+	}
+
+	return (compressedMipmaps);
 }
 
 EntropyReader::EntropyReader(ByteReader& br) : br(br)

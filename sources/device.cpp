@@ -68,6 +68,7 @@ void Device::CreateLogical()
 	if (config.geometryShader) deviceFeatures.geometryShader = VK_TRUE;
 	if (config.wireframeMode) deviceFeatures.fillModeNonSolid = VK_TRUE;
 	if (config.depthBounds) deviceFeatures.depthBounds = VK_TRUE;
+	if (config.compressionBC) deviceFeatures.textureCompressionBC = VK_TRUE;
 
 	std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 

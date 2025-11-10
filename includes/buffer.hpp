@@ -101,7 +101,7 @@ class Buffer
 		 * @param extent Dimensions of the region to copy.
 		 * @param offset Offset within the target image.
 		 */
-		void CopyTo(Image& target, Point<uint32_t, 3> extent = {}, Point<int32_t, 3> offset = {});
+		void CopyTo(Image& target, Point<uint32_t, 3> extent = {}, Point<int32_t, 4> offset = {});
 
 		/**
 		 * @brief Updates the contents of the buffer with new data.

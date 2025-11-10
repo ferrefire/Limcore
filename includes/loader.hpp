@@ -37,6 +37,7 @@ static const float sqrt12 = 1.0 / sqrt(2);
 enum class ModelType { None, Obj, Gltf };
 enum class AttributeType { None, Position, Normal, Coordinate, Color, Index };
 enum class ImageType { None, Jpg, Png };
+enum class CompressionType { None, BC1, BC5 };
 enum class ImageMarker 
 	{ 
 		SOI = 0xD8,
@@ -187,6 +188,15 @@ struct ImageData
 	bool normalMap = false;
 };
 
+struct MipLevel
+{
+	size_t width = 0;
+	size_t height = 0;
+	size_t level = 0;
+
+	std::vector<unsigned char> pixels{};
+};
+
 class ByteReader
 {
 	private:
@@ -283,6 +293,9 @@ class ImageLoader
 		void LoadPixelsGreyscale(std::vector<unsigned char>& buffer) const;
 
 		void LoadPixelsThreaded(std::vector<unsigned char>& buffer) const;
+		void LoadCompressedPixels(std::vector<unsigned char>& buffer, unsigned char* pixels, Point<int, 2> wh, CompressionType compressionType) const;
+		std::vector<MipLevel> LoadMipmaps(size_t mipLevels, bool srgb) const;
+		std::vector<MipLevel> LoadCompressedMipmaps(size_t mipLevels, bool srgb, CompressionType compressionType) const;
 
 		static DataBlock FIDCTBlock(const DataBlock& input);
 		static void TransformBlocks(ImageData* data, size_t start, size_t end);

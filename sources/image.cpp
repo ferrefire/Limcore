@@ -59,7 +59,11 @@ void Image::Create(const ImageLoader& imageLoader, const ImageConfig& imageConfi
 
 	Load(imageLoader);
 
-	if (config.createMipmaps) CreateMipmaps();
+	if (config.createMipmaps)
+	{
+		if (config.compressed) {CreateCompressedMipmaps(imageLoader);}
+		else {CreateMipmaps();}
+	}
 }
 
 void Image::CreateImage()
@@ -162,6 +166,23 @@ void Image::CreateMipmaps()
 
 	config.currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	config.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+}
+
+void Image::CreateCompressedMipmaps(const ImageLoader& imageLoader)
+{
+	if (!image) throw (std::runtime_error("Image does not exist"));
+	if (!device) throw (std::runtime_error("Image has no device"));
+
+	//if (!config.compressed || !config.createMipmaps) return;
+
+	std::vector<MipLevel> compressedMipmaps = imageLoader.LoadCompressedMipmaps(config.mipLevels, config.srgb, (config.normal ? CompressionType::BC5 : CompressionType::BC1));
+	for (int i = 0; i < config.mipLevels; i++)
+	{
+		Update(&compressedMipmaps[i].pixels[0], compressedMipmaps[i].pixels.size(), {compressedMipmaps[i].width, compressedMipmaps[i].height, config.depth}, {0, 0, 0, i}, false);
+	}
+
+	config.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	TransitionLayout();
 }
 
 void Image::CreateView()
@@ -313,12 +334,24 @@ void Image::Load(const ImageLoader& imageLoader)
 	if (!image) throw (std::runtime_error("Image does not exist"));
 	if (!device) throw (std::runtime_error("Image has no device"));
 
+	if (config.compressed && config.createMipmaps) return;
+
 	std::vector<unsigned char> pixels{};
 	imageLoader.LoadPixelsThreaded(pixels);
-	Update(&pixels[0], pixels.size(), {config.width, config.height, config.depth});
+
+	if (config.compressed)
+	{
+		std::vector<unsigned char> compressedPixels{};
+		imageLoader.LoadCompressedPixels(compressedPixels, pixels.data(), {config.width, config.height}, (config.normal ? CompressionType::BC5 : CompressionType::BC1));
+		Update(&compressedPixels[0], compressedPixels.size(), {config.width, config.height, config.depth});
+	}
+	else
+	{
+		Update(&pixels[0], pixels.size(), {config.width, config.height, config.depth});
+	}
 }
 
-void Image::Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent, Point<int32_t, 3> offset)
+void Image::Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent, Point<int32_t, 4> offset, bool transition)
 {
 	if (!image) throw (std::runtime_error("Image does not exist"));
 	if (!device) throw (std::runtime_error("Image has no device"));
@@ -326,9 +359,12 @@ void Image::Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent, 
 	if (extent.x() == 0 && extent.y() == 0 && extent.z() == 0) extent = {config.width, config.height, 1};
 
 	VkImageLayout originalLayout = config.currentLayout;
-	config.targetLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
-	TransitionLayout();
+	if (transition)
+	{
+		config.targetLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		TransitionLayout();
+	}
 
 	Buffer stagingBuffer;
 	BufferConfig stagingConfig = Buffer::StagingConfig();
@@ -337,9 +373,11 @@ void Image::Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent, 
 	stagingBuffer.CopyTo(*this, extent, offset);
 	stagingBuffer.Destroy();
 
-	config.targetLayout = originalLayout;
-
-	TransitionLayout();
+	if (transition)
+	{
+		config.targetLayout = originalLayout;
+		TransitionLayout();
+	}
 }
 
 void Image::CopyTo(Image& target, Command& command)

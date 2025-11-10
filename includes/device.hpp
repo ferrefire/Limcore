@@ -40,6 +40,7 @@ struct DeviceConfig
 	bool geometryShader = false;
 	bool wireframeMode = false;
 	bool depthBounds = true;
+	bool compressionBC = true;
 };
 
 /** @brief Contains information about different queue families. */

@@ -159,7 +159,7 @@ void Buffer::CopyTo(VkBuffer target, size_t offset)
 	command.Submit();
 }
 
-void Buffer::CopyTo(Image& target, Point<uint32_t, 3> extent, Point<int32_t, 3> offset)
+void Buffer::CopyTo(Image& target, Point<uint32_t, 3> extent, Point<int32_t, 4> offset)
 {
 	if (!buffer) throw (std::runtime_error("Buffer does not exist"));
 	if (!device) throw (std::runtime_error("Buffer has no device"));
@@ -179,7 +179,7 @@ void Buffer::CopyTo(Image& target, Point<uint32_t, 3> extent, Point<int32_t, 3> 
 	copyInfo.bufferRowLength = 0;
 	copyInfo.bufferImageHeight = 0;
 	copyInfo.imageSubresource.aspectMask = imageConfig.viewConfig.subresourceRange.aspectMask;
-	copyInfo.imageSubresource.mipLevel = 0;
+	copyInfo.imageSubresource.mipLevel = offset.w();
 	copyInfo.imageSubresource.baseArrayLayer = 0;
 	copyInfo.imageSubresource.layerCount = imageConfig.arrayLayers;
 

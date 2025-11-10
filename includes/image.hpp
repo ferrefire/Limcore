@@ -69,6 +69,9 @@ struct ImageConfig
 	VkImageLayout currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	VkImageLayout targetLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	bool createMipmaps = false;
+	bool srgb = false;
+	bool compressed = false;
+	bool normal = false;
 
 	ImageViewConfig viewConfig{};
 	ImageSamplerConfig samplerConfig{};
@@ -103,6 +106,7 @@ class Image
 
 		void CreateImage();
 		void CreateMipmaps();
+		void CreateCompressedMipmaps(const ImageLoader& imageLoader);
 		void CreateView();
 		void CreateSampler();
 		void AllocateMemory();
@@ -149,7 +153,7 @@ class Image
 		 * @param extent Dimensions of the region to update (defaults to full image).
 		 * @param offset Offset into the image (defaults to zero).
 		 */
-		void Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent = {}, Point<int32_t, 3> offset = {});
+		void Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent = {}, Point<int32_t, 4> offset = {}, bool transition = true);
 
 		void CopyTo(Image& target, Command& command);
 

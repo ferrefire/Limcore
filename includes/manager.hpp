@@ -28,7 +28,7 @@ struct ManagerConfig
 	bool fullscreen = false; /**< @brief Whether to create the window in fullscreen mode. */
 	bool integrated = false; /**< @brief Prefer integrated GPU over discrete GPU when selecting a device. */
 	bool uncapped = false;
-	size_t framesInFlight = 2;
+	size_t framesInFlight = 1;
 };
 
 /**
