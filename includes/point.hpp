@@ -181,6 +181,12 @@ class Point
 		 */
 		T Length() const;
 
+		template <size_t PS = S> requires (PS == 2)
+		float Angle() const;
+
+		template <size_t PS = S> requires (PS == 3)
+		Point<float, 2> Angles() const;
+
 		/**
 		 * @brief Computes the dot product of two points/vectors.
 		 * @param a First vector.
@@ -205,6 +211,8 @@ class Point
 		 * @return Constructed Point.
 		 */
 		static Point<T, S> FromString(const std::string& string);
+
+		static Point<T, S> Rotation(const Point<T, S>& rotation);
 };
 
 POINT_TEMPLATE

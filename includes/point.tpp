@@ -237,6 +237,27 @@ T Point<T, S>::Length() const
 }
 
 POINT_TEMPLATE
+template <size_t PS> requires (PS == 2)
+float Point<T, S>::Angle() const
+{
+	float result = atan2(data[0], data[1]);
+
+	return (result);
+}
+
+POINT_TEMPLATE
+template <size_t PS> requires (PS == 3)
+Point<float, 2> Point<T, S>::Angles() const
+{
+	point2D horizontal = point2D(data[0], data[2]);
+
+	float yaw = horizontal.Angle();
+	float pitch = point2D(data[1], horizontal.Length()).Angle();
+
+	return (Point<float, 2>(pitch, yaw));
+}
+
+POINT_TEMPLATE
 T Point<T, S>::Dot(const Point<T, S>& a, const Point<T, S>& b)
 {
 	T result = 0;
@@ -271,6 +292,16 @@ Point<T, S> Point<T, S>::FromString(const std::string& string)
 	{
 		result[i] = static_cast<T>(std::stof(values[i]));
 	}
+
+	return (result);
+}
+
+POINT_TEMPLATE
+Point<T, S> Point<T, S>::Rotation(const Point<T, S>& rotation)
+{
+	Point<T, S> result = 0;
+	result[S - 1] = 1;
+	result.Rotate(rotation);
 
 	return (result);
 }
