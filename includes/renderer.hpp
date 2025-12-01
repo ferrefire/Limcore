@@ -89,6 +89,7 @@ class Renderer
 		
 		static uint32_t GetFrameCount();
 		static uint32_t GetCurrentFrame();
+		static uint32_t GetRenderIndex();
 
 		static void WaitForFrame();
 		static void Frame();

@@ -139,6 +139,11 @@ uint32_t Renderer::GetCurrentFrame()
 	return (currentFrame);
 }
 
+uint32_t Renderer::GetRenderIndex()
+{
+	return (renderIndex);
+}
+
 void Renderer::WaitForFrame()
 {
 	if (vkWaitForFences(device->GetLogicalDevice(), 1, &fences[currentFrame], VK_TRUE, UINT64_MAX) != VK_SUCCESS)

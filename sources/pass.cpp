@@ -81,6 +81,25 @@ void Pass::Create(const PassConfig& passConfig, Device* passDevice)
 
 void Pass::CreateImages()
 {
+	if (!config.useSwapchain)
+	{
+		for (size_t i = 0; i < Manager::GetSwapchain().GetFrameCount(); i++)
+		{
+			images.push_back(new Image());
+			ImageConfig imageConfig = Image::DefaultConfig();
+			imageConfig.format = config.colorAttachments[0].description.format;
+			imageConfig.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+			//imageConfig.targetLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			imageConfig.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imageConfig.width = Manager::GetWindow().GetConfig().extent.width;
+			imageConfig.height = Manager::GetWindow().GetConfig().extent.height;
+			imageConfig.viewConfig.format = config.colorAttachments[0].description.format;
+			images[images.size() - 1]->Create(imageConfig, device);
+			config.colorAttachments[0].images.push_back(images[images.size() - 1]);
+			config.colorAttachments[0].views.push_back(images[images.size() - 1]->GetView());
+		}
+	}
+
 	if (config.depth)
 	{
 		for (size_t i = 0; i < Manager::GetSwapchain().GetFrameCount(); i++)
@@ -126,7 +145,7 @@ void Pass::CreateFramebuffers()
 	for (int i = 0; i < swapchainViews.size(); i++)
 	{
 		std::vector<VkImageView> views = config.GetViews(i);
-		views[0] = swapchainViews[i];
+		if (config.useSwapchain) views[0] = swapchainViews[i];
 
 		VkFramebufferCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -168,7 +187,12 @@ void Pass::DestroyImages()
 	}
 	images.clear();
 
-	for (AttachmentConfig& attachment : config.colorAttachments) { attachment.views.clear(); }
+	for (AttachmentConfig& attachment : config.colorAttachments)
+	{
+		attachment.views.clear();
+		attachment.images.clear();
+	}
+
 	config.depthAttachment.views.clear();
 }
 
@@ -186,6 +210,14 @@ const VkRenderPass& Pass::GetRenderpass() const
 	if (!renderpass) throw (std::runtime_error("Renderpass requested but not yet created"));
 
 	return (renderpass);
+}
+
+const Image* Pass::GetImage(size_t index) const
+{
+	if (config.colorAttachments.size() <= 0 || index >= config.colorAttachments[0].images.size()) 
+		throw (std::runtime_error("Pass image request index out of bounds"));
+
+	return (config.colorAttachments[0].images[index]);
 }
 
 void Pass::Begin(VkCommandBuffer commandBuffer, uint32_t renderIndex)

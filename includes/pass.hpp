@@ -23,6 +23,7 @@
 struct AttachmentConfig
 {
 	std::vector<VkImageView> views; /**< @brief Image view used by the attachment (e.g., swapchain image or depth image). */
+	std::vector<Image*> images;
 	VkAttachmentDescription description{}; /**< @brief Attachment description (format, load/store ops, layouts, etc.). */
 	VkAttachmentReference reference{}; /**< @brief Reference used by subpasses to bind this attachment. */
 	VkClearValue clear{}; /**< @brief Clear color/depth/stencil value applied when loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR. */
@@ -35,6 +36,7 @@ struct PassConfig
 	AttachmentConfig depthAttachment{}; /**< @brief Optional depth/stencil attachment configuration. */
 	std::vector<VkSubpassDescription> subpasses; /**< @brief Subpass descriptions defining the rendering pipeline stages. */
 	bool depth = false; /**< @brief Whether a depth attachment is used. */
+	bool useSwapchain = true;
 
 	/**
 	 * @brief Gets @c VkAttachmentReference for all color attachments.
@@ -113,6 +115,8 @@ class Pass
 		 * @return Const reference to the Vulkan render pass.
 		 */
 		const VkRenderPass& GetRenderpass() const;
+
+		const Image* GetImage(size_t index) const;
 
 		/**
 		 * @brief Begins a render pass on the given command buffer.
