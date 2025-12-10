@@ -127,6 +127,8 @@ class Buffer
 		 * @return BufferConfig with appropriate usage flags for indices.
 		 */
 		static BufferConfig IndexConfig();
+
+		static BufferConfig StorageConfig();
 };
 
 std::ostream& operator<<(std::ostream& out, const Buffer& buffer);

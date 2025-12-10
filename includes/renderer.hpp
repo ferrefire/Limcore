@@ -31,6 +31,7 @@ struct PassInfo
 {
 	Pass* pass = nullptr; /**< @brief Pointer to a Pass object. */
 	std::vector<std::function<void(VkCommandBuffer, uint32_t)>> calls; /**< @brief Registered draw functions to be called for this pass. */
+	std::vector<std::function<void(VkCommandBuffer, uint32_t)>> preCalls;
 	VkViewport viewport{}; /**< @brief Viewport configuration for this pass. */
 	VkRect2D scissor{}; /**< @brief Scissor rectangle configuration. */
 	bool useWindowExtent = false; /**< @brief Whether to use swapchain window extent for viewport/scissor. */
@@ -105,10 +106,10 @@ class Renderer
 		 * @param index Pass index.
 		 * @param call Function recording Vulkan commands (VkCommandBuffer, render index).
 		 */
-		static void RegisterCall(size_t index, std::function<void(VkCommandBuffer, uint32_t)> call);
+		static void RegisterCall(size_t index, std::function<void(VkCommandBuffer, uint32_t)> call, bool pre = false);
 
 		template <class T>
-		static void RegisterCall(size_t index, T* object, void (T::*call)(VkCommandBuffer, uint32_t)) { RegisterCall(index, std::bind_front(call, object)); }
+		static void RegisterCall(size_t index, T* object, void (T::*call)(VkCommandBuffer, uint32_t), bool pre = false) { RegisterCall(index, std::bind_front(call, object), pre); }
 		
 		static void Resize();
 

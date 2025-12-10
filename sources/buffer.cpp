@@ -231,6 +231,16 @@ BufferConfig Buffer::IndexConfig()
 	return (config);
 }
 
+BufferConfig Buffer::StorageConfig()
+{
+	BufferConfig config{};
+	config.mapped = false;
+	config.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+	config.properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+	return (config);
+}
+
 std::ostream& operator<<(std::ostream& out, const Buffer& buffer)
 {
 	BufferConfig config = buffer.GetConfig();

@@ -27,6 +27,7 @@ enum class DescriptorType
 	DynamicUniformBuffer = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
 	CombinedSampler = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 	StorageImage = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+	StorageBuffer = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 };
 
 /** @brief Configuration for a single descriptor binding. */

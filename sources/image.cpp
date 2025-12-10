@@ -275,6 +275,13 @@ VkImage& Image::GetImage()
 	return (image);
 }
 
+const VkImage& Image::GetImage() const
+{
+	if (!image) throw (std::runtime_error("Image requested but not yet created"));
+
+	return (image);
+}
+
 const VkImageView& Image::GetView() const
 {
 	if (!view) throw (std::runtime_error("Image view requested but not yet created"));
@@ -380,7 +387,7 @@ void Image::Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent, 
 	}
 }
 
-void Image::CopyTo(Image& target, Command& command)
+void Image::CopyTo(Image& target, Command& command, bool signal)
 {
 	//if (!buffer) throw (std::runtime_error("Buffer does not exist"));
 	if (!device) throw (std::runtime_error("Buffer has no device"));
@@ -391,7 +398,7 @@ void Image::CopyTo(Image& target, Command& command)
 	//CommandConfig commandConfig{};
 	////commandConfig.queueIndex = device->GetQueueIndex(QueueType::Graphics);
 	//command.Create(commandConfig, device);
-	command.Begin();
+	if (signal) {command.Begin();}
 
 	VkImageCopy copyInfo{};
 	copyInfo.dstOffset = {0, 0, 0};
@@ -408,8 +415,11 @@ void Image::CopyTo(Image& target, Command& command)
 
 	vkCmdCopyImage(command.GetBuffer(), image, config.currentLayout, target.image, target.config.currentLayout, 1, &copyInfo);
 
-	command.End();
-	command.Submit();
+	if (signal)
+	{
+		command.End();
+		command.Submit();
+	}
 }
 
 ImageViewConfig Image::DefaultViewConfig()

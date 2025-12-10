@@ -134,6 +134,7 @@ class Image
 		void Destroy();
 
 		VkImage& GetImage();
+		const VkImage& GetImage() const;
 		const VkImageView& GetView() const;
 		const VkSampler& GetSampler() const;
 		const ImageConfig& GetConfig() const;
@@ -155,7 +156,7 @@ class Image
 		 */
 		void Update(unsigned char* data, size_t size, Point<uint32_t, 3> extent = {}, Point<int32_t, 4> offset = {}, bool transition = true);
 
-		void CopyTo(Image& target, Command& command);
+		void CopyTo(Image& target, Command& command, bool signal = true);
 
 		/**
 		 * @brief Provides a default image view configuration.

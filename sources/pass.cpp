@@ -88,12 +88,14 @@ void Pass::CreateImages()
 			images.push_back(new Image());
 			ImageConfig imageConfig = Image::DefaultConfig();
 			imageConfig.format = config.colorAttachments[0].description.format;
-			imageConfig.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-			//imageConfig.targetLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			//imageConfig.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+			imageConfig.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 			imageConfig.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			imageConfig.width = Manager::GetWindow().GetConfig().extent.width;
 			imageConfig.height = Manager::GetWindow().GetConfig().extent.height;
 			imageConfig.viewConfig.format = config.colorAttachments[0].description.format;
+			imageConfig.samplerConfig.minFilter = VK_FILTER_NEAREST;
+			imageConfig.samplerConfig.magFilter = VK_FILTER_NEAREST;
 			images[images.size() - 1]->Create(imageConfig, device);
 			config.colorAttachments[0].images.push_back(images[images.size() - 1]);
 			config.colorAttachments[0].views.push_back(images[images.size() - 1]->GetView());

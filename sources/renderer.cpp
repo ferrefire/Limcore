@@ -195,6 +195,11 @@ void Renderer::RecordCommands()
 
 	for (PassInfo& passInfo : passes)
 	{
+		for (std::function<void(VkCommandBuffer, uint32_t)> call : passInfo.preCalls)
+		{
+			call(commands[currentFrame].GetBuffer(), currentFrame);
+		}
+
 		passInfo.pass->Begin(commands[currentFrame].GetBuffer(), renderIndex);
 
 		vkCmdSetViewport(commands[currentFrame].GetBuffer(), 0, 1, &passInfo.viewport);
@@ -256,11 +261,12 @@ void Renderer::AddPass(PassInfo passInfo)
 	passes.push_back(passInfo);
 }
 
-void Renderer::RegisterCall(size_t index, std::function<void(VkCommandBuffer, uint32_t)> call)
+void Renderer::RegisterCall(size_t index, std::function<void(VkCommandBuffer, uint32_t)> call, bool pre)
 {
 	if (passes.size() <= index) return;
 
-	passes[index].calls.push_back(call);
+	if (!pre) {passes[index].calls.push_back(call);}
+	else {passes[index].preCalls.push_back(call);}
 }
 
 void Renderer::Resize()
