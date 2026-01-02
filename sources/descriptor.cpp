@@ -177,7 +177,7 @@ void Descriptor::UpdateDynamic(size_t baseSetID, uint32_t binding, const std::ve
 void Descriptor::Update(size_t setID, uint32_t binding, const Image& image)
 {
 	VkDescriptorImageInfo imageInfo{};
-	imageInfo.sampler = image.GetSampler();
+	if (config[binding].type != DescriptorType::InputAttatchment) imageInfo.sampler = image.GetSampler();
 	imageInfo.imageView = image.GetView();
 	imageInfo.imageLayout = image.GetConfig().currentLayout;
 
@@ -220,8 +220,8 @@ void Descriptor::CreatePools(Device* descriptorDevice)
 		{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100},
 		{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 100},
 		{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 100},
-		//{VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 15},
-	};
+		{VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 10},
+	}; // Reduce these numbers!
 
 	VkDescriptorPoolCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;

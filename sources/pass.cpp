@@ -89,7 +89,7 @@ void Pass::CreateImages()
 			ImageConfig imageConfig = Image::DefaultConfig();
 			imageConfig.format = config.colorAttachments[0].description.format;
 			//imageConfig.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-			imageConfig.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+			imageConfig.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
 			imageConfig.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			imageConfig.width = Manager::GetWindow().GetConfig().extent.width;
 			imageConfig.height = Manager::GetWindow().GetConfig().extent.height;
@@ -108,7 +108,11 @@ void Pass::CreateImages()
 		{
 			images.push_back(new Image());
 			ImageConfig imageConfig = Image::DefaultDepthConfig();
+			imageConfig.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+			imageConfig.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			//imageConfig.targetLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
 			images[images.size() - 1]->Create(imageConfig, device);
+			config.depthAttachment.images.push_back(images[images.size() - 1]);
 			config.depthAttachment.views.push_back(images[images.size() - 1]->GetView());
 		}
 	}
@@ -119,10 +123,18 @@ void Pass::CreateRenderPass()
 	if (renderpass) throw (std::runtime_error("Render pass already exists"));
 	if (!device) throw (std::runtime_error("Pass has no device"));
 
-	config.subpasses[0].pColorAttachments = &config.colorAttachments[0].reference;
-	if (config.depth) config.subpasses[0].pDepthStencilAttachment = &config.depthAttachment.reference;
+	//config.subpasses[0].pColorAttachments = &config.colorAttachments[0].reference;
+	//if (config.depth) config.subpasses[0].pDepthStencilAttachment = &config.depthAttachment.reference;
 
 	std::vector<VkAttachmentDescription> attachments = config.GetAttachments();
+
+	VkSubpassDependency dependency = {
+    	.srcSubpass = 0,
+    	.dstSubpass = 1,
+    	.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+    	.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+    	.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+    	.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT};
 
 	VkRenderPassCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -130,6 +142,8 @@ void Pass::CreateRenderPass()
 	createInfo.pAttachments = attachments.data();
 	createInfo.subpassCount = CUI(config.subpasses.size());
 	createInfo.pSubpasses = config.subpasses.data();
+	createInfo.dependencyCount = 1;
+	createInfo.pDependencies = &dependency;
 
 	if (vkCreateRenderPass(device->GetLogicalDevice(), &createInfo, nullptr, &renderpass) != VK_SUCCESS)
 		throw (std::runtime_error("Failed to create render pass"));
@@ -148,6 +162,7 @@ void Pass::CreateFramebuffers()
 	{
 		std::vector<VkImageView> views = config.GetViews(i);
 		if (config.useSwapchain) views[0] = swapchainViews[i];
+		views[1] = swapchainViews[i];
 
 		VkFramebufferCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -196,6 +211,7 @@ void Pass::DestroyImages()
 	}
 
 	config.depthAttachment.views.clear();
+	config.depthAttachment.images.clear();
 }
 
 void Pass::DestroyFramebuffers()
@@ -214,12 +230,20 @@ const VkRenderPass& Pass::GetRenderpass() const
 	return (renderpass);
 }
 
-const Image* Pass::GetImage(size_t index) const
+const Image* Pass::GetColorImage(size_t index) const
 {
 	if (config.colorAttachments.size() <= 0 || index >= config.colorAttachments[0].images.size()) 
 		throw (std::runtime_error("Pass image request index out of bounds"));
 
 	return (config.colorAttachments[0].images[index]);
+}
+
+const Image* Pass::GetDepthImage(size_t index) const
+{
+	if (index >= config.depthAttachment.images.size()) 
+		throw (std::runtime_error("Pass image request index out of bounds"));
+
+	return (config.depthAttachment.images[index]);
 }
 
 void Pass::Begin(VkCommandBuffer commandBuffer, uint32_t renderIndex)
@@ -302,18 +326,25 @@ PassConfig Pass::DefaultConfig(bool depth)
 
 	AttachmentConfig depthAttachment{};
 	depthAttachment.description = DefaultDepthDescription();
-	depthAttachment.reference.attachment = 1;
+	depthAttachment.reference.attachment = 2;
 	depthAttachment.reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 	depthAttachment.clear.depthStencil = {1.0f, 0};
 
 	PassConfig config{};
 	config.depth = depth;
 	config.colorAttachments.push_back(colorAttachment);
+	config.colorAttachments.push_back(colorAttachment);
+	config.colorAttachments[1].reference.attachment = 1;
 	if (depth) config.depthAttachment = depthAttachment;
-	config.subpasses.resize(1);
+	config.subpasses.resize(2);
 	config.subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	config.subpasses[0].colorAttachmentCount = 1;
 	config.subpasses[0].pColorAttachments = &config.colorAttachments[0].reference;
+	config.subpasses[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	config.subpasses[1].colorAttachmentCount = 1;
+	config.subpasses[1].pColorAttachments = &config.colorAttachments[1].reference;
+	config.subpasses[1].inputAttachmentCount = 2;
+	config.subpasses[1].pInputAttachments = config.inputRefs;
 	if (depth) config.subpasses[0].pDepthStencilAttachment = &config.depthAttachment.reference;
 
 	return (config);

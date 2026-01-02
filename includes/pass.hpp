@@ -38,6 +38,10 @@ struct PassConfig
 	bool depth = false; /**< @brief Whether a depth attachment is used. */
 	bool useSwapchain = true;
 
+	VkAttachmentReference inputRefs[2] = {
+    	{ 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
+    	{ 2, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL }};
+
 	/**
 	 * @brief Gets @c VkAttachmentReference for all color attachments.
 	 * @return Vector of color attachment references in the same order as @ref colorAttachments.
@@ -116,7 +120,8 @@ class Pass
 		 */
 		const VkRenderPass& GetRenderpass() const;
 
-		const Image* GetImage(size_t index) const;
+		const Image* GetColorImage(size_t index) const;
+		const Image* GetDepthImage(size_t index) const;
 
 		/**
 		 * @brief Begins a render pass on the given command buffer.

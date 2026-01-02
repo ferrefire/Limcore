@@ -28,6 +28,7 @@ enum class DescriptorType
 	CombinedSampler = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 	StorageImage = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
 	StorageBuffer = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+	InputAttatchment = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
 };
 
 /** @brief Configuration for a single descriptor binding. */
