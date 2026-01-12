@@ -87,13 +87,13 @@ void Pass::CreateImages()
 		{
 			images.push_back(new Image());
 			ImageConfig imageConfig = Image::DefaultConfig();
-			imageConfig.format = config.colorAttachments[0].description.format;
+			imageConfig.format = VK_FORMAT_R16G16B16A16_SFLOAT;
 			//imageConfig.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 			imageConfig.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
 			imageConfig.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			imageConfig.width = Manager::GetWindow().GetConfig().extent.width;
 			imageConfig.height = Manager::GetWindow().GetConfig().extent.height;
-			imageConfig.viewConfig.format = config.colorAttachments[0].description.format;
+			imageConfig.viewConfig.format = VK_FORMAT_R16G16B16A16_SFLOAT;
 			imageConfig.samplerConfig.minFilter = VK_FILTER_NEAREST;
 			imageConfig.samplerConfig.magFilter = VK_FILTER_NEAREST;
 			images[images.size() - 1]->Create(imageConfig, device);
@@ -109,7 +109,8 @@ void Pass::CreateImages()
 			images.push_back(new Image());
 			ImageConfig imageConfig = Image::DefaultDepthConfig();
 			imageConfig.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-			imageConfig.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imageConfig.targetLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+			//imageConfig.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			//imageConfig.targetLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
 			images[images.size() - 1]->Create(imageConfig, device);
 			config.depthAttachment.images.push_back(images[images.size() - 1]);
@@ -131,10 +132,12 @@ void Pass::CreateRenderPass()
 	VkSubpassDependency dependency = {
     	.srcSubpass = 0,
     	.dstSubpass = 1,
-    	.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+    	.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
     	.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-    	.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-    	.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT};
+    	.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+    	.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
+		.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT
+	};
 
 	VkRenderPassCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -328,6 +331,7 @@ PassConfig Pass::DefaultConfig(bool depth)
 	depthAttachment.description = DefaultDepthDescription();
 	depthAttachment.reference.attachment = 2;
 	depthAttachment.reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	depthAttachment.description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 	depthAttachment.clear.depthStencil = {1.0f, 0};
 
 	PassConfig config{};

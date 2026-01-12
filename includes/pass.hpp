@@ -40,7 +40,7 @@ struct PassConfig
 
 	VkAttachmentReference inputRefs[2] = {
     	{ 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
-    	{ 2, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL }};
+    	{ 2, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL }};
 
 	/**
 	 * @brief Gets @c VkAttachmentReference for all color attachments.

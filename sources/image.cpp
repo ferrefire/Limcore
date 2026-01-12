@@ -525,6 +525,7 @@ std::map<VkImageLayout, VkAccessFlags> Image::transitionAccesses =
 		std::pair<VkImageLayout, VkAccessFlags>{VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
 		std::pair<VkImageLayout, VkAccessFlags>{VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
 		std::pair<VkImageLayout, VkAccessFlags>{VK_IMAGE_LAYOUT_GENERAL, 0}, // Check if correct later
+		std::pair<VkImageLayout, VkAccessFlags>{VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
 	};
 
 std::map<VkImageLayout, VkPipelineStageFlags> Image::transitionStages = 
@@ -533,4 +534,5 @@ std::map<VkImageLayout, VkPipelineStageFlags> Image::transitionStages =
 		std::pair<VkImageLayout, VkPipelineStageFlags>{VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT},
 		std::pair<VkImageLayout, VkPipelineStageFlags>{VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT},
 		std::pair<VkImageLayout, VkPipelineStageFlags>{VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT}, // Check if correct later
+		std::pair<VkImageLayout, VkPipelineStageFlags>{VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT}, // Check if correct later
 	};
