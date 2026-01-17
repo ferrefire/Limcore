@@ -19,53 +19,43 @@
  * The class manages creation, begin/end, and destruction of these resources.
  */
 
-/** @brief Per-attachment configuration for a Vulkan render pass / framebuffer. */
+
 struct AttachmentConfig
 {
-	std::vector<VkImageView> views; /**< @brief Image view used by the attachment (e.g., swapchain image or depth image). */
+	VkAttachmentDescription description{};
+	VkClearValue clear{};
+
+	ImageConfig config{};
 	std::vector<Image*> images;
-	VkAttachmentDescription description{}; /**< @brief Attachment description (format, load/store ops, layouts, etc.). */
-	VkAttachmentReference reference{}; /**< @brief Reference used by subpasses to bind this attachment. */
-	VkClearValue clear{}; /**< @brief Clear color/depth/stencil value applied when loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR. */
+	std::vector<VkImageView> views;
+
+	bool useSwapchain = false;
+	bool useWindowExtent = true;
 };
 
-/** @brief Configuration describing a render pass: attachments, subpasses, and options. */
-struct PassConfig
+struct SubpassConfig
 {
-	std::vector<AttachmentConfig> colorAttachments; /**< @brief Color attachments used by the render pass (one per render target). */
-	AttachmentConfig depthAttachment{}; /**< @brief Optional depth/stencil attachment configuration. */
-	std::vector<VkSubpassDescription> subpasses; /**< @brief Subpass descriptions defining the rendering pipeline stages. */
-	bool depth = false; /**< @brief Whether a depth attachment is used. */
-	bool useSwapchain = true;
+	//VkSubpassDescription description{};
 
-	VkAttachmentReference inputRefs[2] = {
-    	{ 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
-    	{ 2, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL }};
+	std::vector<VkAttachmentReference> colorReferences;
+	std::vector<VkAttachmentReference> inputReferences;
+	VkAttachmentReference depthReference{};
+	VkSubpassDependency dependency{};
 
-	/**
-	 * @brief Gets @c VkAttachmentReference for all color attachments.
-	 * @return Vector of color attachment references in the same order as @ref colorAttachments.
-	 */
-	std::vector<VkAttachmentReference> GetColorReferences();
+	bool useDepth = false;
+	bool useDependency = false;
 
-	/**
-	 * @brief Gets all attachment descriptions (color + optional depth) for render pass creation.
-	 * @return Vector of @c VkAttachmentDescription matching the attachments used by the pass.
-	 */
-	std::vector<VkAttachmentDescription> GetAttachments();
-
-	/**
-	 * @brief Gets the image views of all configured attachments.
-	 * @return Vector of @c VkImageView for color attachments (and depth if present).
-	 */
-	std::vector<VkImageView> GetViews(size_t frame = 0);
-
-	/**
-	 * @brief Gets clear values for all configured attachments.
-	 * @return Vector of @c VkClearValue aligned with the attachment order returned by @ref GetAttachments().
-	 */
-	std::vector<VkClearValue> GetClears();
+	void AddColorReference(uint32_t index, VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+	void AddDepthReference(uint32_t index, VkImageLayout layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	void AddInputReference(uint32_t index, VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	void AddDependency(VkSubpassDependency subpassDependency);
 };
+
+/*struct PassConfig
+{
+	std::vector<AttachmentConfig> attachments;
+	std::vector<SubpassConfig> subpasses;
+};*/
 
 /**
  * @brief High-level owner for a Vulkan render pass plus its images and framebuffers.
@@ -86,8 +76,11 @@ class Pass
 
 	private:
 		State state = Ended;
-		PassConfig config{};
+		//PassConfig config{};
 		Device* device = nullptr;
+
+		std::vector<AttachmentConfig> attachments;
+		std::vector<SubpassConfig> subpasses;
 
 		VkRenderPass renderpass = nullptr;
 		std::vector<Image*> images;
@@ -109,7 +102,8 @@ class Pass
 		 * @param passConfig Configuration describing attachments and subpasses.
 		 * @param passDevice Device used to create Vulkan objects. if @c nullptr, uses the current Device.
 		 */
-		void Create(const PassConfig& passConfig, Device* passDevice = nullptr);
+		//void Create(const PassConfig& passConfig, Device* passDevice = nullptr);
+		void Create(Device* passDevice = nullptr);
 
 		/** @brief Destroys the render pass and associated resources. */
 		void Destroy();
@@ -120,8 +114,10 @@ class Pass
 		 */
 		const VkRenderPass& GetRenderpass() const;
 
-		const Image* GetColorImage(size_t index) const;
-		const Image* GetDepthImage(size_t index) const;
+		const Image* GetAttachmentImage(size_t attachment, size_t index) const;
+
+		void AddAttachment(AttachmentConfig attachmentConfig);
+		void AddSubpass(SubpassConfig subpassConfig);
 
 		/**
 		 * @brief Begins a render pass on the given command buffer.
@@ -150,7 +146,9 @@ class Pass
 		 * @brief Convenience default color attachment description.
 		 * @return A @c VkAttachmentDescription suitable for a typical color render target (implementation chooses sensible load/store ops and layouts).
 		 */
-		static VkAttachmentDescription DefaultColorDescription();
+		//static VkAttachmentDescription DefaultColorDescription();
+
+		static VkAttachmentDescription DefaultSwapDescription();
 
 		/**
 		 * @brief Convenience default depth/stencil attachment description.
@@ -158,10 +156,16 @@ class Pass
 		 */
 		static VkAttachmentDescription DefaultDepthDescription();
 
+		static VkAttachmentDescription DefaultHDRDescription();
+
+		static AttachmentConfig DefaultSwapAttachment();
+		static AttachmentConfig DefaultDepthAttachment(bool input = false);
+		static AttachmentConfig DefaultHDRAttachment();
+
 		/**
 		 * @brief Builds a default @ref PassConfig.
 		 * @param depth Whether to include a depth attachment.
 		 * @return A basic configuration suitable for a single-subpass render pass.
 		 */
-		static PassConfig DefaultConfig(bool depth = false);
+		//static PassConfig DefaultConfig(bool depth = false);
 };
