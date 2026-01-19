@@ -35,8 +35,6 @@ struct AttachmentConfig
 
 struct SubpassConfig
 {
-	//VkSubpassDescription description{};
-
 	std::vector<VkAttachmentReference> colorReferences;
 	std::vector<VkAttachmentReference> inputReferences;
 	VkAttachmentReference depthReference{};
