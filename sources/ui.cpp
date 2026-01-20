@@ -12,7 +12,7 @@ UI::UI()
 
 UI::~UI()
 {
-	
+	DestroyContext();
 }
 
 void UI::CreateContext(VkRenderPass renderPass, uint32_t subpass)
