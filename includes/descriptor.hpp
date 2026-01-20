@@ -142,6 +142,7 @@ class Descriptor
 
 		static void CreatePools(Device* descriptorDevice = nullptr);
 		static void DestroyPools(Device* descriptorDevice = nullptr);
+		static VkDescriptorPool& GetPool();
 };
 
 std::ostream& operator<<(std::ostream& out, const DescriptorConfig& config);

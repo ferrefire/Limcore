@@ -244,6 +244,13 @@ void Descriptor::DestroyPools(Device* descriptorDevice)
 	pool = nullptr;
 }
 
+VkDescriptorPool& Descriptor::GetPool()
+{
+	if (!pool) {throw (std::runtime_error("Pool requested but not yet created"));}
+
+	return (pool);
+}
+
 std::ostream& operator<<(std::ostream& out, const DescriptorConfig& config)
 {
 	out << std::endl;

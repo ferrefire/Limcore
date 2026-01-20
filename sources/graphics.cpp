@@ -83,7 +83,7 @@ void Graphics::DestroyInstance()
 
 const VkInstance& Graphics::GetInstance()
 {
-	if (!instance) throw (std::runtime_error("Instance requested but not yet created"));
+	if (!instance) {throw (std::runtime_error("Instance requested but not yet created"));}
 
 	return (instance);
 }

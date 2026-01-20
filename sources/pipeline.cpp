@@ -95,10 +95,13 @@ void Pipeline::CreateTesselationConfig()
 {
 	std::string path = Utilities::GetPath();
 
+	std::string fragmentShaderName = config.shader;
+	if (config.prepass) {fragmentShaderName.append("Pre");}
+
 	VkShaderModule vertexShader = CreateShader(Utilities::FileToBinary(path + "/shaders/" + config.shader + ".vert.spv"));
 	VkShaderModule controlShader = CreateShader(Utilities::FileToBinary(path + "/shaders/" + config.shader + ".tesc.spv"));
 	VkShaderModule evaluationShader = CreateShader(Utilities::FileToBinary(path + "/shaders/" + config.shader + ".tese.spv"));
-	VkShaderModule fragmentShader = CreateShader(Utilities::FileToBinary(path + "/shaders/" + config.shader + ".frag.spv"));
+	VkShaderModule fragmentShader = CreateShader(Utilities::FileToBinary(path + "/shaders/" + fragmentShaderName + ".frag.spv"));
 
 	config.shaderStages.resize(4);
 
@@ -320,6 +323,7 @@ PipelineConfig Pipeline::DefaultConfig()
 	config.depthStencil.depthTestEnable = VK_TRUE;
 	config.depthStencil.depthWriteEnable = VK_TRUE;
 	config.depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+	//config.depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 	config.depthStencil.depthBoundsTestEnable = VK_TRUE;
 	config.depthStencil.minDepthBounds = 0.0f;
 	config.depthStencil.maxDepthBounds = 1.0f;

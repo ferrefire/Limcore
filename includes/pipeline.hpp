@@ -47,6 +47,7 @@ struct PipelineConfig
 
 	PipelineType type = PipelineType::Graphics;
 	bool tesselation = false;
+	bool prepass = false;
 };
 
 /**

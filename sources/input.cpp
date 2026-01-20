@@ -2,6 +2,7 @@
 
 #include "manager.hpp"
 #include "time.hpp"
+#include "ui.hpp"
 
 void Input::AddKey(int keycode)
 {
@@ -75,11 +76,17 @@ void Input::TriggerMouse(int mode)
 	{
 		mouseEnabled = true;
 		glfwSetInputMode(Manager::GetWindow().GetData(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+		UI::TriggerMouseInput(true);
+		UI::TriggerKeyboardInput(true);
 	}
 	else if (mode == false)
 	{
 		mouseEnabled = false;
 		glfwSetInputMode(Manager::GetWindow().GetData(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+		UI::TriggerMouseInput(false);
+		UI::TriggerKeyboardInput(false);
 	}
 }
 
