@@ -143,6 +143,8 @@ void Menu::RenderMenu(int start, int end)
 	for (int i = start; i < end; i++)
 	{
 		if (components[i].first == ComponentType::FloatSlider) {floatSliders[components[i].second].Render();}
+		else if (components[i].first == ComponentType::Button) {buttons[components[i].second].Render();}
+		else if (components[i].first == ComponentType::Checkbox) {checkboxes[components[i].second].Render();}
 
 		if (nodeFunc != nullptr && ImGui::IsItemEdited()) {nodeFunc();}
 
@@ -183,6 +185,24 @@ void Menu::AddSlider(std::string name, float &value, float min, float max)
 	components.push_back({ComponentType::FloatSlider, floatSliders.size() - 1});
 }
 
+void Menu::AddButton(std::string name, void(*func)(void))
+{
+	Button button(name, func);
+
+	buttons.push_back(button);
+
+	components.push_back({ComponentType::Button, buttons.size() - 1});
+}
+
+void Menu::AddCheckbox(std::string name, bool &value)
+{
+	Checkbox checkbox(name, value);
+
+	checkboxes.push_back(checkbox);
+
+	components.push_back({ComponentType::Checkbox, checkboxes.size() - 1});
+}
+
 int Menu::FindNodeEnd(std::string name, int start)
 {
 	for (int i = start; i < components.size(); i++)
@@ -196,3 +216,4 @@ int Menu::FindNodeEnd(std::string name, int start)
 
 ImGuiIO* UI::io = nullptr;
 std::vector<Menu> UI::menus;
+//int placeholder = 0;

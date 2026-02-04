@@ -9,15 +9,23 @@
 #include <string>
 #include <vector>
 
-enum class ComponentType { Node = 0, FloatSlider = 1 };
+enum class ComponentType { Node = 0, FloatSlider = 1, Button = 2, Checkbox = 3 };
 
 #define COMPONENT_TEMPLATE template <typename T>
+
+static int placeholder = 0;
 
 struct Node
 {
 	std::string name = "node";
 	void(*func)(void) = nullptr;
 };
+
+//struct Button
+//{
+//	std::string name = "button";
+//	void(*func)(void) = nullptr;
+//};
 
 COMPONENT_TEMPLATE
 class Component
@@ -54,12 +62,48 @@ class Slider: public Component<T>
 		}
 };
 
+class Button: public Component<int>
+{
+	public:
+		Button(std::string componentName, void(*componentFunc)(void)) : Component<int>(componentName, placeholder)
+		{
+			func = componentFunc;
+		}
+		~Button(){};
+
+		void(*func)(void) = nullptr;
+
+		void Render() override
+		{
+			if (ImGui::Button(this->name.c_str())) {func();}
+		}
+};
+
+class Checkbox: public Component<bool>
+{
+	public:
+		Checkbox(std::string componentName, bool& componentValue) : Component<bool>(componentName, componentValue)
+		{
+			
+		}
+		~Checkbox(){};
+
+		void Render() override
+		{
+			ImGui::PushItemWidth(250.0f);
+			ImGui::Checkbox(this->name.c_str(), &this->value);
+			ImGui::PopItemWidth();
+		}
+};
+
 class Menu
 {
 	private:
 		std::vector<std::pair<ComponentType, int>> components;
 		std::vector<Node> nodes;
 		std::vector<Slider<float>> floatSliders;
+		std::vector<Button> buttons;
+		std::vector<Checkbox> checkboxes;
 
 	public:
 		std::string title = "new menu";
@@ -68,6 +112,8 @@ class Menu
 
 		void TriggerNode(std::string name, void(*func)(void) = nullptr);
 		void AddSlider(std::string name, float &value, float min, float max);
+		void AddButton(std::string name, void(*func)(void));
+		void AddCheckbox(std::string name, bool &value);
 
 		int FindNodeEnd(std::string name, int start);
 };
