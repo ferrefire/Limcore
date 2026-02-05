@@ -79,10 +79,10 @@ class Button: public Component<int>
 		}
 };
 
-class Checkbox: public Component<bool>
+class Checkbox: public Component<uint32_t>
 {
 	public:
-		Checkbox(std::string componentName, bool& componentValue) : Component<bool>(componentName, componentValue)
+		Checkbox(std::string componentName, uint32_t& componentValue) : Component<uint32_t>(componentName, componentValue)
 		{
 			
 		}
@@ -91,7 +91,7 @@ class Checkbox: public Component<bool>
 		void Render() override
 		{
 			ImGui::PushItemWidth(250.0f);
-			ImGui::Checkbox(this->name.c_str(), &this->value);
+			ImGui::Checkbox(this->name.c_str(), reinterpret_cast<bool *>(&this->value));
 			ImGui::PopItemWidth();
 		}
 };
@@ -113,7 +113,7 @@ class Menu
 		void TriggerNode(std::string name, void(*func)(void) = nullptr);
 		void AddSlider(std::string name, float &value, float min, float max);
 		void AddButton(std::string name, void(*func)(void));
-		void AddCheckbox(std::string name, bool &value);
+		void AddCheckbox(std::string name, uint32_t &value);
 
 		int FindNodeEnd(std::string name, int start);
 };

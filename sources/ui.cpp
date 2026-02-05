@@ -194,7 +194,7 @@ void Menu::AddButton(std::string name, void(*func)(void))
 	components.push_back({ComponentType::Button, buttons.size() - 1});
 }
 
-void Menu::AddCheckbox(std::string name, bool &value)
+void Menu::AddCheckbox(std::string name, uint32_t &value)
 {
 	Checkbox checkbox(name, value);
 
