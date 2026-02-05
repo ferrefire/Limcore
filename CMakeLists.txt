@@ -69,5 +69,6 @@ target_include_directories(imgui PUBLIC
 )
 target_compile_options(imgui PRIVATE $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-O3>)
 target_link_libraries(imgui PUBLIC glfw)
+target_link_libraries(imgui PUBLIC Vulkan-Headers)
 target_link_libraries(imgui PUBLIC vulkan)
 target_link_libraries(${PROJECT_NAME} PUBLIC imgui)
