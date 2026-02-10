@@ -36,6 +36,7 @@ void Shape<V, I>::Create(ShapeType type, ShapeSettings shapeSettings)
 		case ShapeType::Quad: CreateQuad(); break;
 		case ShapeType::Cube: CreateCube(); break;
 		case ShapeType::Plane: CreatePlane(); break;
+		case ShapeType::Cylinder: CreateCylinder(); break;
 	}
 
 	if (settings.scalarized) Scalarize();
@@ -163,14 +164,14 @@ void Shape<V, I>::CreateQuad()
 SHAPE_TEMPLATE
 void Shape<V, I>::CreatePlane()
 {
-	for (size_t i = 0, x = 0; x <= settings.resolution; ++x)
+	for (size_t i = 0, x = 0; x <= settings.resolution.x(); ++x)
     {
-        for (size_t z = 0; z <= settings.resolution; ++z, ++i)
+        for (size_t z = 0; z <= settings.resolution.y(); ++z, ++i)
         {
 			vertices.push_back(Vertex<V>{});
 
-			float xPos = ((float)x / settings.resolution) - 0.5f;
-			float zPos = ((float)z / settings.resolution) - 0.5f;
+			float xPos = ((float)x / settings.resolution.x()) - 0.5f;
+			float zPos = ((float)z / settings.resolution.y()) - 0.5f;
 
 			if constexpr (hasPosition)
 			{
@@ -191,16 +192,16 @@ void Shape<V, I>::CreatePlane()
 
 	if constexpr (hasIndices)
 	{
-		for (size_t ti = 0, vi = 0, x = 0; x < settings.resolution; ++vi, ++x)
+		for (size_t ti = 0, vi = 0, x = 0; x < settings.resolution.x(); ++vi, ++x)
     	{
-    	    for (size_t z = 0; z < settings.resolution; ti += 6, ++vi, ++z)
+    	    for (size_t z = 0; z < settings.resolution.y(); ti += 6, ++vi, ++z)
     	    {
     	        indices.push_back(vi);
     	        indices.push_back(vi + 1);
-    	        indices.push_back(vi + settings.resolution + 2);
+    	        indices.push_back(vi + settings.resolution.y() + 2);
     	        indices.push_back(vi);
-    	        indices.push_back(vi + settings.resolution + 2);
-    	        indices.push_back(vi + settings.resolution + 1);
+    	        indices.push_back(vi + settings.resolution.y() + 2);
+    	        indices.push_back(vi + settings.resolution.y() + 1);
     	    }
     	}
 	}
@@ -238,6 +239,55 @@ void Shape<V, I>::CreateCube()
 	Join(left);
 	Join(top);
 	Join(bottom);
+}
+
+SHAPE_TEMPLATE
+template <VertexConfig PV, VkIndexType PI> requires (Bitmask::HasFlag(PV, Position)) && (PI != VK_INDEX_TYPE_NONE_KHR)
+void Shape<V, I>::CreateCylinder()
+{
+	if (settings.resolution.x() < 3) {settings.resolution.x() = 3;}
+	if (settings.resolution.y() < 1) {settings.resolution.y() = 1;}
+
+	Shape<V, I> plane(ShapeType::Plane, settings);
+
+	plane.Rotate(90.0, Axis::x);
+
+	Join(plane);
+
+	std::vector<indexType> startVertices;
+	std::vector<indexType> endVertices;
+
+	indexType index = 0;
+
+	for (Vertex<V> &vertex : vertices)
+	{
+		float x = round((vertex.position.x() + 0.5) * settings.resolution.x());
+
+		if (x == 0) {startVertices.push_back(index);}
+		else if (x == settings.resolution.x()) {endVertices.push_back(index);}
+
+		point3D newPosition = point3D::Rotation(point3D(0.0, (360.0 / (settings.resolution.x() + 1)) * -x, 0.0)).Unitized();
+		vertex.position.x() = newPosition.x();
+		vertex.position.z() = newPosition.z();
+
+		if constexpr (hasNormal)
+		{
+			vertex.normal = point3D(newPosition.x(), 0.0, newPosition.z()).Normalized();
+		}
+
+		index++;
+	}
+
+	for (size_t i = 0; i < startVertices.size() - 1; i++)
+	{
+		indices.push_back(endVertices[i + 1]);
+		indices.push_back(startVertices[i]);
+		indices.push_back(endVertices[i]);
+
+		indices.push_back(endVertices[i + 1]);
+		indices.push_back(startVertices[i + 1]);
+		indices.push_back(startVertices[i]);
+	}
 }
 
 SHAPE_TEMPLATE
