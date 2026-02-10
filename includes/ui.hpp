@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-enum class ComponentType { Node = 0, FloatSlider = 1, Button = 2, Checkbox = 3 };
+enum class ComponentType { Node = 0, FloatSlider = 1, Button = 2, Checkbox = 3, Dropdown = 4 };
 
 #define COMPONENT_TEMPLATE template <typename T>
 
@@ -96,6 +96,28 @@ class Checkbox: public Component<uint32_t>
 		}
 };
 
+class Dropdown: public Component<uint32_t>
+{
+	public:
+		Dropdown(std::string componentName, uint32_t& componentValue, std::vector<std::string> componentOptions) : Component<uint32_t>(componentName, componentValue)
+		{
+			options = componentOptions;
+		}
+		~Dropdown(){};
+
+		std::vector<std::string> options;
+
+		void Render() override
+		{
+			std::vector<const char *> items(options.size());
+			for (int i = 0; i < options.size(); i++) {items[i] = options[i].c_str();}
+
+			ImGui::PushItemWidth(250.0f);
+			ImGui::Combo(this->name.c_str(), reinterpret_cast<int *>(&this->value), items.data(), options.size());
+			ImGui::PopItemWidth();
+		}
+};
+
 class Menu
 {
 	private:
@@ -104,6 +126,7 @@ class Menu
 		std::vector<Slider<float>> floatSliders;
 		std::vector<Button> buttons;
 		std::vector<Checkbox> checkboxes;
+		std::vector<Dropdown> dropdowns;
 
 	public:
 		std::string title = "new menu";
@@ -114,6 +137,7 @@ class Menu
 		void AddSlider(std::string name, float &value, float min, float max);
 		void AddButton(std::string name, void(*func)(void));
 		void AddCheckbox(std::string name, uint32_t &value);
+		void AddDropdown(std::string name, uint32_t &value, std::vector<std::string> options);
 
 		int FindNodeEnd(std::string name, int start);
 };

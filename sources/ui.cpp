@@ -145,6 +145,7 @@ void Menu::RenderMenu(int start, int end)
 		if (components[i].first == ComponentType::FloatSlider) {floatSliders[components[i].second].Render();}
 		else if (components[i].first == ComponentType::Button) {buttons[components[i].second].Render();}
 		else if (components[i].first == ComponentType::Checkbox) {checkboxes[components[i].second].Render();}
+		else if (components[i].first == ComponentType::Dropdown) {dropdowns[components[i].second].Render();}
 
 		if (nodeFunc != nullptr && ImGui::IsItemEdited()) {nodeFunc();}
 
@@ -201,6 +202,15 @@ void Menu::AddCheckbox(std::string name, uint32_t &value)
 	checkboxes.push_back(checkbox);
 
 	components.push_back({ComponentType::Checkbox, checkboxes.size() - 1});
+}
+
+void Menu::AddDropdown(std::string name, uint32_t &value, std::vector<std::string> options)
+{
+	Dropdown dropdown(name, value, options);
+
+	dropdowns.push_back(dropdown);
+
+	components.push_back({ComponentType::Dropdown, dropdowns.size() - 1});
 }
 
 int Menu::FindNodeEnd(std::string name, int start)
