@@ -8,8 +8,9 @@
 
 #include <string>
 #include <vector>
+#include <type_traits>
 
-enum class ComponentType { Node = 0, FloatSlider = 1, Button = 2, Checkbox = 3, Dropdown = 4 };
+enum class ComponentType { Node, FloatSlider, IntSlider, FloatRange, IntRange, Button, Checkbox, Dropdown, Text };
 
 #define COMPONENT_TEMPLATE template <typename T>
 
@@ -57,7 +58,47 @@ class Slider: public Component<T>
 		void Render() override
 		{
 			ImGui::PushItemWidth(250.0f);
-			ImGui::SliderFloat(this->name.c_str(), &this->value, min, max);
+
+			if constexpr (std::is_same_v<T, float>)
+			{
+				ImGui::SliderFloat(this->name.c_str(), &this->value, min, max);
+			}
+			else if constexpr (std::is_same_v<T, int>)
+			{
+				ImGui::SliderInt(this->name.c_str(), &this->value, min, max);
+			}
+
+			ImGui::PopItemWidth();
+		}
+};
+
+COMPONENT_TEMPLATE
+class Range: public Component<Point<T, 2>>
+{
+	public:
+		Range(std::string componentName, Point<T, 2>& componentValue, T minValue, T maxValue) : Component<Point<T, 2>>(componentName, componentValue)
+		{
+			min = minValue;
+			max = maxValue;
+		}
+		~Range(){};
+
+		T min = 0;
+		T max = 0;
+
+		void Render() override
+		{
+			ImGui::PushItemWidth(250.0f);
+
+			if constexpr (std::is_same_v<T, float>)
+			{
+				ImGui::DragFloatRange2(this->name.c_str(), &this->value.x(), &this->value.y(), std::abs(max - min) * 0.01, min, max);
+			}
+			else if constexpr (std::is_same_v<T, int>)
+			{
+				ImGui::DragIntRange2(this->name.c_str(), &this->value.x(), &this->value.y(), 1.0, min, max);
+			}
+
 			ImGui::PopItemWidth();
 		}
 };
@@ -118,15 +159,40 @@ class Dropdown: public Component<uint32_t>
 		}
 };
 
+class Text: public Component<std::string>
+{
+	public:
+		Text(std::string componentName, std::string& componentValue) : Component<std::string>(componentName, componentValue)
+		{
+			
+		}
+		~Text(){};
+
+		void Render() override
+		{
+			std::string text = this->name;
+			text.append(": ");
+			text.append(this->value);
+
+			ImGui::PushItemWidth(250.0f);
+			ImGui::Text("%s", text.c_str());
+			ImGui::PopItemWidth();
+		}
+};
+
 class Menu
 {
 	private:
 		std::vector<std::pair<ComponentType, int>> components;
 		std::vector<Node> nodes;
 		std::vector<Slider<float>> floatSliders;
+		std::vector<Slider<int>> intSliders;
+		std::vector<Range<float>> floatRanges;
+		std::vector<Range<int>> intRanges;
 		std::vector<Button> buttons;
 		std::vector<Checkbox> checkboxes;
 		std::vector<Dropdown> dropdowns;
+		std::vector<Text> texts;
 
 	public:
 		std::string title = "new menu";
@@ -135,9 +201,13 @@ class Menu
 
 		void TriggerNode(std::string name, void(*func)(void) = nullptr);
 		void AddSlider(std::string name, float &value, float min, float max);
+		void AddSlider(std::string name, int &value, int min, int max);
+		void AddRange(std::string name, Point<float, 2> &value, float min, float max);
+		void AddRange(std::string name, Point<int, 2> &value, int min, int max);
 		void AddButton(std::string name, void(*func)(void));
 		void AddCheckbox(std::string name, uint32_t &value);
 		void AddDropdown(std::string name, uint32_t &value, std::vector<std::string> options);
+		void AddText(std::string name, std::string &value);
 
 		int FindNodeEnd(std::string name, int start);
 };

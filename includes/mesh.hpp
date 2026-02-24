@@ -176,9 +176,11 @@ typedef Mesh<Position, VK_INDEX_TYPE_UINT16> meshP16;
 typedef Mesh<Position | Coordinate, VK_INDEX_TYPE_UINT16> meshPC16;
 typedef Mesh<Position | Normal, VK_INDEX_TYPE_UINT16> meshPN16;
 typedef Mesh<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT16> meshPNC16;
+typedef Mesh<Position | Normal | Coordinate | Color, VK_INDEX_TYPE_UINT16> mesh16;
 typedef Mesh<Position, VK_INDEX_TYPE_UINT32> meshP32;
 typedef Mesh<Position | Coordinate, VK_INDEX_TYPE_UINT32> meshPC32;
 typedef Mesh<Position | Normal, VK_INDEX_TYPE_UINT32> meshPN32;
 typedef Mesh<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT32> meshPNC32;
+typedef Mesh<Position | Normal | Coordinate | Color, VK_INDEX_TYPE_UINT32> mesh32;
 
 #include "mesh.tpp"

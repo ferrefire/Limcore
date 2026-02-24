@@ -150,6 +150,14 @@ void Shape<V, I>::CreateQuad()
 		vertices[3].coordinate = point2D(0.0f, 1.0f);
 	}
 
+	if constexpr (hasColor)
+	{
+		vertices[0].color = point3D(1.0f);
+		vertices[1].color = point3D(1.0f);
+		vertices[2].color = point3D(1.0f);
+		vertices[3].color = point3D(1.0f);
+	}
+
 	if constexpr (hasIndices)
 	{
 		indices.push_back(0);
@@ -186,6 +194,11 @@ void Shape<V, I>::CreatePlane()
 			if constexpr (hasCoordinate)
 			{
 				vertices[vertices.size() - 1].coordinate = point2D(xPos + 0.5f, zPos + 0.5f);
+			}
+
+			if constexpr (hasColor)
+			{
+				vertices[vertices.size() - 1].color = point3D(1.0f);
 			}
         }
 	}
@@ -272,7 +285,7 @@ void Shape<V, I>::CreateCylinder()
 
 		if constexpr (hasNormal)
 		{
-			vertex.normal = point3D(newPosition.x(), 0.0, newPosition.z()).Normalized();
+			vertex.normal = point3D(newPosition.x(), 0.0, newPosition.z()).Unitized();
 		}
 
 		index++;
@@ -333,6 +346,23 @@ void Shape<V, I>::Rotate(const float& degrees, const Axis& axis)
 }
 
 SHAPE_TEMPLATE
+void Shape<V, I>::Rotate(const float& degrees, const Axis& axis, int index)
+{
+	if (index >= vertices.size()) {return;}
+
+	if constexpr (hasPosition)
+	{
+		vertices[index].position.Rotate(degrees, axis);
+	}
+
+	if constexpr (hasNormal)
+	{
+		vertices[index].normal.Rotate(degrees, axis);
+		vertices[index].normal.Unitize();
+	}
+}
+
+SHAPE_TEMPLATE
 void Shape<V, I>::Scale(const point3D& scalar, bool scaleUV)
 {
 	for (Vertex<V>& vertex : vertices)
@@ -348,6 +378,41 @@ void Shape<V, I>::Scale(const point3D& scalar, bool scaleUV)
 			{
 				vertex.coordinate *= scalar;
 			}
+		}
+	}
+}
+
+SHAPE_TEMPLATE
+void Shape<V, I>::Scale(const point3D& scalar, int index)
+{
+	if (index >= vertices.size()) {return;}
+
+	if constexpr (hasPosition)
+	{
+		vertices[index].position *= scalar;
+	}
+}
+
+SHAPE_TEMPLATE
+void Shape<V, I>::SetColor(const point3D& color)
+{
+	if constexpr (hasColor)
+	{
+		for (Vertex<V>& vertex : vertices)
+		{
+			vertex.color = color;
+		}
+	}
+}
+
+SHAPE_TEMPLATE
+void Shape<V, I>::Paint(const point3D& color)
+{
+	if constexpr (hasColor)
+	{
+		for (Vertex<V>& vertex : vertices)
+		{
+			vertex.color *= color;
 		}
 	}
 }
@@ -423,6 +488,21 @@ void Shape<V, I>::Join(const Shape<V, I>& other, bool offset)
 		for (const indexType& index : other.GetIndices())
 		{
 			indices.push_back(index + count);
+		}
+	}
+}
+
+SHAPE_TEMPLATE
+void Shape<V, I>::CalculateNormal()
+{
+	if constexpr (hasNormal)
+	{
+		if constexpr (hasPosition)
+		{
+			for (Vertex<V>& vertex : vertices)
+			{
+				vertex.normal = point3D(vertex.position).Unitized();
+			}
 		}
 	}
 }

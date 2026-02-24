@@ -143,9 +143,13 @@ void Menu::RenderMenu(int start, int end)
 	for (int i = start; i < end; i++)
 	{
 		if (components[i].first == ComponentType::FloatSlider) {floatSliders[components[i].second].Render();}
+		else if (components[i].first == ComponentType::IntSlider) {intSliders[components[i].second].Render();}
+		else if (components[i].first == ComponentType::FloatRange) {floatRanges[components[i].second].Render();}
+		else if (components[i].first == ComponentType::IntRange) {intRanges[components[i].second].Render();}
 		else if (components[i].first == ComponentType::Button) {buttons[components[i].second].Render();}
 		else if (components[i].first == ComponentType::Checkbox) {checkboxes[components[i].second].Render();}
 		else if (components[i].first == ComponentType::Dropdown) {dropdowns[components[i].second].Render();}
+		else if (components[i].first == ComponentType::Text) {texts[components[i].second].Render();}
 
 		if (nodeFunc != nullptr && ImGui::IsItemEdited()) {nodeFunc();}
 
@@ -186,6 +190,33 @@ void Menu::AddSlider(std::string name, float &value, float min, float max)
 	components.push_back({ComponentType::FloatSlider, floatSliders.size() - 1});
 }
 
+void Menu::AddSlider(std::string name, int &value, int min, int max)
+{
+	Slider<int> slider(name, value, min, max);
+
+	intSliders.push_back(slider);
+
+	components.push_back({ComponentType::IntSlider, intSliders.size() - 1});
+}
+
+void Menu::AddRange(std::string name, Point<float, 2> &value, float min, float max)
+{
+	Range<float> range(name, value, min, max);
+
+	floatRanges.push_back(range);
+
+	components.push_back({ComponentType::FloatRange, floatRanges.size() - 1});
+}
+
+void Menu::AddRange(std::string name, Point<int, 2> &value, int min, int max)
+{
+	Range<int> range(name, value, min, max);
+
+	intRanges.push_back(range);
+
+	components.push_back({ComponentType::IntRange, intRanges.size() - 1});
+}
+
 void Menu::AddButton(std::string name, void(*func)(void))
 {
 	Button button(name, func);
@@ -211,6 +242,15 @@ void Menu::AddDropdown(std::string name, uint32_t &value, std::vector<std::strin
 	dropdowns.push_back(dropdown);
 
 	components.push_back({ComponentType::Dropdown, dropdowns.size() - 1});
+}
+
+void Menu::AddText(std::string name, std::string &value)
+{
+	Text text(name, value);
+
+	texts.push_back(text);
+
+	components.push_back({ComponentType::Text, texts.size() - 1});
 }
 
 int Menu::FindNodeEnd(std::string name, int start)

@@ -130,7 +130,14 @@ class Shape
 		 */
 		void Rotate(const float& degrees, const Axis& axis);
 
+		void Rotate(const float& degrees, const Axis& axis, int index);
+
 		void Scale(const point3D& scalar, bool scaleUV = false);
+
+		void Scale(const point3D& scalar, int index);
+
+		void SetColor(const point3D& color);
+		void Paint(const point3D& color);
 
 		/**
 		 * @brief Recenters geometry around the origin.
@@ -150,15 +157,19 @@ class Shape
 		 * @param offset If true, offset indices to account for current vertex count.
 		 */
 		void Join(const Shape<V, I>& other, bool offset = true);
+
+		void CalculateNormal();
 };
 
 typedef Shape<Position, VK_INDEX_TYPE_UINT16> shapeP16;
 typedef Shape<Position | Coordinate, VK_INDEX_TYPE_UINT16> shapePC16;
 typedef Shape<Position | Normal, VK_INDEX_TYPE_UINT16> shapePN16;
 typedef Shape<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT16> shapePNC16;
+typedef Shape<Position | Normal | Coordinate | Color, VK_INDEX_TYPE_UINT16> shape16;
 typedef Shape<Position, VK_INDEX_TYPE_UINT32> shapeP32;
 typedef Shape<Position | Coordinate, VK_INDEX_TYPE_UINT32> shapePC32;
 typedef Shape<Position | Normal, VK_INDEX_TYPE_UINT32> shapePN32;
 typedef Shape<Position | Normal | Coordinate, VK_INDEX_TYPE_UINT32> shapePNC32;
+typedef Shape<Position | Normal | Coordinate | Color, VK_INDEX_TYPE_UINT32> shape32;
 
 #include "shape.tpp"
