@@ -87,6 +87,8 @@ class Buffer
 		 */
 		const void* GetAddress() const;
 
+		void* GetAddress();
+
 		/**
 		 * @brief Copies buffer contents into another buffer.
 		 * @param target Destination buffer handle.
@@ -129,6 +131,8 @@ class Buffer
 		static BufferConfig IndexConfig();
 
 		static BufferConfig StorageConfig();
+
+		static BufferConfig MappedStorageConfig();
 };
 
 std::ostream& operator<<(std::ostream& out, const Buffer& buffer);

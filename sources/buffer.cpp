@@ -137,6 +137,13 @@ const void* Buffer::GetAddress() const
 	return (address);
 }
 
+void* Buffer::GetAddress()
+{
+	if (!config.mapped) throw (std::runtime_error("Requested buffer address but buffer is not mapped"));
+
+	return (address);
+}
+
 void Buffer::CopyTo(VkBuffer target, size_t offset)
 {
 	if (!buffer) throw (std::runtime_error("Buffer does not exist"));
@@ -237,6 +244,16 @@ BufferConfig Buffer::StorageConfig()
 	config.mapped = false;
 	config.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 	config.properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+	return (config);
+}
+
+BufferConfig Buffer::MappedStorageConfig()
+{
+	BufferConfig config{};
+	config.mapped = true;
+	config.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+	config.properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
 	return (config);
 }
