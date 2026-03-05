@@ -61,35 +61,35 @@ void Device::CreateLogical()
 		queueCreateInfos.push_back(createInfo);
 	}
 
-	VkPhysicalDeviceFeatures deviceFeatures{};
-	if (config.tesselation) deviceFeatures.tessellationShader = VK_TRUE;
-	if (config.anisotropic) deviceFeatures.samplerAnisotropy = VK_TRUE;
-	if (config.shaderDouble) deviceFeatures.shaderFloat64 = VK_TRUE;
-	if (config.geometryShader) deviceFeatures.geometryShader = VK_TRUE;
-	if (config.wireframeMode) deviceFeatures.fillModeNonSolid = VK_TRUE;
-	if (config.depthBounds) deviceFeatures.depthBounds = VK_TRUE;
-	if (config.compressionBC) deviceFeatures.textureCompressionBC = VK_TRUE;
+	VkPhysicalDeviceFeatures deviceFeaturesBase{};
+	if (config.tesselation) {deviceFeaturesBase.tessellationShader = VK_TRUE;}
+	if (config.anisotropic) {deviceFeaturesBase.samplerAnisotropy = VK_TRUE;}
+	if (config.shaderDouble) {deviceFeaturesBase.shaderFloat64 = VK_TRUE;}
+	if (config.geometryShader) {deviceFeaturesBase.geometryShader = VK_TRUE;}
+	if (config.wireframeMode) {deviceFeaturesBase.fillModeNonSolid = VK_TRUE;}
+	if (config.depthBounds) {deviceFeaturesBase.depthBounds = VK_TRUE;}
+	if (config.compressionBC) {deviceFeaturesBase.textureCompressionBC = VK_TRUE;}
+
+	VkPhysicalDeviceVulkan12Features deviceFeatures2{};
+	deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	if (config.nonUniformIndexingShaderSampledImageArray) {deviceFeatures2.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;}
+
+	VkPhysicalDeviceFeatures2 deviceFeatures{};
+	deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+	deviceFeatures.features = deviceFeaturesBase;
+	deviceFeatures.pNext = &deviceFeatures2;
 
 	std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-
-	/*VkPhysicalDeviceVulkan13Features f13{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
-	VkPhysicalDeviceVulkan12Features f12{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
-	VkPhysicalDeviceVulkan11Features f11{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES};
-
-	VkPhysicalDeviceFeatures2 feats{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
-	feats.pNext = &f13;
-	f13.pNext = &f12;
-	f12.pNext = &f11;
-
-	vkGetPhysicalDeviceFeatures2(physicalDevice, &feats);*/
 
 	VkDeviceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	createInfo.queueCreateInfoCount = CUI(queueCreateInfos.size());
 	createInfo.pQueueCreateInfos = queueCreateInfos.data();
-	createInfo.pEnabledFeatures = &deviceFeatures;
+	//createInfo.pEnabledFeatures = &deviceFeatures;
+	createInfo.pEnabledFeatures = nullptr;
 	createInfo.enabledExtensionCount = CUI(deviceExtensions.size());
 	createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+	createInfo.pNext = &deviceFeatures;
 	//createInfo.pNext = &feats;
 
 	if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &logicalDevice) != VK_SUCCESS)
@@ -237,7 +237,12 @@ std::vector<DeviceInfo> Device::GetAvailableDevices()
 	{
 		availableDevices[i].physicalDevice = physicalDevices[i];
 		vkGetPhysicalDeviceProperties(availableDevices[i].physicalDevice, &availableDevices[i].deviceProperties);
-		vkGetPhysicalDeviceFeatures(availableDevices[i].physicalDevice, &availableDevices[i].deviceFeatures);
+		availableDevices[i].deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+		availableDevices[i].deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+		availableDevices[i].deviceFeatures3.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+		availableDevices[i].deviceFeatures.pNext = &availableDevices[i].deviceFeatures2;
+		availableDevices[i].deviceFeatures2.pNext = &availableDevices[i].deviceFeatures3;
+		vkGetPhysicalDeviceFeatures2(availableDevices[i].physicalDevice, &availableDevices[i].deviceFeatures);
 		availableDevices[i].type = static_cast<DeviceType>(availableDevices[i].deviceProperties.deviceType);
 	}
 
@@ -252,17 +257,21 @@ DeviceInfo Device::GetBestDevice(DeviceConfig& config)
 	
 	for (int i = 0; i < availableDevices.size(); i++)
 	{
-		if (any && DeviceTypePriority(availableDevices[i].type) < DeviceTypePriority(config.type)) continue;
-		else if (!any && availableDevices[i].type != config.type) continue;
-		else if (config.tesselation && !availableDevices[i].deviceFeatures.tessellationShader) continue;
-		else if (config.anisotropic && !availableDevices[i].deviceFeatures.samplerAnisotropy) continue;
-		else if (config.shaderDouble && !availableDevices[i].deviceFeatures.shaderFloat64) continue;
+		if (any && DeviceTypePriority(availableDevices[i].type) < DeviceTypePriority(config.type)) {continue;}
+		else if (!any && availableDevices[i].type != config.type) {continue;}
+		else if (config.tesselation && !availableDevices[i].deviceFeatures.features.tessellationShader) {continue;}
+		else if (config.anisotropic && !availableDevices[i].deviceFeatures.features.samplerAnisotropy) {continue;}
+		else if (config.shaderDouble && !availableDevices[i].deviceFeatures.features.shaderFloat64) {continue;}
+		else if (config.geometryShader && !availableDevices[i].deviceFeatures.features.geometryShader) {continue;}
+		else if (config.depthBounds && !availableDevices[i].deviceFeatures.features.depthBounds) {continue;}
+		else if (config.compressionBC && !availableDevices[i].deviceFeatures.features.textureCompressionBC) {continue;}
+		else if (config.nonUniformIndexingShaderSampledImageArray && !availableDevices[i].deviceFeatures2.shaderSampledImageArrayNonUniformIndexing) {continue;}
 
 		best = i;
 		config.type = availableDevices[i].type;
 	}
 
-	if (best == -1) throw (std::runtime_error("Failed to find the best suitable device"));
+	if (best == -1) throw (std::runtime_error("Failed to find the best suitable device with the required features"));
 
 	return (availableDevices[best]);
 }

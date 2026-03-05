@@ -41,6 +41,7 @@ struct DeviceConfig
 	bool wireframeMode = false;
 	bool depthBounds = true;
 	bool compressionBC = true;
+	bool nonUniformIndexingShaderSampledImageArray = false;
 };
 
 /** @brief Contains information about different queue families. */
@@ -60,7 +61,10 @@ struct DeviceInfo
 {
 	VkPhysicalDevice physicalDevice = nullptr;
 	VkPhysicalDeviceProperties deviceProperties{};
-	VkPhysicalDeviceFeatures deviceFeatures{};
+	//VkPhysicalDeviceFeatures deviceFeatures{};
+	VkPhysicalDeviceVulkan12Features deviceFeatures2{};
+	VkPhysicalDeviceVulkan13Features deviceFeatures3{};
+	VkPhysicalDeviceFeatures2 deviceFeatures{};
 	DeviceType type = DeviceType::Best;
 };
 
