@@ -70,8 +70,13 @@ void Device::CreateLogical()
 	if (config.depthBounds) {deviceFeaturesBase.depthBounds = VK_TRUE;}
 	if (config.compressionBC) {deviceFeaturesBase.textureCompressionBC = VK_TRUE;}
 
+	VkPhysicalDeviceVulkan13Features deviceFeatures3{};
+	deviceFeatures3.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+	deviceFeatures3.synchronization2 = VK_TRUE;
+
 	VkPhysicalDeviceVulkan12Features deviceFeatures2{};
 	deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	deviceFeatures2.pNext = &deviceFeatures3;
 	if (config.nonUniformIndexingShaderSampledImageArray) {deviceFeatures2.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;}
 
 	VkPhysicalDeviceFeatures2 deviceFeatures{};

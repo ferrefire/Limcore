@@ -133,6 +133,8 @@ class Buffer
 		static BufferConfig StorageConfig();
 
 		static BufferConfig MappedStorageConfig();
+
+		static BufferConfig DrawCommandConfig();
 };
 
 std::ostream& operator<<(std::ostream& out, const Buffer& buffer);
