@@ -69,10 +69,11 @@ void Device::CreateLogical()
 	if (config.wireframeMode) {deviceFeaturesBase.fillModeNonSolid = VK_TRUE;}
 	if (config.depthBounds) {deviceFeaturesBase.depthBounds = VK_TRUE;}
 	if (config.compressionBC) {deviceFeaturesBase.textureCompressionBC = VK_TRUE;}
+	if (config.multiDrawIndirect) {deviceFeaturesBase.multiDrawIndirect = VK_TRUE;}
 
 	VkPhysicalDeviceVulkan13Features deviceFeatures3{};
 	deviceFeatures3.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-	deviceFeatures3.synchronization2 = VK_TRUE;
+	if (config.synchronization2) {deviceFeatures3.synchronization2 = VK_TRUE;}
 
 	VkPhysicalDeviceVulkan12Features deviceFeatures2{};
 	deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
@@ -270,7 +271,9 @@ DeviceInfo Device::GetBestDevice(DeviceConfig& config)
 		else if (config.geometryShader && !availableDevices[i].deviceFeatures.features.geometryShader) {continue;}
 		else if (config.depthBounds && !availableDevices[i].deviceFeatures.features.depthBounds) {continue;}
 		else if (config.compressionBC && !availableDevices[i].deviceFeatures.features.textureCompressionBC) {continue;}
+		else if (config.multiDrawIndirect && !availableDevices[i].deviceFeatures.features.multiDrawIndirect) {continue;}
 		else if (config.nonUniformIndexingShaderSampledImageArray && !availableDevices[i].deviceFeatures2.shaderSampledImageArrayNonUniformIndexing) {continue;}
+		else if (config.synchronization2 && !availableDevices[i].deviceFeatures3.synchronization2) {continue;}
 
 		best = i;
 		config.type = availableDevices[i].type;

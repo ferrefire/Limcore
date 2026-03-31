@@ -42,6 +42,8 @@ struct DeviceConfig
 	bool depthBounds = true;
 	bool compressionBC = true;
 	bool nonUniformIndexingShaderSampledImageArray = false;
+	bool multiDrawIndirect = false;
+	bool synchronization2 = true;
 };
 
 /** @brief Contains information about different queue families. */
