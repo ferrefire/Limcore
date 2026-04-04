@@ -184,6 +184,8 @@ class Matrix
 		 */
 		static Matrix<R, C, T> Projection(const T& fov, const T& ratio, const T& near, const T& far);
 
+		static Matrix<R, C, T> Orthographic(const T& left, const T& right, const T& bottom, const T& top, const T& near, const T& far);
+
 		/**
 		 * @brief Returns a view matrix from a direction and position.
 		 * @param direction Forward direction vector.

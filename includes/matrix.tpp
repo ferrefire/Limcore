@@ -309,6 +309,24 @@ Matrix<R, C, T> Matrix<R, C, T>::Projection(const T& fov, const T& ratio, const 
 }
 
 MATRIX_TEMPLATE
+Matrix<R, C, T> Matrix<R, C, T>::Orthographic(const T& left, const T& right, const T& bottom, const T& top, const T& near, const T& far)
+{
+	Matrix<R, C, T> result;
+
+	result(0, 0) = 2.0 / (right - left);
+	result(1, 1) = 2.0 / (top - bottom);
+	result(2, 2) = 1.0 / (far - near);
+	result(3, 0) = -(right + left) / (right - left);
+	result(3, 1) = -(top + bottom) / (top - bottom);
+	result(3, 2) = -near / (far - near);
+	result(3, 3) = 1.0;
+
+	result(1, 1) *= -1;
+
+	return (result);
+}
+
+MATRIX_TEMPLATE
 Matrix<R, C, T> Matrix<R, C, T>::View(const Point<T, C>& rotation, const Point<T, C>& position)
 {
 	Matrix<R, C, T> result = Identity();

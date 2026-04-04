@@ -2,6 +2,7 @@
 
 #include "manager.hpp"
 #include "utilities.hpp"
+#include "renderer.hpp"
 
 #include <stdexcept>
 
@@ -16,18 +17,19 @@ Pass::~Pass()
 }
 
 //void Pass::Create(const PassConfig& passConfig, Device* passDevice)
-void Pass::Create(Device* passDevice)
+void Pass::Create(VkExtent2D passExtent, Device* passDevice)
 {
-	//config = passConfig;
 	device = passDevice;
+	extent = passExtent;
 
-	if (!device) device = &Manager::GetDevice();
+	if (!device) {device = &Manager::GetDevice();}
+	if (windowBound || extent.height == 0 || extent.width == 0) {extent = Manager::GetWindow().GetConfig().extent;}
 
 	CreateImages();
 	CreateRenderPass();
 	CreateFramebuffers();
 
-	Manager::RegisterResizeCall(this, &Pass::Recreate);
+	if (windowBound) {Manager::RegisterResizeCall(this, &Pass::Recreate);}
 
 	//std::cout << "Pass images: " << images.size() << std::endl;
 }
@@ -36,10 +38,10 @@ void Pass::CreateImages()
 {
 	for (size_t i = 0; i < attachments.size(); i++)
 	{
-		if (attachments[i].useWindowExtent)
+		if (attachments[i].usePassExtent)
 		{
-			attachments[i].config.width = Manager::GetWindow().GetConfig().extent.width;
-			attachments[i].config.height = Manager::GetWindow().GetConfig().extent.height;
+			attachments[i].config.width = extent.width;
+			attachments[i].config.height = extent.height;
 		}
 
 		for (size_t j = 0; j < Manager::GetSwapchain().GetFrameCount(); j++)
@@ -50,10 +52,18 @@ void Pass::CreateImages()
 			}
 			else
 			{
-				images.push_back(new Image());
-				images[images.size() - 1]->Create(attachments[i].config, device);
-				attachments[i].images.push_back(images[images.size() - 1]);
-				attachments[i].views.push_back(images[images.size() - 1]->GetView());
+				if (j == 0)
+				{
+					images.push_back(new Image());
+					images[images.size() - 1]->Create(attachments[i].config, device);
+					attachments[i].images.push_back(images[images.size() - 1]);
+					attachments[i].views.push_back(images[images.size() - 1]->GetView());
+				}
+				else
+				{
+					attachments[i].images.push_back(attachments[i].images[0]);
+					attachments[i].views.push_back(attachments[i].images[0]->GetView());
+				}
 			}
 		}
 	}
@@ -117,8 +127,10 @@ void Pass::CreateFramebuffers()
 		createInfo.renderPass = renderpass;
 		createInfo.attachmentCount = CUI(frameViews.size());
 		createInfo.pAttachments = frameViews.data();
-		createInfo.width = Manager::GetWindow().GetConfig().extent.width;
-		createInfo.height = Manager::GetWindow().GetConfig().extent.height;
+		//createInfo.width = Manager::GetWindow().GetConfig().extent.width;
+		//createInfo.height = Manager::GetWindow().GetConfig().extent.height;
+		createInfo.width = extent.width;
+		createInfo.height = extent.height;
 		createInfo.layers = 1;
 
 		if (vkCreateFramebuffer(device->GetLogicalDevice(), &createInfo, nullptr, &framebuffers[i]) != VK_SUCCESS)
@@ -184,6 +196,8 @@ const Image* Pass::GetAttachmentImage(size_t attachment, size_t index) const
 void Pass::AddAttachment(AttachmentConfig attachmentConfig)
 {
 	attachments.push_back(attachmentConfig);
+
+	if (attachmentConfig.useSwapchain) {windowBound = true;}
 }
 
 void Pass::AddSubpass(SubpassConfig subpassConfig)
@@ -207,7 +221,8 @@ void Pass::Begin(VkCommandBuffer commandBuffer, uint32_t renderIndex)
 	beginInfo.renderPass = renderpass;
 	beginInfo.framebuffer = framebuffers[renderIndex];
 	beginInfo.renderArea.offset = {0, 0};
-	beginInfo.renderArea.extent = Manager::GetWindow().GetConfig().extent;
+	//beginInfo.renderArea.extent = Manager::GetWindow().GetConfig().extent;
+	beginInfo.renderArea.extent = extent;
 	beginInfo.clearValueCount = CUI(clearValues.size());
 	beginInfo.pClearValues = clearValues.data();
 
@@ -230,6 +245,8 @@ void Pass::Recreate()
 {
 	DestroyImages();
 	DestroyFramebuffers();
+
+	if (windowBound) {extent = Manager::GetWindow().GetConfig().extent;}
 
 	CreateImages();
 	CreateFramebuffers();
@@ -271,8 +288,9 @@ VkAttachmentDescription Pass::DefaultDepthDescription()
 	description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	//description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-	description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+	description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	//description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+	//description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
 
 	return (description);
 }
@@ -311,7 +329,27 @@ AttachmentConfig Pass::DefaultDepthAttachment(bool input)
 	{
 		attachmentConfig.config.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
 		attachmentConfig.config.targetLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+		//attachmentConfig.config.targetLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
 	}
+
+	return (attachmentConfig);
+}
+
+AttachmentConfig Pass::DefaultShadowAttachment()
+{
+	AttachmentConfig attachmentConfig{};
+	attachmentConfig.description = DefaultDepthDescription();
+	attachmentConfig.clear.depthStencil = {1.0f, 0};
+	attachmentConfig.config = Image::DefaultDepthConfig();
+
+	attachmentConfig.config.samplerConfig.compareEnabled = VK_TRUE;
+	attachmentConfig.config.samplerConfig.compareOperation = VK_COMPARE_OP_LESS_OR_EQUAL;
+	attachmentConfig.config.samplerConfig.repeatMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	attachmentConfig.config.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	//attachmentConfig.description.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	//attachmentConfig.config.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	attachmentConfig.description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+	attachmentConfig.config.targetLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
 	return (attachmentConfig);
 }
@@ -326,8 +364,8 @@ AttachmentConfig Pass::DefaultHDRAttachment()
 	imageConfig.format = VK_FORMAT_R16G16B16A16_SFLOAT;
 	imageConfig.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
 	imageConfig.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageConfig.width = Manager::GetWindow().GetConfig().extent.width;
-	imageConfig.height = Manager::GetWindow().GetConfig().extent.height;
+	//imageConfig.width = Manager::GetWindow().GetConfig().extent.width;
+	//imageConfig.height = Manager::GetWindow().GetConfig().extent.height;
 	imageConfig.viewConfig.format = VK_FORMAT_R16G16B16A16_SFLOAT;
 	imageConfig.samplerConfig.minFilter = VK_FILTER_NEAREST;
 	imageConfig.samplerConfig.magFilter = VK_FILTER_NEAREST;

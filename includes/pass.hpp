@@ -30,7 +30,7 @@ struct AttachmentConfig
 	std::vector<VkImageView> views;
 
 	bool useSwapchain = false;
-	bool useWindowExtent = true;
+	bool usePassExtent = true;
 };
 
 struct SubpassConfig
@@ -74,8 +74,10 @@ class Pass
 
 	private:
 		State state = Ended;
-		//PassConfig config{};
 		Device* device = nullptr;
+
+		bool windowBound = false;
+		VkExtent2D extent{};
 
 		std::vector<AttachmentConfig> attachments;
 		std::vector<SubpassConfig> subpasses;
@@ -101,7 +103,7 @@ class Pass
 		 * @param passDevice Device used to create Vulkan objects. if @c nullptr, uses the current Device.
 		 */
 		//void Create(const PassConfig& passConfig, Device* passDevice = nullptr);
-		void Create(Device* passDevice = nullptr);
+		void Create(VkExtent2D passExtent = {0, 0}, Device* passDevice = nullptr);
 
 		/** @brief Destroys the render pass and associated resources. */
 		void Destroy();
@@ -158,6 +160,7 @@ class Pass
 
 		static AttachmentConfig DefaultSwapAttachment();
 		static AttachmentConfig DefaultDepthAttachment(bool input = false);
+		static AttachmentConfig DefaultShadowAttachment();
 		static AttachmentConfig DefaultHDRAttachment();
 
 		/**

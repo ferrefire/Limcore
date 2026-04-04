@@ -2,6 +2,7 @@
 
 #include "manager.hpp"
 #include "pipeline.hpp"
+#include "time.hpp"
 
 #include <stdexcept>
 
@@ -222,6 +223,8 @@ void Renderer::RecordCommands()
 		commands[currentFrame].GetConfig() = originalCommandConfig;
 		frameSemaphores.clear();
 	}
+
+	//std::cout << "ri: " << renderIndex << " fi: " << currentFrame << std::endl;
 }
 
 void Renderer::PresentFrame()
