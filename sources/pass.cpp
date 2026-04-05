@@ -17,13 +17,15 @@ Pass::~Pass()
 }
 
 //void Pass::Create(const PassConfig& passConfig, Device* passDevice)
-void Pass::Create(VkExtent2D passExtent, Device* passDevice)
+void Pass::Create(VkExtent2D passExtent, uint32_t passFrames, Device* passDevice)
 {
 	device = passDevice;
 	extent = passExtent;
+	frames = passFrames;
 
 	if (!device) {device = &Manager::GetDevice();}
 	if (windowBound || extent.height == 0 || extent.width == 0) {extent = Manager::GetWindow().GetConfig().extent;}
+	if (windowBound) {frames = Manager::GetSwapchain().GetFrameCount();}
 
 	CreateImages();
 	CreateRenderPass();
@@ -44,7 +46,7 @@ void Pass::CreateImages()
 			attachments[i].config.height = extent.height;
 		}
 
-		for (size_t j = 0; j < Manager::GetSwapchain().GetFrameCount(); j++)
+		for (size_t j = 0; j < frames; j++)
 		{
 			if (attachments[i].useSwapchain)
 			{
@@ -52,7 +54,7 @@ void Pass::CreateImages()
 			}
 			else
 			{
-				if (j == 0)
+				if (j == 0 || attachments[i].perFrame)
 				{
 					images.push_back(new Image());
 					images[images.size() - 1]->Create(attachments[i].config, device);
@@ -113,10 +115,11 @@ void Pass::CreateFramebuffers()
 	if (!renderpass) throw (std::runtime_error("Render pass does not exist yet"));
 	if (!device) throw (std::runtime_error("Pass has no device"));
 
-	const std::vector<VkImageView>& swapchainViews = Manager::GetSwapchain().GetViews();
+	//const std::vector<VkImageView>& swapchainViews = Manager::GetSwapchain().GetViews();
 
-	framebuffers.resize(swapchainViews.size());
-	for (int i = 0; i < swapchainViews.size(); i++)
+	//framebuffers.resize(swapchainViews.size());
+	framebuffers.resize(frames);
+	for (int i = 0; i < frames; i++)
 	{
 		std::vector<VkImageView> frameViews;
 		frameViews.resize(attachments.size());
@@ -185,7 +188,7 @@ const VkRenderPass& Pass::GetRenderpass() const
 	return (renderpass);
 }
 
-const Image* Pass::GetAttachmentImage(size_t attachment, size_t index) const
+Image* Pass::GetAttachmentImage(size_t attachment, size_t index) const
 {
 	if (attachment >= attachments.size() || index >= attachments[attachment].images.size()) 
 		throw (std::runtime_error("Pass image request index out of bounds"));
@@ -246,7 +249,11 @@ void Pass::Recreate()
 	DestroyImages();
 	DestroyFramebuffers();
 
-	if (windowBound) {extent = Manager::GetWindow().GetConfig().extent;}
+	if (windowBound)
+	{
+		extent = Manager::GetWindow().GetConfig().extent;
+		frames = Manager::GetSwapchain().GetFrameCount();
+	}
 
 	CreateImages();
 	CreateFramebuffers();
@@ -350,6 +357,8 @@ AttachmentConfig Pass::DefaultShadowAttachment()
 	//attachmentConfig.config.targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	attachmentConfig.description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 	attachmentConfig.config.targetLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+
+	attachmentConfig.perFrame = true;
 
 	return (attachmentConfig);
 }

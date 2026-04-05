@@ -39,6 +39,7 @@ struct PipelineConfig
 	std::string shader = "";
 	VertexInfo vertexInfo{};
 	std::vector<VkDescriptorSetLayout> descriptorLayouts;
+	std::vector<VkPushConstantRange> pushConstants;
 	VkRenderPass renderpass = nullptr;
 	uint32_t subpass = 0;
 	std::vector<VkDynamicState> dynamicStates;

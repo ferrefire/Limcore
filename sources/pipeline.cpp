@@ -163,6 +163,8 @@ void Pipeline::CreateLayout()
 	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	createInfo.setLayoutCount = CUI(config.descriptorLayouts.size());
 	createInfo.pSetLayouts = config.descriptorLayouts.data();
+	createInfo.pushConstantRangeCount = CUI(config.pushConstants.size());
+	createInfo.pPushConstantRanges = createInfo.pushConstantRangeCount > 0 ? config.pushConstants.data() : nullptr;
 
 	if (vkCreatePipelineLayout(device->GetLogicalDevice(), &createInfo, nullptr, &layout) != VK_SUCCESS)
 		throw (std::runtime_error("Failed to create pipeline layout"));

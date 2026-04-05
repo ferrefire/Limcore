@@ -153,6 +153,9 @@ class Matrix
 		template <size_t CS = C> requires (CS == 4)
 		void Rotate(const point3D& rotation);
 
+		template <size_t CS = C> requires (CS == 4)
+		Matrix<R, C, T> Inversed();
+
 		/** @brief Returns an identity matrix. */
 		static Matrix<R, C, T> Identity();
 

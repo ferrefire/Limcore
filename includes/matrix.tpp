@@ -203,6 +203,57 @@ void Matrix<R, C, T>::Rotate(const point3D& rotation)
 }
 
 MATRIX_TEMPLATE
+template <size_t CS> requires (CS == 4)
+Matrix<R, C, T> Matrix<R, C, T>::Inversed()
+{
+	const T a00 = (*this)(0, 0), a01 = (*this)(0, 1), a02 = (*this)(0, 2), a03 = (*this)(0, 3);
+	const T a10 = (*this)(1, 0), a11 = (*this)(1, 1), a12 = (*this)(1, 2), a13 = (*this)(1, 3);
+	const T a20 = (*this)(2, 0), a21 = (*this)(2, 1), a22 = (*this)(2, 2), a23 = (*this)(2, 3);
+	const T a30 = (*this)(3, 0), a31 = (*this)(3, 1), a32 = (*this)(3, 2), a33 = (*this)(3, 3);
+
+	const T b00 = a00 * a11 - a01 * a10;
+	const T b01 = a00 * a12 - a02 * a10;
+	const T b02 = a00 * a13 - a03 * a10;
+	const T b03 = a01 * a12 - a02 * a11;
+	const T b04 = a01 * a13 - a03 * a11;
+	const T b05 = a02 * a13 - a03 * a12;
+	const T b06 = a20 * a31 - a21 * a30;
+	const T b07 = a20 * a32 - a22 * a30;
+	const T b08 = a20 * a33 - a23 * a30;
+	const T b09 = a21 * a32 - a22 * a31;
+	const T b10 = a21 * a33 - a23 * a31;
+	const T b11 = a22 * a33 - a23 * a32;
+
+	const T det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
+
+	const T invDet = 1.0 / det;
+
+	Matrix<R, C, T> result;
+
+	result(0, 0) = ( a11 * b11 - a12 * b10 + a13 * b09) * invDet;
+	result(0, 1) = (-a01 * b11 + a02 * b10 - a03 * b09) * invDet;
+	result(0, 2) = ( a31 * b05 - a32 * b04 + a33 * b03) * invDet;
+	result(0, 3) = (-a21 * b05 + a22 * b04 - a23 * b03) * invDet;
+
+	result(1, 0) = (-a10 * b11 + a12 * b08 - a13 * b07) * invDet;
+	result(1, 1) = ( a00 * b11 - a02 * b08 + a03 * b07) * invDet;
+	result(1, 2) = (-a30 * b05 + a32 * b02 - a33 * b01) * invDet;
+	result(1, 3) = ( a20 * b05 - a22 * b02 + a23 * b01) * invDet;
+
+	result(2, 0) = ( a10 * b10 - a11 * b08 + a13 * b06) * invDet;
+	result(2, 1) = (-a00 * b10 + a01 * b08 - a03 * b06) * invDet;
+	result(2, 2) = ( a30 * b04 - a31 * b02 + a33 * b00) * invDet;
+	result(2, 3) = (-a20 * b04 + a21 * b02 - a23 * b00) * invDet;
+
+	result(3, 0) = (-a10 * b09 + a11 * b07 - a12 * b06) * invDet;
+	result(3, 1) = ( a00 * b09 - a01 * b07 + a02 * b06) * invDet;
+	result(3, 2) = (-a30 * b03 + a31 * b01 - a32 * b00) * invDet;
+	result(3, 3) = ( a20 * b03 - a21 * b01 + a22 * b00) * invDet;
+
+	return (result);
+}
+
+MATRIX_TEMPLATE
 Matrix<R, C, T> Matrix<R, C, T>::Identity()
 {
 	Matrix<R, C, T> result;

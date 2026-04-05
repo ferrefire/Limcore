@@ -201,7 +201,7 @@ void Renderer::RecordCommands()
 			call(commands[currentFrame].GetBuffer(), currentFrame);
 		}
 
-		passInfo.pass->Begin(commands[currentFrame].GetBuffer(), renderIndex);
+		passInfo.pass->Begin(commands[currentFrame].GetBuffer(), passInfo.renderIndex < 0 ? renderIndex : passInfo.renderIndex);
 
 		vkCmdSetViewport(commands[currentFrame].GetBuffer(), 0, 1, &passInfo.viewport);
 		vkCmdSetScissor(commands[currentFrame].GetBuffer(), 0, 1, &passInfo.scissor);

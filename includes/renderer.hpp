@@ -35,6 +35,7 @@ struct PassInfo
 	VkViewport viewport{}; /**< @brief Viewport configuration for this pass. */
 	VkRect2D scissor{}; /**< @brief Scissor rectangle configuration. */
 	bool useWindowExtent = false; /**< @brief Whether to use swapchain window extent for viewport/scissor. */
+	int renderIndex = -1;
 };
 
 /**
