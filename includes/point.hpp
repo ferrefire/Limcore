@@ -213,6 +213,8 @@ class Point
 		static Point<T, S> FromString(const std::string& string);
 
 		static Point<T, S> Rotation(const Point<T, S>& rotation);
+
+		static Point<T, S> Rotate(const Point<T, S>& point, const Point<T, S>& angles);
 };
 
 POINT_TEMPLATE

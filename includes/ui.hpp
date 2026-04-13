@@ -61,7 +61,7 @@ class Slider: public Component<T>
 
 			if constexpr (std::is_same_v<T, float>)
 			{
-				ImGui::SliderFloat(this->name.c_str(), &this->value, min, max);
+				ImGui::SliderFloat(this->name.c_str(), &this->value, min, max, "%.4f");
 			}
 			else if constexpr (std::is_same_v<T, int>)
 			{

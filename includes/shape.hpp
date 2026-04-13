@@ -25,7 +25,7 @@
 
 #define SHAPE_TEMPLATE template <VertexConfig V, VkIndexType I>
 
-enum class ShapeType { Quad, Plane, Cube, Cylinder };
+enum class ShapeType { Quad, Plane, Cube, Cylinder, Leaf };
 
 struct ShapeSettings
 {
@@ -68,6 +68,8 @@ class Shape
 
 		template <VertexConfig PV = V, VkIndexType PI = I> requires (Bitmask::HasFlag(PV, Position)) && (PI != VK_INDEX_TYPE_NONE_KHR)
 		void CreateCylinder();
+
+		void CreateLeaf();
 
 	public:
 		/** @brief Constructs an empty shape (no vertices/indices). */

@@ -80,10 +80,15 @@ void Device::CreateLogical()
 	deviceFeatures2.pNext = &deviceFeatures3;
 	if (config.nonUniformIndexingShaderSampledImageArray) {deviceFeatures2.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;}
 
+	VkPhysicalDeviceVulkan11Features deviceFeatures1{};
+	deviceFeatures1.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+	deviceFeatures1.pNext = &deviceFeatures2;
+	deviceFeatures1.shaderDrawParameters = VK_TRUE;
+
 	VkPhysicalDeviceFeatures2 deviceFeatures{};
 	deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	deviceFeatures.features = deviceFeaturesBase;
-	deviceFeatures.pNext = &deviceFeatures2;
+	deviceFeatures.pNext = &deviceFeatures1;
 
 	std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 

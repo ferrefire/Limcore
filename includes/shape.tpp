@@ -37,6 +37,7 @@ void Shape<V, I>::Create(ShapeType type, ShapeSettings shapeSettings)
 		case ShapeType::Cube: CreateCube(); break;
 		case ShapeType::Plane: CreatePlane(); break;
 		case ShapeType::Cylinder: CreateCylinder(); break;
+		case ShapeType::Leaf: CreateLeaf(); break;
 	}
 
 	if (settings.scalarized) Scalarize();
@@ -131,7 +132,6 @@ void Shape<V, I>::CreateQuad()
 		vertices[1].position = point3D(0.5f, -0.5f, 0.0f);
 		vertices[2].position = point3D(0.5f, 0.5f, 0.0f);
 		vertices[3].position = point3D(-0.5f, 0.5f, 0.0f);
-		
 	}
 
 	if constexpr (hasNormal)
@@ -300,6 +300,52 @@ void Shape<V, I>::CreateCylinder()
 		indices.push_back(endVertices[i + 1]);
 		indices.push_back(startVertices[i + 1]);
 		indices.push_back(startVertices[i]);
+	}
+}
+
+SHAPE_TEMPLATE
+void Shape<V, I>::CreateLeaf()
+{
+	vertices.resize(10);
+
+	if constexpr (hasPosition)
+	{
+		vertices[0].position = point3D(0.0, 0.0, 0.0);
+		vertices[1].position = point3D(0.1875, 0.5, 0.0);
+		vertices[2].position = point3D(0.0, 1.0, 0.0);
+		vertices[3].position = point3D(-0.1875, 0.5, 0.0);
+
+		vertices[4].position = point3D::Rotate(point3D(0.1875, 0.5, 0.0), point3D(0.0, 0.0, -60.0));
+		vertices[5].position = point3D::Rotate(point3D(0.0, 1.0, 0.0), point3D(0.0, 0.0, -60.0));
+		vertices[6].position = point3D::Rotate(point3D(-0.1875, 0.5, 0.0), point3D(0.0, 0.0, -60.0));
+
+		vertices[7].position = point3D::Rotate(point3D(0.1875, 0.5, 0.0), point3D(0.0, 0.0, 60.0));
+		vertices[8].position = point3D::Rotate(point3D(0.0, 1.0, 0.0), point3D(0.0, 0.0, 60.0));
+		vertices[9].position = point3D::Rotate(point3D(-0.1875, 0.5, 0.0), point3D(0.0, 0.0, 60.0));
+	}
+
+	if constexpr (hasIndices)
+	{
+		indices.push_back(0);
+		indices.push_back(1);
+		indices.push_back(3);
+		indices.push_back(1);
+		indices.push_back(2);
+		indices.push_back(3);
+
+		indices.push_back(0);
+		indices.push_back(4);
+		indices.push_back(6);
+		indices.push_back(4);
+		indices.push_back(5);
+		indices.push_back(6);
+
+		indices.push_back(0);
+		indices.push_back(7);
+		indices.push_back(9);
+		indices.push_back(7);
+		indices.push_back(8);
+		indices.push_back(9);
 	}
 }
 

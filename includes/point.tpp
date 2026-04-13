@@ -19,7 +19,7 @@ Point<T, S>::Point(Init... init)
 
 	((data[i++] = static_cast<T>(init)), ...);
 
-	if (sizeof...(Init) == 1) { for (i = 1; i < S; i++) { data[i] = data[0]; } }
+	if (sizeof...(Init) == 1) {for (i = 1; i < S; i++) {data[i] = data[0];}}
 }
 
 POINT_TEMPLATE
@@ -28,7 +28,7 @@ Point<T, S>::Point(const Point<CT, CS>& other)
 {
 	const size_t size = (S < CS ? S : CS);
 
-	for (int i = 0; i < size; i++) { this->data[i] = static_cast<T>(other[i]); }
+	for (int i = 0; i < size; i++) {this->data[i] = static_cast<T>(other[i]);}
 }
 
 POINT_TEMPLATE
@@ -38,7 +38,7 @@ Point<T, S>::Point(const Point<CT, CS>& other, Init... init)
 	const size_t size = (S < CS ? S : CS);
 	size_t i = 0;
 
-	for (i = 0; i < size; i++) { this->data[i] = static_cast<T>(other[i]); }
+	for (i = 0; i < size; i++) {this->data[i] = static_cast<T>(other[i]);}
 
 	((data[i++] = static_cast<T>(init)), ...);
 }
@@ -49,7 +49,7 @@ Point<T, S>& Point<T, S>::operator=(const Point<CT, CS>& other)
 {
 	const uint32_t size = (S < CS ? S : CS);
 
-	for (size_t i = 0; i < size; i++) { this->data[i] = static_cast<T>(other[i]); }
+	for (size_t i = 0; i < size; i++) {this->data[i] = static_cast<T>(other[i]);}
 
 	return (*this);
 }
@@ -63,7 +63,7 @@ Point<T, S>::~Point()
 POINT_TEMPLATE
 T& Point<T, S>::operator[](const size_t i)
 {
-	if (i >= S) throw (std::out_of_range("Index out of bounds"));
+	if (i >= S) {throw (std::out_of_range("Index out of bounds"));}
 
 	return (data[i]);
 }
@@ -71,7 +71,7 @@ T& Point<T, S>::operator[](const size_t i)
 POINT_TEMPLATE
 const T& Point<T, S>::operator[](const size_t i) const
 {
-	if (i >= S) throw (std::out_of_range("Index out of bounds"));
+	if (i >= S) {throw (std::out_of_range("Index out of bounds"));}
 
 	return (data[i]);
 }
@@ -119,25 +119,25 @@ Point<T, S> Point<T, S>::operator/(const Point<T, S>& other) const
 POINT_TEMPLATE
 void Point<T, S>::operator+=(const Point<T, S>& other)
 {
-	for (size_t i = 0; i < S; i++) { data[i] += other[i]; }
+	for (size_t i = 0; i < S; i++) {data[i] += other[i];}
 }
 
 POINT_TEMPLATE
 void Point<T, S>::operator-=(const Point<T, S>& other)
 {
-	for (size_t i = 0; i < S; i++) { data[i] -= other[i]; }
+	for (size_t i = 0; i < S; i++) {data[i] -= other[i];}
 }
 
 POINT_TEMPLATE
 void Point<T, S>::operator*=(const Point<T, S>& other)
 {
-	for (size_t i = 0; i < S; i++) { data[i] *= other[i]; }
+	for (size_t i = 0; i < S; i++) {data[i] *= other[i];}
 }
 
 POINT_TEMPLATE
 void Point<T, S>::operator/=(const Point<T, S>& other)
 {
-	for (size_t i = 0; i < S; i++) { data[i] /= other[i]; }
+	for (size_t i = 0; i < S; i++) {data[i] /= other[i];}
 }
 
 POINT_TEMPLATE
@@ -157,7 +157,7 @@ POINT_TEMPLATE
 template <size_t PS> requires (PS > 2)
 void Point<T, S>::Rotate(const T& degrees, const Axis& axis)
 {
-	if (S > 3 || degrees == 0) return;
+	if (S > 3 || degrees == 0) {return;}
 
 	const T radians = degrees * 0.0174532925;
 	const T cosTheta = cos(radians);
@@ -177,11 +177,11 @@ POINT_TEMPLATE
 template <size_t PS> requires (PS > 2)
 void Point<T, S>::Rotate(const Point<T, S>& rotation)
 {
-	if (S > 3) return;
+	if (S > 3) {return;}
 
-	if (rotation.x() != 0) Rotate(rotation.x(), Axis::x);
-	if (rotation.y() != 0) Rotate(rotation.y(), Axis::y);
-	if (rotation.z() != 0) Rotate(rotation.z(), Axis::z);
+	if (rotation.x() != 0) {Rotate(rotation.x(), Axis::x);}
+	if (rotation.y() != 0) {Rotate(rotation.y(), Axis::y);}
+	if (rotation.z() != 0) {Rotate(rotation.z(), Axis::z);}
 }
 
 POINT_TEMPLATE
@@ -189,11 +189,11 @@ void Point<T, S>::Normalize()
 {
 	T total = 0;
 
-	for (size_t i = 0; i < S; i++) { total += fabs(data[i]); }
+	for (size_t i = 0; i < S; i++) {total += fabs(data[i]);}
 
-	if (total == 0) return;
+	if (total == 0) {return;}
 
-	for (size_t i = 0; i < S; i++) { data[i] /= total; }
+	for (size_t i = 0; i < S; i++) {data[i] /= total;}
 }
 
 POINT_TEMPLATE
@@ -210,9 +210,9 @@ void Point<T, S>::Unitize()
 {
 	T length = Length();
 
-	if (length == 0) return;
+	if (length == 0) {return;}
 
-	for (size_t i = 0; i < S; i++) { data[i] /= length; }
+	for (size_t i = 0; i < S; i++) {data[i] /= length;}
 }
 
 POINT_TEMPLATE
@@ -229,7 +229,7 @@ T Point<T, S>::Length() const
 {
 	T result = 0;
 
-	for (size_t i = 0; i < S; i++) { result += data[i] * data[i]; }
+	for (size_t i = 0; i < S; i++) {result += data[i] * data[i];}
 
 	result = sqrt(result);
 
@@ -262,7 +262,7 @@ T Point<T, S>::Dot(const Point<T, S>& a, const Point<T, S>& b)
 {
 	T result = 0;
 
-	for (size_t i = 0; i < S; i++) { result += a[i] * b[i]; }
+	for (size_t i = 0; i < S; i++) {result += a[i] * b[i];}
 
 	return (result);
 }
@@ -302,6 +302,20 @@ Point<T, S> Point<T, S>::Rotation(const Point<T, S>& rotation)
 	Point<T, S> result = 0;
 	result[S - 1] = 1;
 	result.Rotate(rotation);
+
+	return (result);
+}
+
+POINT_TEMPLATE
+Point<T, S> Point<T, S>::Rotate(const Point<T, S>& point, const Point<T, S>& angles)
+{
+	Point<T, S> result = point;
+	
+	if (S > 3) {return (result);}
+
+	if (angles.x() != 0) {result.Rotate(angles.x(), Axis::x);}
+	if (angles.y() != 0) {result.Rotate(angles.y(), Axis::y);}
+	if (angles.z() != 0) {result.Rotate(angles.z(), Axis::z);}
 
 	return (result);
 }
