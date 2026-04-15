@@ -21,7 +21,8 @@
 #define MATRIX_TEMPLATE template <size_t R, size_t C, ValidMatrixType T> \
 	requires (ValidMatrixRange<R> && ValidMatrixRange<C>)
 
-#define MATRIX_CAST_TEMPLATE template <ValidMatrixType CT>
+#define MATRIX_CAST_TEMPLATE template <size_t CR, size_t CC, ValidMatrixType CT> \
+	requires (ValidMatrixRange<CR> && ValidMatrixRange<CC>)
 
 template <size_t S>
 concept ValidMatrixRange = (S >= 1 && S <= 4);
@@ -65,7 +66,7 @@ class Matrix
 		 * @param other Matrix to cast from.
 		 */
 		MATRIX_CAST_TEMPLATE
-		Matrix(const Matrix<R, C, CT>& other);
+		Matrix(const Matrix<CR, CC, CT>& other);
 
 		/**
 		 * @brief Assignment operator (same type).
@@ -81,7 +82,7 @@ class Matrix
 		 * @return Reference to this matrix.
 		 */
 		MATRIX_CAST_TEMPLATE
-		Matrix<R, C, T>& operator=(const Matrix<R, C, CT>& other);
+		Matrix<R, C, T>& operator=(const Matrix<CR, CC, CT>& other);
 		
 		/** @brief Destructor. */
 		~Matrix();

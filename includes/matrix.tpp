@@ -25,9 +25,20 @@ Matrix<R, C, T>::Matrix(const std::array<T, R * C>& init)
 
 MATRIX_TEMPLATE
 MATRIX_CAST_TEMPLATE
-Matrix<R, C, T>::Matrix(const Matrix<R, C, CT>& other)
+Matrix<R, C, T>::Matrix(const Matrix<CR, CC, CT>& other)
 {
-	for (size_t i = 0; i < size; i++) { this->data[i] = static_cast<T>(other[i]); }
+	size_t mr = R < CR ? R : CR;
+	size_t mc = C < CC ? C : CC;
+
+	for (size_t r = 0; r < mr; r++)
+	{
+		for (size_t c = 0; c < mc; c++)
+		{
+			(*this)(r, c) = static_cast<T>(other(r, c));
+		}
+	}
+
+	//for (size_t i = 0; i < size; i++) { this->data[i] = static_cast<T>(other[i]); }
 }
 
 MATRIX_TEMPLATE
@@ -40,9 +51,20 @@ Matrix<R, C, T>& Matrix<R, C, T>::operator=(const Matrix<R, C, T>& other)
 
 MATRIX_TEMPLATE
 MATRIX_CAST_TEMPLATE
-Matrix<R, C, T>& Matrix<R, C, T>::operator=(const Matrix<R, C, CT>& other)
+Matrix<R, C, T>& Matrix<R, C, T>::operator=(const Matrix<CR, CC, CT>& other)
 {
-	for (size_t i = 0; i < size; i++) { this->data[i] = static_cast<T>(other[i]); }
+	size_t mr = R < CR ? R : CR;
+	size_t mc = C < CC ? C : CC;
+
+	for (size_t r = 0; r < mr; r++)
+	{
+		for (size_t c = 0; c < mc; c++)
+		{
+			(*this)(r, c) = static_cast<T>(other(r, c));
+		}
+	}
+
+	//for (size_t i = 0; i < size; i++) { this->data[i] = static_cast<T>(other[i]); }
 
 	return (*this);
 }

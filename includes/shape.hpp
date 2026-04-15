@@ -31,6 +31,7 @@ struct ShapeSettings
 {
 	bool scalarized = true;
 	Point<int, 2> resolution = {1, 1}; 
+	uint32_t lod = 0;
 };
 
 /**
