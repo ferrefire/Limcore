@@ -11,7 +11,7 @@ void Input::AddKey(int keycode)
 
 KeyInfo Input::GetKey(int keycode)
 {
-	if (!keys.contains(keycode)) AddKey(keycode);
+	if (!keys.contains(keycode)) {AddKey(keycode);}
 
 	return (keys[keycode]);
 }

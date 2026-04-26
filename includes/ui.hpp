@@ -232,6 +232,7 @@ class UI
 		static void TriggerMouseInput(bool mode);
 		static void TriggerKeyboardInput(bool mode);
 
+		static void NewFrame();
 		static void Frame();
 		static void Render(VkCommandBuffer commandBuffer, uint32_t frameIndex);
 

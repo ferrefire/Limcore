@@ -45,6 +45,9 @@ class Camera
 	private:
 		CameraConfig config{};
 
+		double pendingDeltaX = 0;
+		double pendingDeltaY = 0;
+
 		point3D position = point3D(0);
 		point3D direction = point3D(0, 0, 1);
 		point3D angles = point3D(0, 0, 0);

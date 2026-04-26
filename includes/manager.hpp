@@ -59,6 +59,7 @@ class Manager
 		static bool resizing;
 
 		static std::vector<std::function<void()>> startCalls;
+		static std::vector<std::function<void()>> prePollCalls;
 		static std::vector<std::function<void()>> frameCalls;
 		static std::vector<std::function<void()>> endCalls;
 		static std::vector<std::function<void()>> resizeCalls;
@@ -135,6 +136,8 @@ class Manager
 
 		template <class T>
 		static void RegisterStartCall(T* object, void (T::*call)()) { RegisterStartCall(std::bind_front(call, object)); }
+
+		static void RegisterPrePollCall(std::function<void()> call);
 
 		/**
 		 * @brief Registers a callback to run each frame.

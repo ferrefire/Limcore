@@ -23,6 +23,7 @@ void UI::CreateContext(VkRenderPass renderPass, uint32_t subpass)
 	io = &ImGui::GetIO();
 	//io->ConfigFlags |= ImGuiConfigFlags_NoMouse;
 	io->ConfigWindowsMoveFromTitleBarOnly = true;
+	io->ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
 
 	ImGui::StyleColorsDark();
 
@@ -49,6 +50,7 @@ void UI::CreateContext(VkRenderPass renderPass, uint32_t subpass)
 
 	ImGui_ImplVulkan_Init(&init_info);
 
+	Manager::RegisterPrePollCall(NewFrame);
 	Manager::RegisterFrameCall(Frame);
 	Manager::RegisterEndCall(DestroyContext);
 }
@@ -85,12 +87,18 @@ void UI::TriggerKeyboardInput(bool mode)
 	else {io->ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;}
 }
 
+void UI::NewFrame()
+{
+	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+}
+
 void UI::Frame()
 {
 	if (!io) {return;}
 
-	ImGui_ImplVulkan_NewFrame();
-	ImGui_ImplGlfw_NewFrame();
+	//ImGui_ImplVulkan_NewFrame();
+	//ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 
 	RenderFPS();

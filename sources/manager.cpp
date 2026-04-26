@@ -176,6 +176,8 @@ void Manager::Start()
 
 void Manager::Frame()
 {
+	for (std::function<void()> call : prePollCalls) { call(); }
+
 	glfwPollEvents();
 
 	Renderer::WaitForFrame();
@@ -240,6 +242,11 @@ void Manager::RegisterStartCall(std::function<void()> call)
 	startCalls.push_back(call);
 }
 
+void Manager::RegisterPrePollCall(std::function<void()> call)
+{
+	prePollCalls.push_back(call);
+}
+
 void Manager::RegisterFrameCall(std::function<void()> call)
 {
 	frameCalls.push_back(call);
@@ -272,6 +279,7 @@ bool Manager::stopping = false;
 bool Manager::resizing = false;
 
 std::vector<std::function<void()>> Manager::startCalls;
+std::vector<std::function<void()>> Manager::prePollCalls;
 std::vector<std::function<void()>> Manager::frameCalls;
 std::vector<std::function<void()>> Manager::endCalls;
 std::vector<std::function<void()>> Manager::resizeCalls;

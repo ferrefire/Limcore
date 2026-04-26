@@ -45,6 +45,7 @@ void Window::CreateFrame()
 
 	if (config.fullscreen) glfwSetWindowMonitor(data, nullptr, 0, 0, width, height, mode->refreshRate);
 	glfwSetInputMode(data, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	//if (glfwRawMouseMotionSupported()) {glfwSetInputMode(data, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);}
 	glfwSetCursorPosCallback(data, Input::MouseCallback);
 	glfwSetScrollCallback(data, Input::ScrollCallback);
 }

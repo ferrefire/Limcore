@@ -38,6 +38,8 @@ void Camera::SetConfig(const CameraConfig& newConfig)
 {
 	config = newConfig;
 
+	updated = false;
+
 	UpdateView();
 	UpdateProjection();
 }
@@ -110,6 +112,14 @@ void Camera::Rotate(const point3D& rotation)
 	if (angles.x() > 89) angles.x() = 89;
 	if (angles.x() < -89) angles.x() = -89;
 
+	if (abs(angles.y()) > 360.0)
+	{
+		float intPart;
+		float fracPart = std::modf(angles.y(), &intPart);
+
+		angles.y() = (static_cast<int32_t>(intPart) % 360) + fracPart;
+	}
+
 	direction = point3D(0, 0, 1);
 	direction.Rotate(angles);
 	direction.Unitize();
@@ -122,7 +132,10 @@ void Camera::Rotate(const point3D& rotation)
 
 void Camera::Mouse(double deltaX, double deltaY)
 {
-	Rotate(point3D(deltaY * config.sensitivity, deltaX * config.sensitivity));
+	pendingDeltaX += deltaX;
+	pendingDeltaY += deltaY;
+
+	//Rotate(point3D(deltaY * config.sensitivity, deltaX * config.sensitivity));
 }
 
 void Camera::Scroll(double deltaX, double deltaY)
@@ -133,12 +146,16 @@ void Camera::Scroll(double deltaX, double deltaY)
 
 void Camera::Frame()
 {
-	if (Input::GetKey(GLFW_KEY_W).down) Move(direction * Time::deltaTime * config.speed);
-	if (Input::GetKey(GLFW_KEY_S).down) Move(direction * Time::deltaTime * -config.speed);
-	if (Input::GetKey(GLFW_KEY_D).down) Move(right * Time::deltaTime * config.speed);
-	if (Input::GetKey(GLFW_KEY_A).down) Move(right * Time::deltaTime * -config.speed);
-	if (Input::GetKey(GLFW_KEY_SPACE).down) Move(up * Time::deltaTime * config.speed);
-	if (Input::GetKey(GLFW_KEY_LEFT_CONTROL).down) Move(up * Time::deltaTime * -config.speed);
+	if (Input::GetKey(GLFW_KEY_W).down) {Move(direction * Time::deltaTime * config.speed);}
+	if (Input::GetKey(GLFW_KEY_S).down) {Move(direction * Time::deltaTime * -config.speed);}
+	if (Input::GetKey(GLFW_KEY_D).down) {Move(right * Time::deltaTime * config.speed);}
+	if (Input::GetKey(GLFW_KEY_A).down) {Move(right * Time::deltaTime * -config.speed);}
+	if (Input::GetKey(GLFW_KEY_SPACE).down) {Move(up * Time::deltaTime * config.speed);}
+	if (Input::GetKey(GLFW_KEY_LEFT_CONTROL).down) {Move(up * Time::deltaTime * -config.speed);}
+
+	Rotate(point3D(pendingDeltaY * config.sensitivity, pendingDeltaX * config.sensitivity));
+	pendingDeltaX = 0;
+	pendingDeltaY = 0;
 }
 
 void Camera::Resize(size_t width, size_t height)
