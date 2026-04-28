@@ -161,7 +161,7 @@ class Shape
 		 */
 		void Join(const Shape<V, I>& other, bool offset = true);
 
-		void CalculateNormal();
+		void CalculateNormals(bool inverted = false);
 };
 
 typedef Shape<Position, VK_INDEX_TYPE_UINT16> shapeP16;

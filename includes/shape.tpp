@@ -329,25 +329,25 @@ void Shape<V, I>::CreateLeaf()
 		if constexpr (hasIndices)
 		{
 			indices.push_back(0);
+			indices.push_back(2);
 			indices.push_back(1);
-			indices.push_back(2);
 			indices.push_back(0);
-			indices.push_back(2);
 			indices.push_back(3);
+			indices.push_back(2);
 	
 			indices.push_back(0);
+			indices.push_back(5);
 			indices.push_back(4);
-			indices.push_back(5);
 			indices.push_back(0);
-			indices.push_back(5);
 			indices.push_back(6);
+			indices.push_back(5);
 	
 			indices.push_back(0);
+			indices.push_back(8);
 			indices.push_back(7);
-			indices.push_back(8);
 			indices.push_back(0);
-			indices.push_back(8);
 			indices.push_back(9);
+			indices.push_back(8);
 		}
 	}
 	else if (settings.lod == 1)
@@ -373,16 +373,16 @@ void Shape<V, I>::CreateLeaf()
 		if constexpr (hasIndices)
 		{
 			indices.push_back(0);
-			indices.push_back(1);
 			indices.push_back(2);
+			indices.push_back(1);
 	
 			indices.push_back(0);
-			indices.push_back(3);
 			indices.push_back(4);
+			indices.push_back(3);
 	
 			indices.push_back(0);
-			indices.push_back(5);
 			indices.push_back(6);
+			indices.push_back(5);
 		}
 	}
 	else if (settings.lod == 2)
@@ -400,11 +400,11 @@ void Shape<V, I>::CreateLeaf()
 		if constexpr (hasIndices)
 		{
 			indices.push_back(0);
-			indices.push_back(1);
 			indices.push_back(3);
 			indices.push_back(1);
+			indices.push_back(1);
+			indices.push_back(3);
 			indices.push_back(2);
-			indices.push_back(3);
 		}
 	}
 	
@@ -600,15 +600,44 @@ void Shape<V, I>::Join(const Shape<V, I>& other, bool offset)
 }
 
 SHAPE_TEMPLATE
-void Shape<V, I>::CalculateNormal()
+void Shape<V, I>::CalculateNormals(bool inverted)
 {
 	if constexpr (hasNormal)
 	{
 		if constexpr (hasPosition)
 		{
-			for (Vertex<V>& vertex : vertices)
+			if constexpr (hasIndices)
 			{
-				vertex.normal = point3D(vertex.position).Unitized();
+				//std::vector<indexType> calculatedIndices;
+
+				for (Vertex<V>& vertex : vertices)
+				{
+					vertex.normal = point3D(0.0);
+				}
+
+				for (int i = 0; i < indices.size(); i += 3)
+				{
+					point3D u = vertices[indices[i + 1]].position - vertices[indices[i]].position;
+					point3D v = vertices[indices[i + 2]].position - vertices[indices[i]].position;
+
+					point3D n;
+
+					if (!inverted) {n = point3D::Cross(u, v).Unitized();}
+					else {n = point3D::Cross(v, u).Unitized();}
+
+					vertices[indices[i]].normal += n;
+					vertices[indices[i + 1]].normal += n;
+					vertices[indices[i + 2]].normal += n;
+
+					//calculatedIndices.push_back(indices[i]);
+					//calculatedIndices.push_back(indices[i + 1]);
+					//calculatedIndices.push_back(indices[i + 2]);
+				}
+
+				for (Vertex<V>& vertex : vertices)
+				{
+					vertex.normal = vertex.normal.Unitized();
+				}
 			}
 		}
 	}
