@@ -51,6 +51,7 @@ class Camera
 		point3D position = point3D(0);
 		point3D direction = point3D(0, 0, 1);
 		point3D angles = point3D(0, 0, 0);
+		point3D totalAngles = point3D(0, 0, 0);
 		point3D right = point3D(1, 0, 0);
 		point3D up = point3D(0, 1, 0);
 
@@ -89,6 +90,7 @@ class Camera
 		const point3D& GetPosition() const; /**< @brief Gets the camera position. */
 		const point3D& GetDirection() const; /**< @brief Gets the forward direction vector. */
 		const point3D& GetAngles() const; /**< @brief Gets the Euler angles (pitch, yaw, roll). */
+		const point3D& GetTotalAngles() const; /**< @brief Gets the total accumulated Euler angles (pitch, yaw, roll). */
 		const point3D& GetRight() const; /**< @brief Gets the right vector. */
 		const point3D& GetUp() const; /**< @brief Gets the up vector. */
 

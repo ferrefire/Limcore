@@ -325,7 +325,8 @@ std::ostream& operator<<(std::ostream& out, const Point<T, S>& point)
 {
 	for (size_t i = 0; i < S; i++)
 	{
-		out << static_cast<char>(119 + ((i + 1) % 4)) << ": " << point[i] << (i + 1 < S ? ", " : "");
+		//out << static_cast<char>(119 + ((i + 1) % 4)) << ": " << point[i] << (i + 1 < S ? ", " : "");
+		out << point[i] << (i + 1 < S ? ", " : "");
 	}
 
 	return (out);

@@ -64,6 +64,11 @@ const point3D& Camera::GetAngles() const
 	return (angles);
 }
 
+const point3D& Camera::GetTotalAngles() const
+{
+	return (totalAngles);
+}
+
 const point3D& Camera::GetRight() const
 {
 	return (right);
@@ -108,9 +113,13 @@ void Camera::Move(const point3D& translation)
 void Camera::Rotate(const point3D& rotation)
 {
 	angles += rotation;
+	totalAngles += rotation;
 
-	if (angles.x() > 89) angles.x() = 89;
-	if (angles.x() < -89) angles.x() = -89;
+	if (angles.x() > 89) {angles.x() = 89;}
+	if (angles.x() < -89) {angles.x() = -89;}
+
+	if (totalAngles.x() > 89) {totalAngles.x() = 89;}
+	if (totalAngles.x() < -89) {totalAngles.x() = -89;}
 
 	if (abs(angles.y()) > 360.0)
 	{
