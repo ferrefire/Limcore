@@ -1,25 +1,210 @@
 # Limcore
 
-Limcore is a lightweight, platform-independent graphics library that uses Vulkan and GLFW. Limcore does not use any other external libraries. All the dependencies are automatically downloaded and compiled alongside Limcore.
+### A modern C++ framework for building Vulkan applications with less boilerplate and full low-level control.
+
+Limcore is a C++ graphics library created to simplify and accelerate development with the [Vulkan graphics API](https://www.vulkan.org/).
+
+Vulkan provides extensive control over modern GPU hardware, but that control comes with significant setup complexity and repeated resource-management code. Limcore reduces this overhead through configurable, object-oriented abstractions for Vulkan resources, rendering operations, asset loading, mathematics, input, timing, and application management.
+
+The library provides sensible defaults for fast development while preserving direct access to the underlying Vulkan resources whenever low-level control is required.
 
 ## Table of Contents
-- [Installation](#installation)
-- [Setup](#setup)
-- [Usage](#usage)
+- [Focus](#focus)
+- [Features](#features)
+- [Building](#building)
 - [Documentation](#documentation)
+- [License](#license)
 
-## Installation
-### Dependencies
+## Focus
+
+Limcore was designed around five primary goals:
+1. ### Reduce Vulkan boilerplate
+   Repetitive resource creation and configuration should not dominate application code.
+2. ### Provide useful defaults
+   Common resources should be easy to create without requiring a large amount of configuration.
+3. ### Preserve full control
+   Abstraction should not prevent developers from accessing native Vulkan resources or configuring advanced behaviour.
+4. ### Streamline application pipeline
+   A clear and simple structure should be used to keep an application organized and readable.
+5. ### Support complete applications
+   Rendering, mathematics, assets, input, timing, debugging, and application management should work together as a unified library.
+
+## Features
+
+### Vulkan resource abstractions
+
+Limcore provides C++ handle classes for the major resources used by a Vulkan application, including:
+- Buffers and memory
+- Graphics and compute pipelines
+- Render passes and framebuffers
+- Command pools and command buffers
+- Physical and logical devices
+- Descriptor sets, layouts, and pools
+- Swapchains and window surfaces
+- Images, image views, and samplers
+- Synchronization primitives
+
+Resources can be created using default configurations or customized through explicit configuration structures.
+
+Although these classes remove much of Vulkan's repetitive setup code, they do not hide the underlying API. Native Vulkan handles and resources remain accessible if more advanced behaviour is needed.
+
+### Rendering system
+
+The renderer manages common rendering and compute operations, including:
+- Render-pass execution
+- Graphics draw commands
+- Compute dispatch commands
+- Command recording and submission
+- Per-frame rendering operations
+
+This provides a structured rendering workflow while keeping synchronisation and resource transitions explicit.
+
+### Hardware and device selection
+
+Limcore includes utilities for querying and selecting an appropriate rendering device.
+
+These utilities can inspect and compare:
+- Available GPUs
+- Queue-family support
+- Window-surface compatibility
+- Swapchain support
+- Required device extension
+- Vulkan features and capabilities
+- Device suitability and ranking
+
+This helps applications select the most appropriate physical device instead of relying on a fixed adapter.
+
+### Mathematics
+
+The library contains custom vector and matrix mathematics classes with functionality comparable to commonly used graphics math libraries such as GLM.
+
+The math system is fully templated and supports:
+- Vectors of multiple dimensions
+- Matrices of multiple sizes
+- Common arithmetic operations
+- Vector and matrix transformations
+- Graphics-related projection and view calculations
+- Multiple underlying numeric types
+
+### Camera system
+
+The camera class provides reusable camera behaviour for real-time 3D applications, including:
+- Position and orientation management
+- Translation and rotation
+- View-matrix generation
+- Perspective configuration
+- Input-driven camera movement
+
+### Asset loading
+
+Limcore includes asset-loading functionality for textures and 3D models.
+
+The image-loading system supports JPEG images and includes utilities for:
+- Texture loading of different color formats
+- Mipmap generation
+- GPU texture preparation
+- Compression to BC texture formats
+
+The model-loading system supports:
+- Wavefront OBJ models
+- glTF models
+- Mesh and vertex data extraction
+
+### Mesh utilities
+
+Limcore provides fully templated classes for mesh management and real-time procedural shape generation.
+
+Mesh-related functionality includes:
+- Mesh resource management
+- Vertex and index configurability and handling
+- GPU buffer preparation
+- Shape integration
+
+Shape generation includes:
+- Generation of numerous shape primitives
+- Shape combining and blending
+- Configurable vertex and index types
+- Normal vector generation
+- Translation and rotation
+
+These utilities make it possible to work with both imported assets and meshes generated at runtime. It also viable to modify imported meshes with the use of the procedural shape system.
+
+### Input and timing
+
+Limcore includes usefull systems for managing input and timing utility. These systems efficiently retrieve and process data from the [GLFW](https://github.com/glfw/glfw) library.
+
+The input system includes functionality such as:
+- Keyboard input querying
+- Mouse input querying
+- Only tracking used input
+- Per-frame input information
+
+The timing system allows for:
+- Delta-time calculation
+- Average and current frames per second
+- Exposed timing ticks
+- Timers
+- Application runtime tracking
+
+### User interface
+
+[ImGui](https://github.com/ocornut/imgui) is used for application UI creation. Limcore provides an easy to use system that acts as a layer on top of [ImGui](https://github.com/ocornut/imgui). It focuses on start-only UI creation which is then handled separatley. This removes cluttered UI code from per-frame update calls and moves them to application start calls.
+
+The UI system allows for:
+- One-time interface declarations
+- Component nesting
+- Function registering to UI components
+- Several interface and data types
+
+### Application management
+
+A central manager acts as the core of a Limcore application, creating and initiating all major resources. It can be configured to alter its behaviour to applications needs.
+
+Systems and callbacks can be registered for different stages of the application lifecycle:
+- Startup
+- Per-frame updates
+- Pre-frame updates
+- Post-frame updates
+- Shutdown
+
+Most Limcore systems are tightly linked to and managed by this manager. This way everything can be correctly kept track of and be cleanly shut down or fixed incase of a problem. It provides a consistent structure for initializing, running and cleaning up application components.
+
+### Debugging
+
+The library includes additional debugging functionality by processing custom print statements at compile time. This allows for the printing of enum values and bit flag names.
+
+### Project tools
+
+Limcore provides scripts for project and shader management. Depending on the target platform, these scripts can automate tasks such as:
+- Fetching dependencies
+- Configuring the project
+- Building the library
+- Compiling the application
+- Compiling GLSL shaders to SPIR-V
+- Cleaning up files
+
+## Building
+
+### Requirements
+
 For Linux:
-- CMake version 3.22 or newer.
+- [CMake](https://cmake.org/) version 3.22 or newer
 
 For Windows:
-- Visual studio 2022 or newer.
-- CMake version 3.22 or newer.
+- [Visual Studio](https://visualstudio.microsoft.com/) 2022 or newer
+- [CMake](https://cmake.org/) version 3.22 or newer
 
-### CMake
-To build Limcore into your project using CMake, you can use CMake's FetchContent functionality.
-Simply add the following into your CMakeLists.txt file and you're set:
+### Dependencies
+
+Limcore was build to have as few dependencies as possible to make using it easy and not a chore. All the dependencies it does have, are automatically fetched and managed by Limcore itself.
+
+A list of external libraries used in Limcore:
+- [GLFW](https://github.com/glfw/glfw), used for window creation, surface integration and input
+- [ImGui](https://github.com/ocornut/imgui), used for graphical user interfaces
+
+### Project integration
+
+To build Limcore into your project, you should make use of CMake's FetchContent functionality. Simply add the following instructions into your `CMakeLists.txt` file and you're set:
 ```cmake
 include(FetchContent) # If not already included
 
@@ -34,199 +219,19 @@ FetchContent_MakeAvailable("limcore")
 
 target_link_libraries(${PROJECT_NAME} PUBLIC "limcore")
 ```
-Limcore handles all the dependencies and is platform independent. So it should "just work".
-
-## Setup
-Limcore also provides a quick and easy way to create and setup a new project. All you need to do is download the 
-![new-project.sh](https://github.com/ferrefire/Limcore/blob/main/new-project.sh) script and run it.
-
-It will automatically create the source file directories needed for Limcore. It will also create a CMakeLists file and add glslang to the project for shader compiling. To create a Limcore project with the new-project.sh script, you can run the following command:
-```bash
-./new-project.sh # To create and setup everything
-
-./new-project.sh command # To create and setup specific elements
-
-./new-project.sh -option # To add specific behaviour by using options
-```
-
-Creation commands:
-- d (to create all the source directories).
-- s (to download and initiate the setup script).
-- c (to download and initiate the CMake file).
-- g (to download and initiate the shader compiling scripts).
-
-Creation options:
-- -override or -o (to overwrite all the helper scripts and CMake files regardless of if they already exist).
-- -clean or -c (to clean up and remove downloaded files).
-
-The new-project.sh script will also add two very usefull scripts for managing the project (building, compiling, running, dependencies, etc.)
-
-### Setup.sh
-The setup.sh script is very usefull to quickly manage your Limcore project. It's usage is simple and straightfoward.
-
-To build the CMake files and fetch or update any dependencies, execute the following command:
-```bash
-./setup.sh build # Or 'bd'
-```
-
-To compile the project into an executable, execute the following command:
-```bash
-./setup.sh compile # Or 'cmp'
-```
-
-To run the project, execute the following command:
-```bash
-./setup.sh run # Or 'r'
-```
-And to add application arguments, you can add them after the "run" command by using a '-':
-```bash
-./setup.sh run -fs # To run the application in fullscreen
-```
-Some arguments:
-- -fs (to run the application in fullscreen).
-- -ig (to force the application to use an integrated graphics device).
-
-To clean the project and remove any downloaded dependencies, execute the following command:
-```bash
-./setup.sh clean # Or 'cl'
-```
-
-### Shader-Compiler.sh
-The shader-compiler.sh script is a swift way to compile your shaders from GLSL into SPIRV code. Simply put your shaders (.vert, .frag, .comp, etc.) in the "shaders" folder and execute the following command:
-```bash
-./shader-compiler all # Or example.vert example.frag for compiling specifig shaders
-```
-
-## Usage
-This is a short example that explains how to render a simple cube to a window.
-
-### Manager
-The manager class handles the application's creation, function registering, configuration, cleaning and destruction. The first thing to do is tell the manager to create all the neccessary resources:
-
-```cxx
-#include "manager.hpp"
-
-int main(int argc, char** argv)
-{
-	Manager::ParseArguments(argv, argc); // Always do this even if you don't pass any arguments.
-	Manager::Create();
-}
-```
-
-Then we can register a start, frame and end call to the manager for creation, update and cleanup purposes:
-
-```cxx
-Manager::RegisterStartCall(StartFuctionName);
-Manager::RegisterFrameCall(FrameFuctionName);
-Manager::RegisterEndCall(EndFunctionName);
-```
-To register a member function, you can use an overload:
-```cxx
-Manager::RegisterFrameCall(&object, &Object::Function); // If registering from outside the object.
-Manager::RegisterFrameCall(this, &Object::Function); // If registering from inside the object.
-```
-
-After that we tell the manager to start the main loop:
-
-```cxx
-Manager::Run(); // This will also call all registered start functions once.
-```
-
-Don't forget to tell the manager to clean up all the resources when application has ended. This will also call all registered end functions.
-
-```cxx
-Manager::Destroy();
-```
-
-That was pretty much it for the application's main function. It should look something like this:
-
-```cxx
-#include "manager.hpp"
-
-int main(int argc, char** argv)
-{
-	Manager::ParseArguments(argv, argc);
-	Manager::Create();
-
-	Manager::RegisterStartCall(StartFuctionName);
-	Manager::RegisterFrameCall(FrameFuctionName);
-	Manager::RegisterEndCall(EndFuctionName);
-
-	Manager::Run();
-
-	Manager::Destroy();
-
-	exit(EXIT_SUCCESS);
-}
-```
-
-### Mesh
-Next we will create a mesh to render. Creating meshes is very straightfoward and dynamic. In Limcore, meshes are templated with a flag that describes the elements of it's vertices and an enum to describe the type of indices it will use.
-
-We declare our mesh like this:
-
-```cxx
-#include "mesh.hpp"
-
-Mesh<Position, VK_INDEX_TYPE_UINT16> mesh;
-// Or Mesh<Position | Coordinate | Normal, VK_INDEX_TYPE_UINT32> mesh;
-// Or Mesh<Position | Color, VK_INDEX_TYPE_NONE_KHR> mesh;
-```
-The Mesh class also contains some usefull type definitions:
-- meshP16
-- meshPC16
-- meshPN16
-- meshPNC16
-- meshP32
-- meshPC32
-- meshPN32
-- meshPNC32
-
-Next we create the mesh. There are three ways to create a mesh.
-
-1. By using a Shape to provide the geometry data.
-
-A Shape is very usefull for creating procedural shapes. They are similar to the Mesh class in that they are templated.
-For more information about shapes, consult the ![documentation](https://github.com/ferrefire/Limcore/releases/download/Documentation/refman.pdf).
-
-For simple shapes, you can just pass a ShapeType to the Mesh:
-```cxx
-mesh.Create(ShapeType::Cube);
-```
-
-2. By using a ModelLoader to load a 3D model stored in the resources/models directory.
-
-Currently only two formats are supported:
-- .obj
-- .gltf
-
-A model can be loaded and passed to the Mesh like this:
-```cxx
-mesh.Create(ModelLoader("model_name", ModelType::Gltf));
-```
-
-3. By manually setting the vertices and indices which is quite straight foward.
-
-Now we declare a Pass which describes and manages a renderpass and it's associated resources.
-It is fully configurable but for now we can just use a default configuration.
-
-Declare it like this:
-```cxx
-#include "pass.hpp"
-
-Pass pass;
-```
-
-And then create it in the start function:
-```cxx
-PassConfig passConfig = Pass::DefaultConfig(true);
-pass.Create(passConfig);
-```
-
-WORK IN PROGRESS...
 
 ## Documentation
-Limcore is fully documented through doxygen.
 
-### PDF
-A PDF containing Limcore's documentation can be found ![here](https://github.com/ferrefire/Limcore/releases/download/Documentation/refman.pdf)
+Important note: the documentation for Limcore is dated, in need of updating, and not finished. It should be consulted only to get a general idea. It will be updated soon.
+
+The Limcore source code is documented using Doxygen. The documentation contains class descriptions, API references, configuration options, and information about the relationships between Limcore's systems. A PDF can be downloaded [here](https://github.com/user-attachments/files/29220679/refman.pdf).
+
+### Example application
+
+The [Terrain](https://github.com/ferrefire/Terrain) project is a complex project made with Limcore. It should cover most of Limcore's functionality.
+
+## License
+
+This project is licensed under the MIT License, see LICENSE.txt for more information.
+
+Created by Ferre Molenbeek.
