@@ -4,7 +4,7 @@
 
 Limcore is a C++ graphics library created to simplify and accelerate development with the [Vulkan graphics API](https://www.vulkan.org/).
 
-Vulkan provides extensive control over modern GPU hardware, but that control comes with significant setup complexity and repeated resource-management code. Limcore reduces this overhead through configurable, object-oriented abstractions for Vulkan resources, rendering operations, asset loading, mathematics, input, timing, and application management.
+Vulkan provides extensive control over modern GPU hardware, however that control comes with significant setup complexity and repeated resource-management code. Limcore reduces this overhead through configurable, object-oriented abstractions for Vulkan resources, rendering operations, asset loading, mathematics, input, timing, and application management.
 
 The library provides sensible defaults for fast development while preserving direct access to the underlying Vulkan resources whenever low-level control is required.
 
@@ -18,15 +18,15 @@ The library provides sensible defaults for fast development while preserving dir
 ## Focus
 
 Limcore was designed around five primary goals:
-1. ### Reduce Vulkan boilerplate
+### 1. Reduce Vulkan boilerplate
    Repetitive resource creation and configuration should not dominate application code.
-2. ### Provide useful defaults
+### 2. Provide useful defaults
    Common resources should be easy to create without requiring a large amount of configuration.
-3. ### Preserve full control
+### 3. Preserve full control
    Abstraction should not prevent developers from accessing native Vulkan resources or configuring advanced behaviour.
-4. ### Streamline application pipeline
+### 4. Streamline application pipeline
    A clear and simple structure should be used to keep an application organized and readable.
-5. ### Support complete applications
+### 5. Support complete applications
    Rendering, mathematics, assets, input, timing, debugging, and application management should work together as a unified library.
 
 ## Features
@@ -127,7 +127,7 @@ Shape generation includes:
 - Normal vector generation
 - Translation and rotation
 
-These utilities make it possible to work with both imported assets and meshes generated at runtime. It also viable to modify imported meshes with the use of the procedural shape system.
+These utilities make it possible to work with both imported assets and meshes generated at runtime. It is also viable to modify imported meshes with the use of the procedural shape system.
 
 ### Input and timing
 
@@ -140,7 +140,7 @@ The input system includes functionality such as:
 - Per-frame input information
 
 The timing system allows for:
-- Delta-time calculation
+- Delta time calculation
 - Average and current frames per second
 - Exposed timing ticks
 - Timers
@@ -148,7 +148,7 @@ The timing system allows for:
 
 ### User interface
 
-[ImGui](https://github.com/ocornut/imgui) is used for application UI creation. Limcore provides an easy to use system that acts as a layer on top of [ImGui](https://github.com/ocornut/imgui). It focuses on start-only UI creation which is then handled separatley. This removes cluttered UI code from per-frame update calls and moves them to application start calls.
+[ImGui](https://github.com/ocornut/imgui) is used for application UI creation. Limcore provides an easy to use system that acts as a layer on top of [ImGui](https://github.com/ocornut/imgui). It focuses on start-only UI creation which is then handled separately. This removes cluttered UI code from per-frame update calls and moves them to application start calls.
 
 The UI system allows for:
 - One-time interface declarations
@@ -167,7 +167,7 @@ Systems and callbacks can be registered for different stages of the application 
 - Post-frame updates
 - Shutdown
 
-Most Limcore systems are tightly linked to and managed by this manager. This way everything can be correctly kept track of and be cleanly shut down or fixed incase of a problem. It provides a consistent structure for initializing, running and cleaning up application components.
+Most Limcore systems are tightly linked to and managed by this manager. This way everything can be properly tracked and cleanly shut down or fixed in case of a problem. It provides a consistent structure for initializing, running, and cleaning up application components.
 
 ### Debugging
 
@@ -196,10 +196,10 @@ For Windows:
 
 ### Dependencies
 
-Limcore was build to have as few dependencies as possible to make using it easy and not a chore. All the dependencies it does have, are automatically fetched and managed by Limcore itself.
+Limcore was build with as few dependencies as possible, making it easy to integrate instead of a chore. All the dependencies it does have, are automatically fetched and managed by Limcore itself.
 
 A list of external libraries used in Limcore:
-- [GLFW](https://github.com/glfw/glfw), used for window creation, surface integration and input
+- [GLFW](https://github.com/glfw/glfw), used for window creation, surface integration, and input
 - [ImGui](https://github.com/ocornut/imgui), used for graphical user interfaces
 
 ### Project integration
@@ -222,7 +222,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC "limcore")
 
 ## Documentation
 
-Important note: the documentation for Limcore is dated, in need of updating, and not finished. It should be consulted only to get a general idea. It will be updated soon.
+Important note: The Limcore documentation is outdated and incomplete. It should only be consulted as a general reference and will be updated soon.
 
 The Limcore source code is documented using Doxygen. The documentation contains class descriptions, API references, configuration options, and information about the relationships between Limcore's systems. A PDF can be downloaded [here](https://github.com/user-attachments/files/29220679/refman.pdf).
 
